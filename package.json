@@ -26,7 +26,8 @@
     "publish": {
       "provider": "github",
       "owner": "juno-apps",
-      "repo": "junobooks"
+      "repo": "junobooks",
+      "draft": false
     }
   },
   "scripts": {
