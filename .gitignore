@@ -26,6 +26,9 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 
+# Claude Code session/tooling files (not project content)
+.claude/
+
 # Env / secrets
 .env
 .env.local

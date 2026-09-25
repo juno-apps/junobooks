@@ -25,6 +25,6 @@ Pointer log only — a few lines per round. Details live in git history.
 
 ## Round 5 — Unit 0d: auto-update
 - Files: `src/main/index.ts` (calls `autoUpdater.checkForUpdatesAndNotify()` on startup, packaged builds only). Version bumped to 0.0.2, then 0.0.3.
-- Fixed along the way: GitHub Releases were publishing as drafts (invisible to the public update check) — added `"draft": false` to the `publish` config in `package.json`.
+- Fixed along the way: GitHub Releases were publishing as drafts (invisible to the public update check). First attempt used `"draft": false`, which isn't a real electron-builder option and broke the whole `publish` config (confusing wall of schema errors in CI) — correct fix is `"releaseType": "release"`.
 - Sequencing note: v0.0.1 predates the update-check code, so it could never have offered an update — owner installed v0.0.2 (which has the code) so it can check for v0.0.3.
-- Status: not yet confirmed — v0.0.3 about to be pushed/tagged; owner will relaunch her installed 0.0.2 app to see the update offer.
+- Status: not yet confirmed — v0.0.3 fix pushed and re-tagged; owner will relaunch her installed 0.0.2 app to see the update offer.
