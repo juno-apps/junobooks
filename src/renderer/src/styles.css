@@ -1,0 +1,27 @@
+:root {
+  color-scheme: light;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.app-main {
+  flex: 1;
+  padding: 2rem;
+}
+
+.app-footer {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  color: #666;
+  border-top: 1px solid #ddd;
+  background: #f7f7f7;
+}

@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build output
+/out/
+/dist/
+/build/*.exe
+/build/*.blockmap
+
+# Test data — never commit sample or real company books
+/test-data/
+
+# Real company data must never be in the repo
+/Companies/
+
+# Logs
+*.log
+npm-debug.log*
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+
+# Editor/OS cruft
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+
+# Env / secrets
+.env
+.env.local
