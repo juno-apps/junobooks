@@ -47,5 +47,5 @@ None yet — created as modules land.
 None yet. Created only when the owner types "create new handoff."
 
 ## Phase 0 status
-- 0a in progress: app scaffolded (window titled "JunoBooks", footer shows version + build date), `git init` and `.gitignore` pending, this doc set just created.
+- 0a confirmed: app scaffolded (window titled "JunoBooks", footer shows version + build date). `npm start` opens the window as expected.
 - 0b–0e: not started.
