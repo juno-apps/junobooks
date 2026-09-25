@@ -14,10 +14,15 @@ Lean, current-state-only. See `JunoBooks-PLAN.md` for the master plan and phase 
 ```
 JunoBooks-code/
   src/
-    main/            Electron main process (window, IPC handlers)
+    main/            Electron main process (window, IPC handlers, database)
+      paths.ts       Where the sample/test company lives (dev vs packaged)
+      testCompany.ts Opens the sample company's SQLite file, smoke test, backups
     preload/         contextBridge API exposed to the renderer as window.juno
     renderer/         React app (src/renderer/src)
   test-data/          Sample companies for development (git-ignored, never real books)
+    Companies/Sample Company/
+      books.sqlite
+      backups/       Timestamped copies made on app close, newest 30 kept
   docs/
     architecture.md   This file
     progress-log.md   Pointer log of what changed each round
@@ -28,7 +33,20 @@ JunoBooks-code/
 ```
 
 ## Database schema
-Not yet created. Phase 0 unit 0b will add a smoke-test table; the real schema starts in Phase 1.
+Only a `smoke_test` table exists so far (Phase 0 unit 0b), used to prove the
+app can write and read SQLite and take backups. The real schema (chart of
+accounts, journal entries, etc.) starts in Phase 1.
+
+Each company is one `better-sqlite3` file, opened in WAL mode. On app close,
+the WAL is checkpointed and a timestamped copy of the file is placed in that
+company's `backups/` folder; only the newest 30 copies are kept.
+
+In dev (`npm start`) the sample company lives at `<project root>/test-data/Companies/Sample Company/`
+(git-ignored). In a packaged build it falls back to a `test-data` folder
+under Electron's userData directory, since the project source isn't shipped —
+this is still a sample company, never the owner's real books. Real
+company management (the `Documents\JunoBooks\` layout in the master plan)
+starts in Phase 1.
 
 ## Ledger rules
 Not yet implemented. Double-entry rules (every entry balances, posted periods lock, no hard deletes) land in Phase 1.
@@ -48,4 +66,5 @@ None yet. Created only when the owner types "create new handoff."
 
 ## Phase 0 status
 - 0a confirmed: app scaffolded (window titled "JunoBooks", footer shows version + build date). `npm start` opens the window as expected.
-- 0b–0e: not started.
+- 0b built, not yet confirmed by the owner: sample company database, smoke-test write/read, backup-on-close with 30-copy pruning. Logic verified with a standalone script; owner still needs to confirm in the running app.
+- 0c–0e: not started.

@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
+import { closeTestCompany, getTestCompanyStatus, openTestCompany } from './testCompany'
 
 const isDev = !app.isPackaged
 
@@ -25,10 +26,14 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  openTestCompany()
+
   ipcMain.handle('app:getInfo', () => ({
     version: app.getVersion(),
     buildDate: __BUILD_DATE__
   }))
+
+  ipcMain.handle('testCompany:status', () => getTestCompanyStatus())
 
   createWindow()
 
@@ -38,5 +43,10 @@ app.whenReady().then(() => {
 })
 
 app.on('window-all-closed', () => {
+  closeTestCompany()
   if (process.platform !== 'darwin') app.quit()
+})
+
+app.on('before-quit', () => {
+  closeTestCompany()
 })

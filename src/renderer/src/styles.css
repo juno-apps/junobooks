@@ -25,3 +25,19 @@ body {
   border-top: 1px solid #ddd;
   background: #f7f7f7;
 }
+
+.smoke-test {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fafafa;
+  max-width: 640px;
+}
+
+.smoke-test .path {
+  font-family: 'Cascadia Code', Consolas, monospace;
+  font-size: 0.8rem;
+  color: #555;
+  word-break: break-all;
+}
