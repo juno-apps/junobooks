@@ -67,4 +67,5 @@ None yet. Created only when the owner types "create new handoff."
 ## Phase 0 status
 - 0a confirmed: app scaffolded (window titled "JunoBooks", footer shows version + build date). `npm start` opens the window as expected.
 - 0b confirmed: sample company database, smoke-test write/read, backup-on-close with 30-copy pruning. Lives at `test-data/Companies/Sample Company/` inside the project code folder (not `Documents\JunoBooks\` — that starts in Phase 1).
-- 0c–0e: not started.
+- 0c in progress: repository is `github.com/juno-apps/junobooks` (public). `electron-builder` config added to `package.json` (NSIS installer, publishes to GitHub Releases). `.github/workflows/release.yml` builds on `windows-latest` and publishes a Release whenever a `vX.Y.Z` tag is pushed.
+- 0d–0e: not started.

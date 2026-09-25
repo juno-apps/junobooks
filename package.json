@@ -4,13 +4,38 @@
   "description": "JunoBooks — offline-first accounting for small businesses",
   "main": "./out/main/index.js",
   "author": "JunoBooks",
-  "homepage": "https://github.com/junojewelry/junobooks",
+  "homepage": "https://github.com/juno-apps/junobooks",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/juno-apps/junobooks.git"
+  },
+  "build": {
+    "appId": "com.junobooks.app",
+    "productName": "JunoBooks",
+    "directories": {
+      "output": "dist"
+    },
+    "files": ["out/**/*"],
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "juno-apps",
+      "repo": "junobooks"
+    }
+  },
   "scripts": {
     "start": "electron-vite dev",
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "postinstall": "electron-builder install-app-deps",
     "build:win": "npm run build && electron-builder --win",
+    "release:win": "npm run build && electron-builder --win --publish always",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "test": "vitest run"
   },

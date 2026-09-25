@@ -15,3 +15,9 @@ Pointer log only — a few lines per round. Details live in git history.
 - Files: `src/main/paths.ts` (sample-company location), `src/main/testCompany.ts` (open/write/read + backup-on-close, keeps last 30), IPC wiring in `src/main/index.ts`, `src/preload/*`, `src/renderer/src/App.tsx` (shows the DB path and rows on screen).
 - Verified write/read and backup-pruning logic with a standalone script (Electron's GUI can't run headlessly from this automation shell, so this checked the same code path without a window).
 - Status: **confirmed** by owner, after pointing her to the exact path (`test-data` sits inside the project code folder, not `Documents\JunoBooks\` — easy to miss since it's git-ignored).
+
+## Round 4 — Unit 0c: GitHub + installer (in progress)
+- Owner created GitHub account (username `juno-apps`) and public repo `junobooks`.
+- Added `electron-builder` config to `package.json` (NSIS target, GitHub Releases publish target) and `.github/workflows/release.yml` (builds on `windows-latest`, publishes on any `vX.Y.Z` tag push).
+- Local `npm run build:win` can't fully complete in this dev environment (a sandboxed permission restriction, unrelated to the app) — the real build runs on GitHub Actions instead.
+- Status: not yet pushed to GitHub; owner's go-ahead needed before publishing.
