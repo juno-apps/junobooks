@@ -22,3 +22,7 @@ Pointer log only — a few lines per round. Details live in git history.
 - Local `npm run build:win` can't fully complete in this dev environment (a sandboxed permission restriction, unrelated to the app) — the real build runs on GitHub Actions instead.
 - Pushed to GitHub, tagged `v0.0.1`, Actions built and published the installer as a GitHub Release.
 - Status: **confirmed** — owner downloaded, installed (per-user), and opened it.
+
+## Round 5 — Unit 0d: auto-update
+- Files: `src/main/index.ts` (calls `autoUpdater.checkForUpdatesAndNotify()` on startup, packaged builds only). Version bumped to 0.0.2.
+- Status: not yet confirmed — need to push, tag `v0.0.2`, and have owner relaunch her installed 0.0.1 app to see the update offer.

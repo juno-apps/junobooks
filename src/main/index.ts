@@ -1,4 +1,5 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
+import { autoUpdater } from 'electron-updater'
 import { join } from 'path'
 import { closeTestCompany, getTestCompanyStatus, openTestCompany } from './testCompany'
 
@@ -40,6 +41,13 @@ app.whenReady().then(() => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
+
+  // Checks GitHub Releases for a newer version and, if found, downloads it
+  // and prompts to restart and install. No-ops harmlessly when running
+  // unpackaged (npm start).
+  if (!isDev) {
+    autoUpdater.checkForUpdatesAndNotify()
+  }
 })
 
 app.on('window-all-closed', () => {

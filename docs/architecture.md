@@ -7,7 +7,7 @@ Lean, current-state-only. See `JunoBooks-PLAN.md` for the master plan and phase 
 - **UI:** React 18 + TypeScript, built with Vite.
 - **Database:** SQLite via `better-sqlite3`, one file per company. (Not yet wired up — see Phase 0 status below.)
 - **Installer:** `electron-builder` (NSIS `.exe`), built by GitHub Actions on `windows-latest`. (Not yet configured.)
-- **Updates:** `electron-updater` against GitHub Releases. (Dependency installed, not yet wired up.)
+- **Updates:** `electron-updater` against GitHub Releases. Checks on startup in packaged builds only; on finding a newer Release it downloads it and prompts to restart and install.
 - **Tests:** Vitest, for ledger math, imports, and other logic that needs real tests.
 
 ## Folder layout
@@ -68,4 +68,5 @@ None yet. Created only when the owner types "create new handoff."
 - 0a confirmed: app scaffolded (window titled "JunoBooks", footer shows version + build date). `npm start` opens the window as expected.
 - 0b confirmed: sample company database, smoke-test write/read, backup-on-close with 30-copy pruning. Lives at `test-data/Companies/Sample Company/` inside the project code folder (not `Documents\JunoBooks\` — that starts in Phase 1).
 - 0c confirmed: repository is `github.com/juno-apps/junobooks` (public). Pushing a `vX.Y.Z` tag triggers `.github/workflows/release.yml`, which builds the NSIS installer on `windows-latest` and publishes it as a GitHub Release. `v0.0.1` built, downloaded, and installed successfully (per-user install, not code-signed yet — expected).
-- 0d–0e: not started.
+- 0d in progress: `electron-updater` wired up in `src/main/index.ts` — on startup (packaged builds only), it checks GitHub Releases and offers to download and install a newer version. Version bumped to 0.0.2 to test this.
+- 0e: not started.
