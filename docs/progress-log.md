@@ -20,4 +20,5 @@ Pointer log only — a few lines per round. Details live in git history.
 - Owner created GitHub account (username `juno-apps`) and public repo `junobooks`.
 - Added `electron-builder` config to `package.json` (NSIS target, GitHub Releases publish target) and `.github/workflows/release.yml` (builds on `windows-latest`, publishes on any `vX.Y.Z` tag push).
 - Local `npm run build:win` can't fully complete in this dev environment (a sandboxed permission restriction, unrelated to the app) — the real build runs on GitHub Actions instead.
-- Status: not yet pushed to GitHub; owner's go-ahead needed before publishing.
+- Pushed to GitHub, tagged `v0.0.1`, Actions built and published the installer as a GitHub Release.
+- Status: **confirmed** — owner downloaded, installed (per-user), and opened it.
