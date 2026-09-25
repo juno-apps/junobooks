@@ -24,5 +24,7 @@ Pointer log only — a few lines per round. Details live in git history.
 - Status: **confirmed** — owner downloaded, installed (per-user), and opened it.
 
 ## Round 5 — Unit 0d: auto-update
-- Files: `src/main/index.ts` (calls `autoUpdater.checkForUpdatesAndNotify()` on startup, packaged builds only). Version bumped to 0.0.2.
-- Status: not yet confirmed — need to push, tag `v0.0.2`, and have owner relaunch her installed 0.0.1 app to see the update offer.
+- Files: `src/main/index.ts` (calls `autoUpdater.checkForUpdatesAndNotify()` on startup, packaged builds only). Version bumped to 0.0.2, then 0.0.3.
+- Fixed along the way: GitHub Releases were publishing as drafts (invisible to the public update check) — added `"draft": false` to the `publish` config in `package.json`.
+- Sequencing note: v0.0.1 predates the update-check code, so it could never have offered an update — owner installed v0.0.2 (which has the code) so it can check for v0.0.3.
+- Status: not yet confirmed — v0.0.3 about to be pushed/tagged; owner will relaunch her installed 0.0.2 app to see the update offer.
