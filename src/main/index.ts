@@ -2,7 +2,7 @@ import { app, BrowserWindow, ipcMain } from 'electron'
 import { autoUpdater } from 'electron-updater'
 import { join } from 'path'
 import type { AccountInput } from '../shared/accounts'
-import type { CompanyProfile, EntityChangeInput, NewCompanyInput, Result } from '../shared/company'
+import type { CompanyProfile, EntityChangeInput, HomeStateChangeInput, NewCompanyInput, Result } from '../shared/company'
 import { readAppSettings, writeAppSettings } from './appSettings'
 import { createCompany, listCompanies, openCompany, type CompanyBooks } from './companyStore'
 import { getCompaniesDir, getDataRoot } from './paths'
@@ -88,6 +88,15 @@ app.whenReady().then(() => {
   )
   ipcMain.handle('company:removeEntityTypeChange', (_e, effectiveDate: string) =>
     wrap(() => requireCompany().removeEntityTypeChange(effectiveDate))
+  )
+  ipcMain.handle('company:changeHomeState', (_e, input: HomeStateChangeInput) =>
+    wrap(() => requireCompany().changeHomeState(input))
+  )
+  ipcMain.handle('company:correctStartingHomeState', (_e, stateCode: string) =>
+    wrap(() => requireCompany().correctStartingHomeState(stateCode))
+  )
+  ipcMain.handle('company:removeHomeStateChange', (_e, effectiveDate: string) =>
+    wrap(() => requireCompany().removeHomeStateChange(effectiveDate))
   )
   ipcMain.handle('accounts:restore', (_e, numbers: string[]) => wrap(() => requireCompany().restoreAccounts(numbers)))
   ipcMain.handle('chart:get', () =>current?.chart() ?? null)

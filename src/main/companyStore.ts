@@ -8,6 +8,7 @@ import {
   type CompanySummary,
   type EntityChangeInput,
   type EntityChangeResult,
+  type HomeStateChangeInput,
   type NewCompanyInput
 } from '../shared/company'
 import { localDateString } from '../shared/dates'
@@ -17,7 +18,15 @@ import { isTemplateId, type TemplateId } from '../shared/templates'
 import type { AccountInput } from '../shared/accounts'
 import { addAccount, deleteAccount, setAccountActive, updateAccount, type ChartContext } from './accounts'
 import { accountCount, applyChart, getChart, restoreAccounts } from './chart'
-import { addEntityTypeChange, correctStartingEntityType, getHistory, removeEntityTypeChange } from './companyHistory'
+import {
+  addEntityTypeChange,
+  addHomeStateChange,
+  correctStartingEntityType,
+  correctStartingHomeState,
+  getHistory,
+  removeEntityTypeChange,
+  removeHomeStateChange
+} from './companyHistory'
 import { getSchemaVersion, LATEST_SCHEMA_VERSION, runMigrations } from './db/migrations'
 
 /**
@@ -211,6 +220,21 @@ export class CompanyBooks {
 
   removeEntityTypeChange(effectiveDate: string, now: Date = new Date()): CompanyProfile {
     removeEntityTypeChange(this.db, effectiveDate)
+    return this.profile(now)
+  }
+
+  changeHomeState(input: HomeStateChangeInput, now: Date = new Date()): CompanyProfile {
+    addHomeStateChange(this.db, input, now)
+    return this.profile(now)
+  }
+
+  correctStartingHomeState(stateCode: string, now: Date = new Date()): CompanyProfile {
+    correctStartingHomeState(this.db, stateCode)
+    return this.profile(now)
+  }
+
+  removeHomeStateChange(effectiveDate: string, now: Date = new Date()): CompanyProfile {
+    removeHomeStateChange(this.db, effectiveDate)
     return this.profile(now)
   }
 

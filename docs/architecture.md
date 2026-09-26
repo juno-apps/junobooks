@@ -22,10 +22,10 @@ JunoBooks-code/
       ledger.ts        Ledger engine: post / void / reverse entries, period lock, balances
       chart.ts         Apply a template's accounts; build the chart-of-accounts view
       accounts.ts      Add / edit / deactivate / delete accounts
-      companyHistory.ts  Entity-type history: add / remove a change, correct the starting type
+      companyHistory.ts  Entity-type and home-state history: add / remove a change, correct the starting value
       db/migrations.ts Numbered schema migrations
     preload/           contextBridge API exposed to the renderer as window.juno
-    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange)
+    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange)
     shared/            Code used by both main and renderer: entity types, US states, dates, money, company validation,
                        templates.ts (starting charts), taxLines.ts (tax categories + per-year line tables), chart.ts (view types),
                        accounts.ts (account input rules: kinds, debit/credit side, validation, number-range warning)
@@ -51,7 +51,7 @@ JunoBooks-code/
 - New company form: name, entity type, home state (default CA), books start date (default Jan 1 this year), starting chart of accounts (template). The initial entity type and home state take effect on the books start date. The chart is created in the same transaction.
 - Companies created before templates existed show a one-time "Set up the chart of accounts" panel (refused if the company already has accounts).
 - Company home shows the profile and the chart of accounts. See `docs/topics/chart-of-accounts.md`.
-- **Entity type changes** (`companyHistory.ts`, "Change" link on company home): a new type plus a start date is added to `entity_type_history`. Rules (`validateHistoryChange` in `shared/company.ts`, reusable for home state): the date can't be before the books start, on or before the books-closed-through date, on a date that already has an entry, or change nothing. Future dates are allowed. "Correct starting type" replaces the first row's type (same date); "Remove" deletes a later change (never the starting one). Both are refused if the books are closed through the date involved. Every change shows the "Check with your accountant" note. Each add/correct also adds the accounts the new type needs, in the same transaction (see `docs/topics/chart-of-accounts.md`); existing accounts are never changed or removed.
+- **Entity type and home state changes** (`companyHistory.ts`, "Change" links on company home): a new value plus a start date is added to `entity_type_history` / `home_state_history`. Both share one set of rules (`validateHistoryChange` in `shared/company.ts`): the date can't be before the books start, on or before the books-closed-through date, on a date that already has an entry, or change nothing. Future dates are allowed. "Correct starting type/state" replaces the first row's value (same date); "Remove" deletes a later change (never the starting one). Both are refused if the books are closed through the date involved. Every change shows a "Check with your accountant" note. The history list reloads after every save. An entity-type add/correct also adds the accounts the new type needs, in the same transaction (see `docs/topics/chart-of-accounts.md`); existing accounts are never changed or removed. A home-state change records history only.
 
 ## Database schema
 Schema version is SQLite's `user_version` (0 = not a JunoBooks file). Migrations live in `src/main/db/migrations.ts`, each in its own transaction. Shipped migrations are never edited — add a new one.
@@ -107,12 +107,12 @@ Sole proprietor, Single-member LLC → Schedule C · Multi-member LLC, Partnersh
 - Ledger math, schema, imports/exports: real automated tests (`npm test`).
 
 ## Agreed design rules (not yet built)
-- **Home state has effective dates** (stored since v1). A screen to change it with a start date comes in unit 1f, using the same rules as entity type changes.
+- **Home state has effective dates** (stored since v1, changed from company home; see Companies). Sales tax rates by state and date come in Phase 8.
 - **Sales tax rates are data with effective dates, not constants.** The owner adds a new rate and the date it starts. Old transactions keep the rate that applied on their date. Built in Phase 8.
 - **Judgment calls are flagged, not decided.** Where the app makes a tax/accounting assumption it shows a "Check with your accountant" note, and all notes collect on the accountant package's "Notes for accountant" page.
 
 ## Phase 1 plan
-1a company manager · 1b core schema + audit log · 1c ledger engine · 1d templates + chart of accounts + tax-line mapping · 1e add/rename/deactivate accounts · 1f entity-type / home-state changes with start dates + settings · 1g docs + decide when packaged builds move to `Documents\JunoBooks`.
+1a company manager · 1b core schema + audit log · 1c ledger engine · 1d templates + chart of accounts + tax-line mapping · 1e add/rename/deactivate accounts · 1f entity-type / home-state changes with start dates (the two Change panels stand in for a separate settings screen) · 1g docs + decide when packaged builds move to `Documents\JunoBooks`.
 
 ## Open questions
 See `JunoBooks-PLAN.md` §10 (inventory method, S-corp election timing, which bank CSVs, which Etsy exports). Home state resolved: California, switchable per company.
@@ -125,4 +125,4 @@ None yet. Created only when the owner types "create new handoff."
 
 ## Status
 - **Phase 0 complete:** installs from GitHub, opens, updates itself.
-- **Phase 1:** 1a confirmed (create, list, switch companies). 1b confirmed (schema v2, integrity triggers, audit log). 1c confirmed (ledger engine, period lock, schema v3). 1d confirmed (templates, tax lines, chart screen, schema v4). 1e confirmed (account editing, schema v5). 1f in progress: entity-type change, correct/remove, chart update and restore-missing-accounts confirmed; home-state change to follow.
+- **Phase 1:** 1a confirmed (create, list, switch companies). 1b confirmed (schema v2, integrity triggers, audit log). 1c confirmed (ledger engine, period lock, schema v3). 1d confirmed (templates, tax lines, chart screen, schema v4). 1e confirmed (account editing, schema v5). 1f confirmed (entity-type and home-state changes with start dates, correct/remove, chart update on entity change, restore missing accounts; no schema change).

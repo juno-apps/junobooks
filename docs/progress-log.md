@@ -84,3 +84,10 @@ Pointer log only — a few lines per round. Details live in git history.
 - Files: `src/main/chart.ts` (`placeAccounts`, `addEntityAccounts`, `missingAccounts`, `restoreAccounts`), `companyHistory.ts` (`removeEntityTypeChange`, chart update in same transaction), `companyStore.ts`, IPC/preload, `EntityTypeChange.tsx`, `ChartOfAccounts.tsx`, `CompanyHome.tsx`, styles, `shared/{company,chart}.ts`, `companyHistory.test.ts`, topic doc. No schema change.
 - 172 tests pass; typecheck clean.
 - Status: **confirmed** by owner. Next: step 3 (home state change).
+
+## Round 15 — Unit 1f, step 3: home-state change
+- Owner rule added to `CLAUDE.md` §6: after a model-switch suggestion, don't start until the switch is confirmed.
+- Files: `src/main/companyHistory.ts` (entity and home state now share one set of rules), `shared/{company,states}.ts`, `companyStore.ts`, IPC/preload, `HomeStateChange.tsx`, `CompanyHome.tsx`, `EntityTypeChange.tsx`, `companyHistory.test.ts`. No schema change.
+- Fixed: history list didn't refresh after a future-dated change (entity and state panels).
+- 177 tests pass; typecheck clean.
+- Status: **confirmed** by owner. **1f done.** Next: 1g (docs + when packaged builds move to `Documents\JunoBooks`).

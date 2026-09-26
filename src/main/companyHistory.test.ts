@@ -2,7 +2,15 @@ import Database from 'better-sqlite3'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { applyChart, getChart, missingAccounts, restoreAccounts } from './chart'
 import { runMigrations } from './db/migrations'
-import { addEntityTypeChange, correctStartingEntityType, getHistory, removeEntityTypeChange } from './companyHistory'
+import {
+  addEntityTypeChange,
+  addHomeStateChange,
+  correctStartingEntityType,
+  correctStartingHomeState,
+  getHistory,
+  removeEntityTypeChange,
+  removeHomeStateChange
+} from './companyHistory'
 import { setLockedThrough } from './ledger'
 
 let db: Database.Database
@@ -289,5 +297,58 @@ describe('removing an entity type change', () => {
       .prepare("SELECT COUNT(*) AS n FROM audit_log WHERE table_name = 'entity_type_history' AND action = 'delete'")
       .get() as { n: number }
     expect(n.n).toBe(1)
+  })
+})
+
+describe('home state history', () => {
+  const states = (): string[] => getHistory(db).homeStates.map((r) => `${r.effectiveDate} ${r.value}`)
+
+  it('records a move with its start date, and allows a future date', () => {
+    addHomeStateChange(db, { stateCode: 'NV', effectiveDate: '2026-07-01' })
+    addHomeStateChange(db, { stateCode: 'TX', effectiveDate: '2099-01-01' })
+    expect(states()).toEqual(['2026-01-01 CA', '2026-07-01 NV', '2099-01-01 TX'])
+  })
+
+  it('follows the same date rules as entity type', () => {
+    expect(() => addHomeStateChange(db, { stateCode: 'NV', effectiveDate: '2025-12-31' })).toThrow(/books start on 2026-01-01/)
+    expect(() => addHomeStateChange(db, { stateCode: 'NV', effectiveDate: '2026-02-30' })).toThrow(/valid start date/)
+    expect(() => addHomeStateChange(db, { stateCode: 'CA', effectiveDate: '2026-05-01' })).toThrow(/already California/)
+    addHomeStateChange(db, { stateCode: 'NV', effectiveDate: '2026-07-01' })
+    expect(() => addHomeStateChange(db, { stateCode: 'TX', effectiveDate: '2026-07-01' })).toThrow(
+      /already a change to the home state starting on 2026-07-01/
+    )
+    setLockedThrough(db, '2026-09-30')
+    expect(() => addHomeStateChange(db, { stateCode: 'TX', effectiveDate: '2026-09-30' })).toThrow(/closed through 2026-09-30/)
+    expect(() => addHomeStateChange(db, { stateCode: 'ZZ', effectiveDate: '2026-10-01' })).toThrow(/Choose a home state/)
+  })
+
+  it('corrects the starting state, refused if the books are closed through the start date', () => {
+    correctStartingHomeState(db, 'OR')
+    expect(states()).toEqual(['2026-01-01 OR'])
+    expect(() => correctStartingHomeState(db, 'OR')).toThrow(/already Oregon/)
+    setLockedThrough(db, '2026-01-31')
+    expect(() => correctStartingHomeState(db, 'WA')).toThrow(/closed through 2026-01-31/)
+  })
+
+  it('removes a later move but never the starting state, with the closed-period rule', () => {
+    addHomeStateChange(db, { stateCode: 'NV', effectiveDate: '2026-07-01' })
+    expect(() => removeHomeStateChange(db, '2026-01-01')).toThrow(/starting home state can't be removed/)
+    setLockedThrough(db, '2026-07-31')
+    expect(() => removeHomeStateChange(db, '2026-07-01')).toThrow(/closed through 2026-07-31/)
+    setLockedThrough(db, null, 'Wrong move entered')
+    removeHomeStateChange(db, '2026-07-01')
+    expect(states()).toEqual(['2026-01-01 CA'])
+  })
+
+  it('leaves entity type history and accounts alone, and is audited', () => {
+    applyChart(db, 'general', 'smllc')
+    const before = (db.prepare('SELECT COUNT(*) AS n FROM accounts').get() as { n: number }).n
+    addHomeStateChange(db, { stateCode: 'NV', effectiveDate: '2026-07-01' })
+    expect(getHistory(db).entityTypes).toHaveLength(1)
+    expect((db.prepare('SELECT COUNT(*) AS n FROM accounts').get() as { n: number }).n).toBe(before)
+    const n = db
+      .prepare("SELECT COUNT(*) AS n FROM audit_log WHERE table_name = 'home_state_history' AND action = 'insert'")
+      .get() as { n: number }
+    expect(n.n).toBeGreaterThan(0)
   })
 })

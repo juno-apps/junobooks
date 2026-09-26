@@ -7,6 +7,7 @@ import type {
   EntityChangeInput,
   EntityChangeResult,
   HistoryRow,
+  HomeStateChangeInput,
   NewCompanyInput,
   Result
 } from '../shared/company'
@@ -21,6 +22,7 @@ export type {
   EntityChangeInput,
   EntityChangeResult,
   HistoryRow,
+  HomeStateChangeInput,
   NewCompanyInput,
   Result
 }
@@ -40,6 +42,9 @@ export interface JunoApi {
   changeEntityType: (input: EntityChangeInput) => Promise<Result<EntityChangeResult>>
   correctStartingEntityType: (entityType: string) => Promise<Result<EntityChangeResult>>
   removeEntityTypeChange: (effectiveDate: string) => Promise<Result<CompanyProfile>>
+  changeHomeState: (input: HomeStateChangeInput) => Promise<Result<CompanyProfile>>
+  correctStartingHomeState: (stateCode: string) => Promise<Result<CompanyProfile>>
+  removeHomeStateChange: (effectiveDate: string) => Promise<Result<CompanyProfile>>
   restoreAccounts: (numbers: string[]) => Promise<Result<ChartView>>
   getChart: () => Promise<ChartView | null>
   setupChart: (template: string) => Promise<Result<CompanyProfile>>

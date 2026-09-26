@@ -5,6 +5,7 @@ import { getStateName } from '../../shared/states'
 import { TEMPLATES } from '../../shared/templates'
 import ChartOfAccounts from './ChartOfAccounts'
 import EntityTypeChange from './EntityTypeChange'
+import HomeStateChange from './HomeStateChange'
 import TemplatePicker from './TemplatePicker'
 
 interface Props {
@@ -14,6 +15,7 @@ interface Props {
 
 function CompanyHome({ company, onChanged }: Props): JSX.Element {
   const [changingEntity, setChangingEntity] = useState(false)
+  const [changingState, setChangingState] = useState(false)
   /** Bumped after an entity change so the chart reloads (new accounts, new tax lines). */
   const [chartVersion, setChartVersion] = useState(0)
   const entity = getEntityType(company.entityType)
@@ -33,7 +35,12 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
           <dt>Federal tax return</dt>
           <dd>{TAX_FORM_LABELS[entity.taxForm]}</dd>
           <dt>Home state</dt>
-          <dd>{getStateName(company.homeState)}</dd>
+          <dd>
+            {getStateName(company.homeState)}{' '}
+            <button type="button" className="link-button" onClick={() => setChangingState((v) => !v)}>
+              Change
+            </button>
+          </dd>
           <dt>Books start</dt>
           <dd>{company.booksStartDate}</dd>
           {template && (
@@ -54,6 +61,13 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
             onChanged(profile)
           }}
           onClose={() => setChangingEntity(false)}
+        />
+      )}
+      {changingState && (
+        <HomeStateChange
+          currentState={company.homeState}
+          onChanged={onChanged}
+          onClose={() => setChangingState(false)}
         />
       )}
       {company.template ?<ChartOfAccounts key={`${company.folder}-${chartVersion}`} /> : <SetupChart onDone={onChanged} />}

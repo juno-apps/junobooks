@@ -41,6 +41,11 @@ export interface CompanyHistory {
   homeStates: HistoryRow[]
 }
 
+export interface HomeStateChangeInput {
+  stateCode: string
+  effectiveDate: string
+}
+
 export interface EntityChangeInput {
   entityType: string
   effectiveDate: string

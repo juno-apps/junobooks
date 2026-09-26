@@ -39,6 +39,7 @@ JunoBooks is a Windows desktop accounting app (Electron + SQLite) for small busi
 - Default model: Sonnet.
 - Before a task that looks like it needs Opus (complex or risky changes across many files, tricky debugging, ledger or database-schema changes), tell me and ask me to switch models first, using the model dropdown next to the send button. Never start that kind of task on Sonnet without asking.
 - If I'm on Opus and the next task is simple, suggest switching back first.
+- When I suggest a model switch (either direction) and I haven't made it yet, do not start the task. Wait until I confirm the switch is done.
 
 ## 7. Working style (I'll trade speed for fewer tokens)
 - **One unit at a time:** break multi-step work into small units, one per turn. Stop at natural checkpoints so I can try the app.

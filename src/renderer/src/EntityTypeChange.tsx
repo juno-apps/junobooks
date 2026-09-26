@@ -72,6 +72,7 @@ function EntityTypeChange({ currentEntityType, onChanged, onClose }: Props): JSX
     if (result.ok) {
       setEntityType('')
       setSummary(result.value)
+      setHistory(await window.juno.getHistory())
       onChanged(result.value.profile)
     } else {
       setError(result.error)

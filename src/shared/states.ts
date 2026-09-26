@@ -61,6 +61,10 @@ export const US_STATES: UsState[] = [
   { code: 'WY', name: 'Wyoming' }
 ]
 
+/** Shown wherever a home-state change is entered or listed (judgment call for the accountant). */
+export const HOME_STATE_CHANGE_NOTE =
+  'Check with your accountant: moving the business to another state can change which state returns you file (including a part-year return), state income or franchise tax, and sales tax registration.'
+
 export function isStateCode(value: string): boolean {
   return US_STATES.some((s) => s.code === value)
 }
