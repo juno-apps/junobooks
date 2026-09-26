@@ -31,12 +31,16 @@ JunoBooks is a Windows desktop accounting app (Electron + SQLite) for small busi
 - A new handoff references earlier ones by name rather than repeating them.
 - Update the "latest handoff" line in `architecture.md` whenever you create one.
 
-## 5. Model choice
+## 5. Backlog
+- When I start a message with "backlog:", add the item to `docs/backlog.md` under the right section (Data/logic changes, Feature ideas, or UI tweaks). Don't start any work on it. Just confirm it's parked.
+- At the start of each phase, show me the backlog items that fit that phase.
+
+## 6. Model choice
 - Default model: Sonnet.
 - Before a task that looks like it needs Opus (complex or risky changes across many files, tricky debugging, ledger or database-schema changes), tell me and ask me to switch models first, using the model dropdown next to the send button. Never start that kind of task on Sonnet without asking.
 - If I'm on Opus and the next task is simple, suggest switching back first.
 
-## 6. Working style (I'll trade speed for fewer tokens)
+## 7. Working style (I'll trade speed for fewer tokens)
 - **One unit at a time:** break multi-step work into small units, one per turn. Stop at natural checkpoints so I can try the app.
 - **Plan first:** for larger tasks, propose a short plan and wait for my OK before building.
 - **Named files:** if I name the relevant files, use those directly. Skip broad exploration.
@@ -47,7 +51,7 @@ JunoBooks is a Windows desktop accounting app (Electron + SQLite) for small busi
 - **Next steps:** end every response on multi-step work with a brief "next steps" pointer, so I know what to ask for next.
 - **Fresh sessions:** when a phase or major round is done and the docs are updated, tell me it's a good time to start a new session, so old context stops costing tokens.
 
-## 7. Protect my books
+## 8. Protect my books
 - Develop and test only against a test data folder with sample companies. Never open, modify, or migrate my real company files unless I explicitly ask.
 - Any database change must include a safe migration and create a backup first.
 - Double-entry integrity is non-negotiable: every transaction must balance, and posted periods stay locked.

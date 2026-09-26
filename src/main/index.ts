@@ -1,9 +1,38 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { autoUpdater } from 'electron-updater'
 import { join } from 'path'
-import { closeTestCompany, getTestCompanyStatus, openTestCompany } from './testCompany'
+import type { CompanyProfile, NewCompanyInput, Result } from '../shared/company'
+import { readAppSettings, writeAppSettings } from './appSettings'
+import { createCompany, listCompanies, openCompany, type CompanyBooks } from './companyStore'
+import { getCompaniesDir, getDataRoot } from './paths'
 
 const isDev = !app.isPackaged
+
+let current: CompanyBooks | null = null
+
+/** Opens a company (closing and backing up the previous one) and remembers it. */
+function switchTo(folder: string): CompanyProfile {
+  if (current?.folder === folder) return current.profile()
+  const next = openCompany(getCompaniesDir(), folder)
+  current?.close()
+  current = next
+  writeAppSettings(getDataRoot(), { ...readAppSettings(getDataRoot()), lastCompany: folder })
+  return current.profile()
+}
+
+function closeCurrent(): void {
+  current?.close()
+  current = null
+}
+
+/** Turns thrown errors into a plain message the screen can show. */
+function wrap<T>(fn: () => T): Result<T> {
+  try {
+    return { ok: true, value: fn() }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) }
+  }
+}
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -27,14 +56,26 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  openTestCompany()
+  const last = readAppSettings(getDataRoot()).lastCompany
+  if (last) {
+    try {
+      switchTo(last)
+    } catch {
+      // Last company is gone or unreadable; start on the company list instead.
+    }
+  }
 
   ipcMain.handle('app:getInfo', () => ({
     version: app.getVersion(),
     buildDate: __BUILD_DATE__
   }))
 
-  ipcMain.handle('testCompany:status', () => getTestCompanyStatus())
+  ipcMain.handle('companies:list', () => listCompanies(getCompaniesDir()))
+  ipcMain.handle('companies:current', () => current?.profile() ?? null)
+  ipcMain.handle('companies:open', (_e, folder: string) => wrap(() => switchTo(folder)))
+  ipcMain.handle('companies:create', (_e, input: NewCompanyInput) =>
+    wrap(() => switchTo(createCompany(getCompaniesDir(), input)))
+  )
 
   createWindow()
 
@@ -51,10 +92,10 @@ app.whenReady().then(() => {
 })
 
 app.on('window-all-closed', () => {
-  closeTestCompany()
+  closeCurrent()
   if (process.platform !== 'darwin') app.quit()
 })
 
 app.on('before-quit', () => {
-  closeTestCompany()
+  closeCurrent()
 })

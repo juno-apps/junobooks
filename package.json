@@ -38,7 +38,7 @@
     "build:win": "npm run build && electron-builder --win",
     "release:win": "npm run build && electron-builder --win --publish always",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
-    "test": "vitest run"
+    "test": "node scripts/run-tests.cjs"
   },
   "dependencies": {
     "better-sqlite3": "^11.10.0",

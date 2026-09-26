@@ -1,21 +1,16 @@
+import type { CompanyProfile, CompanySummary, NewCompanyInput, Result } from '../shared/company'
+
+export type { CompanyProfile, CompanySummary, NewCompanyInput, Result }
+
 export interface AppInfo {
   version: string
   buildDate: string
 }
 
-export interface SmokeTestRow {
-  id: number
-  created_at: string
-  note: string
-}
-
-export interface TestCompanyStatus {
-  companyDir: string
-  dbPath: string
-  rows: SmokeTestRow[]
-}
-
 export interface JunoApi {
   getAppInfo: () => Promise<AppInfo>
-  getTestCompanyStatus: () => Promise<TestCompanyStatus>
+  listCompanies: () => Promise<CompanySummary[]>
+  getCurrentCompany: () => Promise<CompanyProfile | null>
+  openCompany: (folder: string) => Promise<Result<CompanyProfile>>
+  createCompany: (input: NewCompanyInput) => Promise<Result<CompanyProfile>>
 }

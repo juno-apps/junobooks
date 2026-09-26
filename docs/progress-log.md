@@ -33,3 +33,15 @@ Pointer log only — a few lines per round. Details live in git history.
 ## Round 6 — Unit 0e: docs, Phase 0 complete
 - Added `docs/topics/README.md` and `docs/handoffs/README.md` explaining when files land in each folder.
 - **Phase 0 done.** JunoBooks installs from GitHub, opens, and updates itself. Good point to start a fresh session before Phase 1 (Foundation: companies, entities, templates, chart of accounts, ledger engine).
+
+## Round 7 — Phase 1 plan proposed; backlog added
+- Proposed Phase 1 units 1a–1f (company manager, schema/migrations, ledger engine, templates/CoA, classification history, docs). Awaiting owner OK.
+- Added `docs/backlog.md` and a "backlog:" rule in `CLAUDE.md` §5.
+- Owner confirmed California, but state must be switchable per company and sales tax rates must be adjustable with effective dates. Recorded in `architecture.md` "Agreed design rules."
+- Owner approved the Phase 1 plan and the "flag judgment calls for the accountant" approach.
+
+## Round 8 — Unit 1a: company manager
+- Files: `src/main/{index,paths,appSettings,companyStore}.ts`, `src/main/db/migrations.ts` (schema v1), `src/shared/*`, `src/preload/*`, `src/renderer/src/{App,CompanyPicker,NewCompanyForm,CompanyHome}.tsx`, `styles.css`, `scripts/run-tests.cjs`, `companyStore.test.ts`. Removed `testCompany.ts`.
+- Migration runner pulled forward from 1b (needed to store the company profile). Tests run inside Electron's Node.
+- 14 tests pass; typecheck and build clean.
+- Status: **confirmed** by owner.
