@@ -16,8 +16,9 @@ import type { ChartView } from '../shared/chart'
 import type { EntityTypeId } from '../shared/entities'
 import { isTemplateId, type TemplateId } from '../shared/templates'
 import type { AccountInput } from '../shared/accounts'
-import type { ManualEntryInput } from '../shared/journal'
-import { LedgerError, postEntry } from './ledger'
+import type { EntryListItem, ManualEntryInput } from '../shared/journal'
+import { listEntries } from './entries'
+import { LedgerError, postEntry, reverseEntry, voidEntry } from './ledger'
 import { addAccount, deleteAccount, setAccountActive, updateAccount, type ChartContext } from './accounts'
 import { accountCount, applyChart, getChart, restoreAccounts } from './chart'
 import {
@@ -277,6 +278,20 @@ export class CompanyBooks {
     const start = this.profile(now).booksStartDate
     if (input.date < start) throw new LedgerError(`Your books start on ${start}, so an entry can't be dated earlier.`)
     return postEntry(this.db, { date: input.date, memo: input.memo, source: 'manual', lines: input.lines })
+  }
+
+  entries(): EntryListItem[] {
+    return listEntries(this.db)
+  }
+
+  voidEntry(id: number, reason: string): EntryListItem[] {
+    voidEntry(this.db, id, reason)
+    return this.entries()
+  }
+
+  reverseEntry(id: number, date: string, memo?: string): EntryListItem[] {
+    reverseEntry(this.db, id, date, memo)
+    return this.entries()
   }
 
   close(): void {

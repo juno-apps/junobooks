@@ -203,3 +203,68 @@ describe('postManualEntry', () => {
     }
   })
 })
+
+describe('entries, voidEntry, reverseEntry', () => {
+  function setup() {
+    const books = openCompany(root, createCompany(root, juno))
+    const [a, b] = books.chart().accounts.filter((x) => x.type === 'asset')
+    const post = (date: string, cents: number, memo = '') =>
+      books.postManualEntry({
+        date,
+        memo,
+        lines: [
+          { accountId: a.id, amountCents: cents, memo: 'in' },
+          { accountId: b.id, amountCents: -cents, memo: '' }
+        ]
+      })
+    const balance = () => books.chart().accounts.find((x) => x.id === a.id)!.balanceCents
+    return { books, a, b, post, balance }
+  }
+
+  it('lists entries newest first with lines, account names and debit total', () => {
+    const { books, a, b, post } = setup()
+    try {
+      const first = post('2026-02-01', 1_000, 'older')
+      const second = post('2026-03-01', 2_500, 'newer')
+      const list = books.entries()
+      expect(list.map((e) => e.id)).toEqual([second, first])
+      expect(list[0]).toMatchObject({ date: '2026-03-01', memo: 'newer', status: 'posted', amountCents: 2_500 })
+      expect(list[0].lines).toEqual([
+        { accountId: a.id, accountNumber: a.number, accountName: a.name, amountCents: 2_500, memo: 'in' },
+        { accountId: b.id, accountNumber: b.number, accountName: b.name, amountCents: -2_500, memo: '' }
+      ])
+    } finally {
+      books.close()
+    }
+  })
+
+  it('voids an entry: marked voided with its reason, dropped from balances', () => {
+    const { books, post, balance } = setup()
+    try {
+      const id = post('2026-02-01', 1_000)
+      expect(() => books.voidEntry(id, '  ')).toThrow(/needs a reason/)
+      const list = books.voidEntry(id, 'Entered twice')
+      expect(list[0]).toMatchObject({ id, status: 'void', voidReason: 'Entered twice' })
+      expect(balance()).toBe(0)
+      expect(() => books.voidEntry(id, 'again')).toThrow(/already voided/)
+    } finally {
+      books.close()
+    }
+  })
+
+  it('reverses an entry: both linked, balances cancel, and the original can no longer be voided', () => {
+    const { books, post, balance } = setup()
+    try {
+      const id = post('2026-02-01', 1_000, 'Rent')
+      expect(() => books.reverseEntry(id, '2026-01-31')).toThrow(/can't be dated before/)
+      const list = books.reverseEntry(id, '2026-02-10')
+      const reversal = list.find((e) => e.reversesEntryId === id)!
+      expect(reversal).toMatchObject({ date: '2026-02-10', memo: 'Reversal of entry #1: Rent', source: 'reversal' })
+      expect(list.find((e) => e.id === id)!.reversedById).toBe(reversal.id)
+      expect(balance()).toBe(0)
+      expect(() => books.voidEntry(id, 'oops')).toThrow(/already reversed/)
+    } finally {
+      books.close()
+    }
+  })
+})

@@ -118,6 +118,11 @@ app.whenReady().then(() => {
   ipcMain.handle('entries:postManual', (_e, input: ManualEntryInput) =>
     wrap(() => requireCompany().postManualEntry(input))
   )
+  ipcMain.handle('entries:list', () => current?.entries() ?? [])
+  ipcMain.handle('entries:void', (_e, id: number, reason: string) => wrap(() => requireCompany().voidEntry(id, reason)))
+  ipcMain.handle('entries:reverse', (_e, id: number, date: string, memo?: string) =>
+    wrap(() => requireCompany().reverseEntry(id, date, memo))
+  )
   ipcMain.handle('companies:create', (_e, input: NewCompanyInput) =>
     wrap(() => switchTo(createCompany(getCompaniesDir(), input)))
   )

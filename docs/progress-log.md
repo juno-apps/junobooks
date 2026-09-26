@@ -33,3 +33,7 @@ Pointer log only — a few lines per round. Details live in git history.
 ## Round 18 — Unit 2a: journal entry screen
 - Journal entry screen (account picker, auto-added rows, fill-the-difference, live totals, Enter posts); manual entries can't predate the books start.
 - Files: `shared/journal.ts` (+test), `renderer/JournalEntry.tsx`, `CompanyHome.tsx`, `styles.css`, `companyStore.ts` (+test), IPC/preload. New topic doc `manual-entry.md`. No schema change. 185 tests pass. Status: **confirmed** by owner.
+
+## Round 19 — Unit 2b: transaction list
+- Transactions / Chart of accounts tabs; transaction list with Duplicate, Void, Reverse; two-line entries keep balancing when line 1's amount changes (fixes duplicate + edit). Backlog: bank-import matching, cleared status + reconciliation.
+- Files: `main/entries.ts`, `TransactionList.tsx`, `JournalEntry.tsx`, `CompanyHome.tsx`, `shared/journal.ts` (+test), `companyStore.ts` (+test), IPC/preload, styles. No schema change. 191 tests pass. Status: **confirmed** by owner.

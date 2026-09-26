@@ -389,3 +389,59 @@ button.danger {
 .entry-table .unbalanced {
   color: #a12622;
 }
+
+.tabs {
+  display: flex;
+  gap: 0.3rem;
+  margin: 1.2rem 0 0.4rem;
+  border-bottom: 1px solid #ddd;
+}
+
+.tab {
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  background: none;
+  margin-bottom: -1px;
+}
+
+.tab.active {
+  border-color: #ddd;
+  background: #fff;
+  font-weight: 600;
+}
+
+.entry-list .entry-row {
+  cursor: pointer;
+}
+
+.entry-list .entry-row:hover,
+.entry-list .entry-row.open {
+  background: #f3f6fa;
+}
+
+.entry-list .entry-detail > td {
+  background: #fafbfc;
+  padding: 0.6rem 1rem 1rem;
+}
+
+.entry-lines {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 0.6rem;
+}
+
+.entry-lines th,
+.entry-lines td {
+  padding: 0.2rem 0.4rem;
+  text-align: left;
+}
+
+.entry-lines th {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.entry-lines .amount {
+  text-align: right;
+}

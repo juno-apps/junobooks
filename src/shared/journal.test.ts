@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { blankRow, rowsToLines, rowTotals, type EntryRow } from './journal'
+import { blankRow, mirrorPair, rowsToLines, rowTotals, type EntryRow } from './journal'
 
 function row(accountId: number | null, debit = '', credit = '', memo = ''): EntryRow {
   return { accountId, debit, credit, memo }
@@ -38,5 +38,30 @@ describe('rowsToLines', () => {
   })
   it('needs at least two lines', () => {
     expect(rowsToLines([row(1, '5'), blankRow()])).toEqual({ error: 'An entry needs at least two lines.' })
+  })
+})
+
+describe('mirrorPair', () => {
+  const edit = (rows: EntryRow[], i: number, patch: Partial<EntryRow>) =>
+    mirrorPair(rows, rows.map((r, j) => (j === i ? { ...r, ...patch } : r)), i)
+
+  it('keeps a balanced two-line entry balanced when line 1 changes', () => {
+    const rows = [row(1, '100'), row(2, '', '100'), blankRow()]
+    expect(edit(rows, 0, { debit: '150' }).map((r) => [r.debit, r.credit])).toEqual([
+      ['150', ''],
+      ['', '150'],
+      ['', '']
+    ])
+    expect(edit([row(1, '', '20'), row(2, '20')], 0, { credit: '25' })[1].debit).toBe('25')
+  })
+  it('never changes an earlier line, so a split can be typed on line 2', () => {
+    const rows = [row(1, '100'), row(2, '', '100')]
+    expect(edit(rows, 1, { credit: '60' })[0].debit).toBe('100')
+  })
+  it('leaves unbalanced entries, three-line entries and side switches alone', () => {
+    expect(edit([row(1, '100'), row(2, '', '60')], 0, { debit: '90' })[1].credit).toBe('60')
+    const three = [row(1, '100'), row(2, '', '60'), row(3, '', '40')]
+    expect(edit(three, 0, { debit: '90' })).toEqual([row(1, '90'), row(2, '', '60'), row(3, '', '40')])
+    expect(edit([row(1, '100'), row(2, '', '100')], 0, { debit: '', credit: '100' })[1].credit).toBe('100')
   })
 })

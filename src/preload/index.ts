@@ -21,7 +21,10 @@ const api: JunoApi = {
   updateAccount: (id, input) => ipcRenderer.invoke('accounts:update', id, input),
   setAccountActive: (id, active) => ipcRenderer.invoke('accounts:setActive', id, active),
   deleteAccount: (id) => ipcRenderer.invoke('accounts:delete', id),
-  postManualEntry: (input) => ipcRenderer.invoke('entries:postManual', input)
+  postManualEntry: (input) => ipcRenderer.invoke('entries:postManual', input),
+  listEntries: () => ipcRenderer.invoke('entries:list'),
+  voidEntry: (id, reason) => ipcRenderer.invoke('entries:void', id, reason),
+  reverseEntry: (id, date, memo) => ipcRenderer.invoke('entries:reverse', id, date, memo)
 }
 
 contextBridge.exposeInMainWorld('juno', api)

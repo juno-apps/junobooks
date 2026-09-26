@@ -66,3 +66,46 @@ export function rowsToLines(rows: EntryRow[]): { lines: ManualEntryInput['lines'
   if (lines.length < 2) return { error: 'An entry needs at least two lines.' }
   return { lines }
 }
+
+function hasAmount(r: EntryRow): boolean {
+  return r.debit.trim() !== '' || r.credit.trim() !== ''
+}
+
+/**
+ * Two-line entries stay balanced: when the amount on the upper of exactly two
+ * amount lines changes, and the entry balanced before the change, the lower
+ * line's amount follows. Only top-to-bottom, so typing a split on line 2 never
+ * overwrites line 1. `prev` is the rows before the edit, `next` after.
+ */
+export function mirrorPair<T extends EntryRow>(prev: T[], next: T[], i: number): T[] {
+  const changed = prev[i].debit !== next[i].debit || prev[i].credit !== next[i].credit
+  if (!changed || rowTotals(prev).difference !== 0) return next
+  const others = next.map((r, j) => j).filter((j) => j !== i && hasAmount(next[j]))
+  if (others.length !== 1 || others[0] < i) return next
+  const j = others[0]
+  const r = next[i]
+  const o = next[j]
+  const debitOnly = (x: EntryRow): boolean => x.debit.trim() !== '' && x.credit.trim() === ''
+  const creditOnly = (x: EntryRow): boolean => x.credit.trim() !== '' && x.debit.trim() === ''
+  let mirrored: T | null = null
+  if (debitOnly(r) && creditOnly(o)) mirrored = { ...o, credit: r.debit }
+  else if (creditOnly(r) && debitOnly(o)) mirrored = { ...o, debit: r.credit }
+  return mirrored ? next.map((x, k) => (k === j ? mirrored! : x)) : next
+}
+
+/** One entry as the transaction list shows it. */
+export interface EntryListItem {
+  id: number
+  date: string
+  memo: string
+  status: 'draft' | 'posted' | 'void'
+  source: string
+  /** The entry this one reverses, if it's a reversal. */
+  reversesEntryId: number | null
+  /** The posted entry that reverses this one, if any. */
+  reversedById: number | null
+  voidReason: string | null
+  /** Total of the debit side. */
+  amountCents: number
+  lines: { accountId: number; accountNumber: string; accountName: string; amountCents: number; memo: string }[]
+}

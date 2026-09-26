@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import type { CompanyProfile } from '../../preload/types'
+import type { CompanyProfile, EntryListItem } from '../../preload/types'
 import { getEntityType, TAX_FORM_LABELS } from '../../shared/entities'
 import { getStateName } from '../../shared/states'
 import { TEMPLATES } from '../../shared/templates'
@@ -8,6 +8,7 @@ import EntityTypeChange from './EntityTypeChange'
 import HomeStateChange from './HomeStateChange'
 import JournalEntry from './JournalEntry'
 import TemplatePicker from './TemplatePicker'
+import TransactionList from './TransactionList'
 
 interface Props {
   company: CompanyProfile
@@ -17,9 +18,17 @@ interface Props {
 function CompanyHome({ company, onChanged }: Props): JSX.Element {
   const [changingEntity, setChangingEntity] = useState(false)
   const [changingState, setChangingState] = useState(false)
-  const [entering, setEntering] = useState(false)
-  /** Bumped after an entity change so the chart reloads (new accounts, new tax lines). */
+  /** The entry screen: closed, a blank entry, or a copy of an existing entry. */
+  const [entering, setEntering] = useState<{ copyOf?: EntryListItem } | null>(null)
+  const [tab, setTab] = useState<'transactions' | 'chart'>('transactions')
+  /** Bumped after anything that changes accounts or balances, so the chart and transaction list reload. */
   const [chartVersion, setChartVersion] = useState(0)
+  const [entryKey, setEntryKey] = useState(0)
+
+  function startEntry(copyOf?: EntryListItem): void {
+    setEntering({ copyOf })
+    setEntryKey((k) => k + 1)
+  }
   const entity = getEntityType(company.entityType)
   const template = TEMPLATES.find((t) => t.id === company.template)
   return (
@@ -56,14 +65,19 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
         </dl>
         {company.template && !entering && (
           <div className="form-actions home-actions">
-            <button type="button" className="primary" onClick={() => setEntering(true)}>
+            <button type="button" className="primary" onClick={() => startEntry()}>
               New journal entry
             </button>
           </div>
         )}
       </section>
       {entering && (
-        <JournalEntry onPosted={() => setChartVersion((v) => v + 1)} onClose={() => setEntering(false)} />
+        <JournalEntry
+          key={entryKey}
+          copyOf={entering.copyOf}
+          onPosted={() => setChartVersion((v) => v + 1)}
+          onClose={() => setEntering(null)}
+        />
       )}
       {changingEntity && (
         <EntityTypeChange
@@ -82,7 +96,33 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
           onClose={() => setChangingState(false)}
         />
       )}
-      {company.template ?<ChartOfAccounts key={`${company.folder}-${chartVersion}`} /> : <SetupChart onDone={onChanged} />}
+      {company.template ? (
+        <>
+          <div className="tabs">
+            <button type="button" className={tab === 'transactions' ? 'tab active' : 'tab'} onClick={() => setTab('transactions')}>
+              Transactions
+            </button>
+            <button type="button" className={tab === 'chart' ? 'tab active' : 'tab'} onClick={() => setTab('chart')}>
+              Chart of accounts
+            </button>
+          </div>
+          {tab === 'transactions' ? (
+            <TransactionList
+              key={company.folder}
+              version={chartVersion}
+              onChanged={() => setChartVersion((v) => v + 1)}
+              onDuplicate={(e) => {
+                startEntry(e)
+                window.scrollTo({ top: 0, behavior: 'smooth' })
+              }}
+            />
+          ) : (
+            <ChartOfAccounts key={`${company.folder}-${chartVersion}`} />
+          )}
+        </>
+      ) : (
+        <SetupChart onDone={onChanged} />
+      )}
     </>
   )
 }

@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import type { ChartAccount } from '../../preload/types'
+import type { ChartAccount, EntryListItem } from '../../preload/types'
 import { localDateString } from '../../shared/dates'
-import { blankRow, rowsToLines, rowTotals, type EntryRow } from '../../shared/journal'
+import { blankRow, mirrorPair, rowsToLines, rowTotals, type EntryRow } from '../../shared/journal'
 import { formatCents } from '../../shared/money'
 
 interface Props {
+  /** An existing entry to copy (Duplicate). The copy is dated today. */
+  copyOf?: EntryListItem
   onPosted: () => void
   onClose: () => void
 }
@@ -46,11 +48,23 @@ function plainAmount(cents: number): string {
   return formatCents(cents).replace('$', '').replace(/,/g, '')
 }
 
-function JournalEntry({ onPosted, onClose }: Props): JSX.Element {
+/** Screen rows for a copy of an existing entry, plus a blank row to keep typing. */
+function rowsFrom(entry: EntryListItem): Row[] {
+  const rows = entry.lines.map((l) => ({
+    accountId: l.accountId,
+    accountText: `${l.accountNumber} ${l.accountName}`,
+    debit: l.amountCents > 0 ? plainAmount(l.amountCents) : '',
+    credit: l.amountCents < 0 ? plainAmount(-l.amountCents) : '',
+    memo: l.memo
+  }))
+  return [...rows, newRow()]
+}
+
+function JournalEntry({ copyOf, onPosted, onClose }: Props): JSX.Element {
   const [accounts, setAccounts] = useState<ChartAccount[] | null>(null)
   const [date, setDate] = useState(localDateString())
-  const [memo, setMemo] = useState('')
-  const [rows, setRows] = useState<Row[]>([newRow(), newRow()])
+  const [memo, setMemo] = useState(copyOf?.memo ?? '')
+  const [rows, setRows] = useState<Row[]>(copyOf ? rowsFrom(copyOf) : [newRow(), newRow()])
   const [error, setError] = useState<string | null>(null)
   const [posted, setPosted] = useState<number | null>(null)
   const [busy, setBusy] = useState(false)
@@ -67,7 +81,7 @@ function JournalEntry({ onPosted, onClose }: Props): JSX.Element {
   function update(i: number, patch: Partial<Row>): void {
     setPosted(null)
     setRows((prev) => {
-      const next = prev.map((r, j) => (j === i ? { ...r, ...patch } : r))
+      const next = mirrorPair(prev, prev.map((r, j) => (j === i ? { ...r, ...patch } : r)), i)
       // Typing in the last row adds a fresh one below it.
       if (i === next.length - 1 && !isEmptyRow(next[i])) next.push(newRow())
       return next
@@ -131,7 +145,7 @@ function JournalEntry({ onPosted, onClose }: Props): JSX.Element {
   return (
     <section className="panel journal-entry">
       <div className="chart-header">
-        <h2>New journal entry</h2>
+        <h2>{copyOf ? `New journal entry (copy of #${copyOf.id})` : 'New journal entry'}</h2>
         <button type="button" className="link-button" onClick={onClose}>
           Close
         </button>
