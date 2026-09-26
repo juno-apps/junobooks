@@ -54,6 +54,12 @@ Opening an older file backs it up first (`backups/books-<time>-before-upgrade-vX
 - `home_state_history`: state_code, effective_date (unique), created_at.
 - The value in force on a date = latest row with effective_date ≤ that date (falls back to the earliest row).
 
+**v2** (all new tables `STRICT`)
+- `accounts`: number (unique text), name, type (asset/liability/equity/income/expense), parent_id, description, is_active, created_at, updated_at.
+- `journal_entries`: entry_date, memo, status (draft/posted/void), source (e.g. `manual`), reverses_entry_id, created_at, posted_at, voided_at, void_reason.
+- `journal_lines`: entry_id, line_no, account_id, amount_cents (signed integer, never 0), memo.
+- `audit_log`: at (UTC ms), action (insert/update/delete/baseline), table_name, record_id, old_values / new_values (JSON). Filled by triggers on every table above, so no code path can skip it. Rows that existed before v2 were logged as `baseline`.
+
 Files open in WAL mode with foreign keys on. Dates are `YYYY-MM-DD` text.
 
 **Backups:** on close (and before any migration) the WAL is checkpointed and the file copied to `backups/books-<ISO time>[-label].sqlite`. Only the newest 30 are kept (sorted by name, since names start with the timestamp).
@@ -62,7 +68,14 @@ Files open in WAL mode with foreign keys on. Dates are `YYYY-MM-DD` text.
 Sole proprietor, Single-member LLC → Schedule C · Multi-member LLC, Partnership → 1065 · LLC taxed as S-corp, S-corp → 1120-S · C-corp → 1120. Defined in `src/shared/entities.ts`.
 
 ## Ledger rules
-Not yet implemented (units 1b–1c). Every entry balances, posted periods lock, no hard deletes, money as integer cents.
+Enforced by database triggers (v2), so they hold no matter which code writes:
+- **Money** is signed integer cents: positive = debit, negative = credit. Fractions and zero lines are refused.
+- **Lifecycle:** an entry is created as a draft, lines are added, then it's posted in one step. Only draft → posted → void is allowed.
+- **Balance:** posting fails unless the entry has at least 2 lines summing to exactly 0.
+- **Posted = locked:** a posted entry and its lines can't be edited or deleted. It can only be voided (a reason is required). Voided entries never change. Drafts can be edited or deleted freely.
+- **Accounts** used by posted entries can't change type or be deleted (renaming is fine).
+- **Audit log** can't be edited or deleted. It rolls back with any failed change.
+- Not yet built (1c): the ledger code that creates/posts/voids/reverses entries, and period locking.
 
 ## Verification practice
 - Small/low-risk changes: `npm run typecheck`.
@@ -87,4 +100,4 @@ None yet. Created only when the owner types "create new handoff."
 
 ## Status
 - **Phase 0 complete:** installs from GitHub, opens, updates itself.
-- **Phase 1:** 1a confirmed (create, list, switch companies).
+- **Phase 1:** 1a confirmed (create, list, switch companies). 1b confirmed (schema v2, integrity triggers, audit log).

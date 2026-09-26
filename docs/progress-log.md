@@ -45,3 +45,9 @@ Pointer log only — a few lines per round. Details live in git history.
 - Migration runner pulled forward from 1b (needed to store the company profile). Tests run inside Electron's Node.
 - 14 tests pass; typecheck and build clean.
 - Status: **confirmed** by owner.
+
+## Round 9 — Unit 1b: core schema + audit log
+- Files: `src/main/db/migrations.ts` (v2: accounts, journal entries/lines, audit log, integrity triggers), `src/main/db/schema.test.ts`.
+- Rules live in the database (triggers), not just code. The "who" in the audit log is implied (one user per PC); no user column.
+- 31 tests pass; typecheck and build clean.
+- Status: **confirmed** by owner.
