@@ -158,3 +158,48 @@ describe('pruneBackups', () => {
     expect(left[0]).toBe('books-2026-01-06T00-00-00-000Z.sqlite')
   })
 })
+
+describe('postManualEntry', () => {
+  function idOf(books: ReturnType<typeof openCompany>, number: string): number {
+    return books.chart().accounts.find((a) => a.number === number)!.id
+  }
+
+  it('posts a balanced manual entry that shows in balances', () => {
+    const books = openCompany(root, createCompany(root, juno))
+    try {
+      const [cash, other] = books.chart().accounts.filter((a) => a.type === 'asset').map((a) => a.number)
+      const id = books.postManualEntry({
+        date: '2026-02-01',
+        memo: 'Move money',
+        lines: [
+          { accountId: idOf(books, cash), amountCents: 2_500, memo: '' },
+          { accountId: idOf(books, other), amountCents: -2_500, memo: '' }
+        ]
+      })
+      expect(id).toBeGreaterThan(0)
+      const source = books.db.prepare('SELECT source, status FROM journal_entries WHERE id = ?').get(id)
+      expect(source).toEqual({ source: 'manual', status: 'posted' })
+      expect(books.chart().accounts.find((a) => a.number === cash)!.balanceCents).toBe(2_500)
+    } finally {
+      books.close()
+    }
+  })
+
+  it('refuses an entry dated before the books start, or unbalanced', () => {
+    const books = openCompany(root, createCompany(root, juno))
+    try {
+      const [a, b] = books.chart().accounts.slice(0, 2).map((x) => x.id)
+      const lines = [
+        { accountId: a, amountCents: 100, memo: '' },
+        { accountId: b, amountCents: -100, memo: '' }
+      ]
+      expect(() => books.postManualEntry({ date: '2025-12-31', memo: '', lines })).toThrow(/books start on 2026-01-01/)
+      expect(() =>
+        books.postManualEntry({ date: '2026-01-05', memo: '', lines: [lines[0], { ...lines[1], amountCents: -99 }] })
+      ).toThrow(/off by \$0.01/)
+      expect(books.db.prepare('SELECT COUNT(*) AS n FROM journal_entries').get()).toEqual({ n: 0 })
+    } finally {
+      books.close()
+    }
+  })
+})

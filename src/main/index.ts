@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain } from 'electron'
 import { autoUpdater } from 'electron-updater'
 import { join } from 'path'
 import type { AccountInput } from '../shared/accounts'
+import type { ManualEntryInput } from '../shared/journal'
 import type { CompanyProfile, EntityChangeInput, HomeStateChangeInput, NewCompanyInput, Result } from '../shared/company'
 import { readAppSettings, writeAppSettings } from './appSettings'
 import { createCompany, listCompanies, openCompany, type CompanyBooks } from './companyStore'
@@ -114,6 +115,9 @@ app.whenReady().then(() => {
     wrap(() => requireCompany().setAccountActive(id, active))
   )
   ipcMain.handle('accounts:delete', (_e, id: number) => wrap(() => requireCompany().deleteAccount(id)))
+  ipcMain.handle('entries:postManual', (_e, input: ManualEntryInput) =>
+    wrap(() => requireCompany().postManualEntry(input))
+  )
   ipcMain.handle('companies:create', (_e, input: NewCompanyInput) =>
     wrap(() => switchTo(createCompany(getCompaniesDir(), input)))
   )

@@ -1,4 +1,5 @@
 import type { AccountInput } from '../shared/accounts'
+import type { ManualEntryInput } from '../shared/journal'
 import type { ChartAccount, ChartView } from '../shared/chart'
 import type {
   CompanyHistory,
@@ -23,6 +24,7 @@ export type {
   EntityChangeResult,
   HistoryRow,
   HomeStateChangeInput,
+  ManualEntryInput,
   NewCompanyInput,
   Result
 }
@@ -52,4 +54,5 @@ export interface JunoApi {
   updateAccount: (id: number, input: AccountInput) => Promise<Result<ChartView>>
   setAccountActive: (id: number, active: boolean) => Promise<Result<ChartView>>
   deleteAccount: (id: number) => Promise<Result<ChartView>>
+  postManualEntry: (input: ManualEntryInput) => Promise<Result<number>>
 }

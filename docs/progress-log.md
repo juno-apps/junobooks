@@ -25,3 +25,11 @@ Pointer log only — a few lines per round. Details live in git history.
 - Decision: packaged builds move to `Documents\JunoBooks` right after the Phase 2 checkpoint (with a Settings screen to choose the folder), not before.
 - Docs pass: fixed stale lines in `architecture.md`, removed the finished Phase 1 plan list, condensed old log entries.
 - **Phase 1 done.** Good time to start a fresh session before Phase 2 (manual entry).
+
+## Round 17 — Phase 2 plan
+- Plan approved: 2a journal entry screen · 2b transaction list (void, reverse, duplicate) · 2c Expense/Income/Transfer screens · 2d account register · 2e opening balances · 2f receipts (schema v6) · 2g move packaged data to `Documents\JunoBooks` + Settings (after the Phase 2 checkpoint).
+- Sub-accounts stay parked until Phase 9 (Reports).
+
+## Round 18 — Unit 2a: journal entry screen
+- Journal entry screen (account picker, auto-added rows, fill-the-difference, live totals, Enter posts); manual entries can't predate the books start.
+- Files: `shared/journal.ts` (+test), `renderer/JournalEntry.tsx`, `CompanyHome.tsx`, `styles.css`, `companyStore.ts` (+test), IPC/preload. New topic doc `manual-entry.md`. No schema change. 185 tests pass. Status: **confirmed** by owner.

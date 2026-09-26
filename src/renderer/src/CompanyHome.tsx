@@ -6,6 +6,7 @@ import { TEMPLATES } from '../../shared/templates'
 import ChartOfAccounts from './ChartOfAccounts'
 import EntityTypeChange from './EntityTypeChange'
 import HomeStateChange from './HomeStateChange'
+import JournalEntry from './JournalEntry'
 import TemplatePicker from './TemplatePicker'
 
 interface Props {
@@ -16,6 +17,7 @@ interface Props {
 function CompanyHome({ company, onChanged }: Props): JSX.Element {
   const [changingEntity, setChangingEntity] = useState(false)
   const [changingState, setChangingState] = useState(false)
+  const [entering, setEntering] = useState(false)
   /** Bumped after an entity change so the chart reloads (new accounts, new tax lines). */
   const [chartVersion, setChartVersion] = useState(0)
   const entity = getEntityType(company.entityType)
@@ -52,7 +54,17 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
           <dt>Company folder</dt>
           <dd className="path">{company.dir}</dd>
         </dl>
+        {company.template && !entering && (
+          <div className="form-actions home-actions">
+            <button type="button" className="primary" onClick={() => setEntering(true)}>
+              New journal entry
+            </button>
+          </div>
+        )}
       </section>
+      {entering && (
+        <JournalEntry onPosted={() => setChartVersion((v) => v + 1)} onClose={() => setEntering(false)} />
+      )}
       {changingEntity && (
         <EntityTypeChange
           currentEntityType={company.entityType}

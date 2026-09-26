@@ -328,3 +328,64 @@ button.danger {
 .missing-accounts ul {
   margin: 0.4rem 0;
 }
+
+.home-actions {
+  margin-top: 1rem;
+}
+
+.success {
+  color: #1e6b34;
+  font-weight: 600;
+}
+
+.entry-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.entry-table th,
+.entry-table td {
+  padding: 0.2rem 0.3rem;
+  text-align: left;
+}
+
+.entry-table thead th {
+  font-size: 0.85rem;
+  color: #666;
+  border-bottom: 1px solid #ddd;
+}
+
+.entry-table input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.entry-table td:first-child {
+  width: 38%;
+}
+
+.entry-table .amount {
+  width: 14%;
+  text-align: right;
+}
+
+.entry-table td.amount input {
+  text-align: right;
+}
+
+.entry-table input.unmatched {
+  border-color: #a12622;
+}
+
+.entry-table tfoot th {
+  border-top: 1px solid #ddd;
+  padding-top: 0.4rem;
+}
+
+.entry-table .balanced {
+  color: #1e6b34;
+}
+
+.entry-table .unbalanced {
+  color: #a12622;
+}
