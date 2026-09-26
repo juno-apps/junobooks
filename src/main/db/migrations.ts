@@ -14,8 +14,8 @@ export interface Migration {
   sql: string
 }
 
-/** Audit triggers as they were written for v2. Frozen with that migration —
- * a later migration that needs different triggers gets its own helper. */
+/** Audit triggers as first written for v2. Never edit it (that would change
+ * shipped migrations). Later migrations may reuse it as is, or add a new helper. */
 function auditTriggersV2(table: string, columns: string[]): string {
   const json = (row: string): string => `json_object(${columns.map((c) => `'${c}', ${row}.${c}`).join(', ')})`
   const now = `strftime('%Y-%m-%dT%H:%M:%fZ', 'now')`
@@ -213,6 +213,50 @@ export const MIGRATIONS: Migration[] = [
       ${Object.entries(V2_AUDITED)
         .map(([table, cols]) => auditTriggersV2(table, cols))
         .join('\n')}
+    `
+  },
+  {
+    version: 3,
+    description: 'Period locking (with reopen reasons), one live reversal per entry',
+    sql: `
+      -- Append-only: the latest row is the lock in force. NULL = nothing locked.
+      CREATE TABLE period_lock_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        locked_through TEXT CHECK (locked_through IS NULL
+          OR locked_through GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'),
+        reason TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL
+      ) STRICT;
+
+      CREATE TRIGGER period_lock_no_update BEFORE UPDATE ON period_lock_history BEGIN
+        SELECT RAISE(ABORT, 'Period lock history can''t be changed.');
+      END;
+      CREATE TRIGGER period_lock_no_delete BEFORE DELETE ON period_lock_history BEGIN
+        SELECT RAISE(ABORT, 'Period lock history can''t be changed.');
+      END;
+
+      CREATE TRIGGER period_lock_reopen_needs_reason BEFORE INSERT ON period_lock_history
+      WHEN trim(NEW.reason) = ''
+        AND (SELECT locked_through FROM period_lock_history ORDER BY id DESC LIMIT 1) IS NOT NULL
+        AND (NEW.locked_through IS NULL
+          OR NEW.locked_through < (SELECT locked_through FROM period_lock_history ORDER BY id DESC LIMIT 1))
+      BEGIN
+        SELECT RAISE(ABORT, 'Reopening closed books needs a reason.');
+      END;
+
+      -- No posting or voiding on or before the locked-through date.
+      CREATE TRIGGER je_locked_period BEFORE UPDATE OF status ON journal_entries
+      WHEN NEW.status <> OLD.status
+        AND min(OLD.entry_date, NEW.entry_date)
+          <= (SELECT locked_through FROM period_lock_history ORDER BY id DESC LIMIT 1)
+      BEGIN
+        SELECT RAISE(ABORT, 'The books are closed for that date.');
+      END;
+
+      CREATE UNIQUE INDEX journal_entries_one_live_reversal ON journal_entries (reverses_entry_id)
+        WHERE reverses_entry_id IS NOT NULL AND status = 'posted';
+
+      ${auditTriggersV2('period_lock_history', ['id', 'locked_through', 'reason', 'created_at'])}
     `
   }
 ]

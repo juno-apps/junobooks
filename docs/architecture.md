@@ -19,10 +19,11 @@ JunoBooks-code/
       paths.ts         Data root (dev vs packaged)
       appSettings.ts   Per-PC prefs (app-settings.json: last opened company)
       companyStore.ts  Create / list / open companies, backups (no Electron imports, so testable)
+      ledger.ts        Ledger engine: post / void / reverse entries, period lock, balances
       db/migrations.ts Numbered schema migrations
     preload/           contextBridge API exposed to the renderer as window.juno
     renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome)
-    shared/            Code used by both main and renderer: entity types, US states, dates, company validation
+    shared/            Code used by both main and renderer: entity types, US states, dates, money, company validation
   scripts/run-tests.cjs
   test-data/           Dev data root (git-ignored, never real books)
     app-settings.json
@@ -60,6 +61,10 @@ Opening an older file backs it up first (`backups/books-<time>-before-upgrade-vX
 - `journal_lines`: entry_id, line_no, account_id, amount_cents (signed integer, never 0), memo.
 - `audit_log`: at (UTC ms), action (insert/update/delete/baseline), table_name, record_id, old_values / new_values (JSON). Filled by triggers on every table above, so no code path can skip it. Rows that existed before v2 were logged as `baseline`.
 
+**v3**
+- `period_lock_history` (append-only): locked_through (date or NULL = nothing locked), reason, created_at. The latest row is the lock in force. Audited.
+- Unique index: at most one *posted* reversal per entry.
+
 Files open in WAL mode with foreign keys on. Dates are `YYYY-MM-DD` text.
 
 **Backups:** on close (and before any migration) the WAL is checkpointed and the file copied to `backups/books-<ISO time>[-label].sqlite`. Only the newest 30 are kept (sorted by name, since names start with the timestamp).
@@ -68,14 +73,16 @@ Files open in WAL mode with foreign keys on. Dates are `YYYY-MM-DD` text.
 Sole proprietor, Single-member LLC → Schedule C · Multi-member LLC, Partnership → 1065 · LLC taxed as S-corp, S-corp → 1120-S · C-corp → 1120. Defined in `src/shared/entities.ts`.
 
 ## Ledger rules
-Enforced by database triggers (v2), so they hold no matter which code writes:
-- **Money** is signed integer cents: positive = debit, negative = credit. Fractions and zero lines are refused.
-- **Lifecycle:** an entry is created as a draft, lines are added, then it's posted in one step. Only draft → posted → void is allowed.
-- **Balance:** posting fails unless the entry has at least 2 lines summing to exactly 0.
-- **Posted = locked:** a posted entry and its lines can't be edited or deleted. It can only be voided (a reason is required). Voided entries never change. Drafts can be edited or deleted freely.
-- **Accounts** used by posted entries can't change type or be deleted (renaming is fine).
+`src/main/ledger.ts` is the only code that writes journal entries. It checks every rule first (plain-English errors), and database triggers enforce the same rules underneath, so they hold even if the code is bypassed.
+- **Money** is signed integer cents: positive = debit, negative = credit. `shared/money.ts` converts typed amounts ↔ cents with string handling only (`parseMoney`, `formatCents`). Max $10 trillion per line.
+- **Posting** (`postEntry`): valid date, ≥ 2 lines, whole non-zero cents, active accounts, debits = credits, date not locked. Draft → lines → posted in one transaction. A failure leaves nothing behind.
+- **Posted = locked:** a posted entry and its lines can't be edited or deleted. Only draft → posted → void is allowed.
+- **Void** (`voidEntry`): needs a reason. The entry stays on record but drops out of balances. Voided entries never change.
+- **Reverse** (`reverseEntry`): posts an equal-and-opposite entry (source `reversal`) linked by `reverses_entry_id`, dated on or after the original. It works even when the original's period is locked. An entry can have only one live reversal, and a reversed entry can't be voided (void the reversal first).
+- **Period lock** (`setLockedThrough`): one "books closed through" date per company. Nothing dated on or before it can be posted or voided. Moving it later needs no reason. Moving it earlier or clearing it (reopening) needs a reason, and every change is kept in `period_lock_history` and the audit log.
+- **Balances** (`accountBalances`): debits minus credits per account, posted entries only, optionally as of a date. Which side reads as "positive" on screen (debit- vs credit-normal accounts) is decided with the chart of accounts in 1d.
+- **Accounts** used by posted entries can't change type or be deleted (renaming is fine). Inactive accounts can't receive new postings.
 - **Audit log** can't be edited or deleted. It rolls back with any failed change.
-- Not yet built (1c): the ledger code that creates/posts/voids/reverses entries, and period locking.
 
 ## Verification practice
 - Small/low-risk changes: `npm run typecheck`.
@@ -100,4 +107,4 @@ None yet. Created only when the owner types "create new handoff."
 
 ## Status
 - **Phase 0 complete:** installs from GitHub, opens, updates itself.
-- **Phase 1:** 1a confirmed (create, list, switch companies). 1b confirmed (schema v2, integrity triggers, audit log).
+- **Phase 1:** 1a confirmed (create, list, switch companies). 1b confirmed (schema v2, integrity triggers, audit log). 1c confirmed (ledger engine, period lock, schema v3).

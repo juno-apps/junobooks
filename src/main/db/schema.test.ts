@@ -193,7 +193,7 @@ describe('upgrading an existing company', () => {
     books.close()
 
     const backups = readdirSync(join(dir, 'backups'))
-    const preUpgrade = backups.find((f) => f.includes('before-upgrade-v1-to-v2'))
+    const preUpgrade = backups.find((f) => f.includes(`before-upgrade-v1-to-v${LATEST_SCHEMA_VERSION}`))
     expect(preUpgrade).toBeDefined()
     const saved = new Database(join(dir, 'backups', preUpgrade!), { readonly: true })
     expect(getSchemaVersion(saved)).toBe(1)

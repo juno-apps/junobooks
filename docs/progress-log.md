@@ -51,3 +51,10 @@ Pointer log only — a few lines per round. Details live in git history.
 - Rules live in the database (triggers), not just code. The "who" in the audit log is implied (one user per PC); no user column.
 - 31 tests pass; typecheck and build clean.
 - Status: **confirmed** by owner.
+
+## Round 10 — Unit 1c: ledger engine
+- Owner chose "reopen allowed, with a reason" for period locks.
+- Files: `src/main/ledger.ts`, `src/shared/money.ts`, `src/main/db/migrations.ts` (v3: period lock history, one-live-reversal index), tests `ledger.test.ts`, `money.test.ts`.
+- Not wired to any screen yet (first use: chart of accounts in 1d).
+- 78 tests pass; typecheck and build clean.
+- Status: **confirmed** by owner.
