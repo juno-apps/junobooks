@@ -23,10 +23,20 @@ export interface ChartAccount {
   hasPostings: boolean
 }
 
+/** A standard account the chart doesn't have. `number` is the number it would get now. */
+export interface MissingAccount {
+  number: string
+  name: string
+  /** The number the template normally uses. */
+  wantedNumber: string
+}
+
 export interface ChartView {
   form: TaxForm
   /** The tax year shown (this year) and the IRS form year its line numbers come from. */
   taxYear: number
   tableYear: number
   accounts: ChartAccount[]
+  /** Standard accounts for the template and current entity type that aren't in the chart. */
+  missing: MissingAccount[]
 }

@@ -24,6 +24,8 @@ function ChartOfAccounts(): JSX.Element {
   const [chart, setChart] = useState<ChartView | null>(null)
   const [editing, setEditing] = useState<Editing>(null)
   const [showInactive, setShowInactive] = useState(false)
+  const [showMissing, setShowMissing] = useState(false)
+  const [restoreError, setRestoreError] = useState<string | null>(null)
 
   useEffect(() => {
     window.juno.getChart().then(setChart)
@@ -39,6 +41,13 @@ function ChartOfAccounts(): JSX.Element {
   function done(next: ChartView): void {
     setChart(next)
     setEditing(null)
+  }
+
+  async function restore(numbers: string[]): Promise<void> {
+    setRestoreError(null)
+    const result = await window.juno.restoreAccounts(numbers)
+    if (result.ok) setChart(result.value)
+    else setRestoreError(result.error)
   }
 
   return (
@@ -60,6 +69,40 @@ function ChartOfAccounts(): JSX.Element {
           <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />
           Show {inactiveCount} inactive {inactiveCount === 1 ? 'account' : 'accounts'}
         </label>
+      )}
+
+      {chart.missing.length > 0 && (
+        <div className="missing-accounts">
+          <button type="button" className="link-button" onClick={() => setShowMissing((v) => !v)}>
+            {showMissing ? 'Hide' : 'Show'} {chart.missing.length} standard{' '}
+            {chart.missing.length === 1 ? 'account' : 'accounts'} not in your chart
+          </button>
+          {showMissing && (
+            <>
+              <p className="hint">
+                Standard accounts for your business type that you don&rsquo;t have (deleted, or never added). Add back any
+                you want.
+              </p>
+              <ul>
+                {chart.missing.map((m) => (
+                  <li key={m.wantedNumber}>
+                    {m.number} {m.name}
+                    {m.number !== m.wantedNumber && ` (usual number ${m.wantedNumber} is taken)`}{' '}
+                    <button type="button" className="link-button" onClick={() => void restore([m.wantedNumber])}>
+                      Add back
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              {chart.missing.length > 1 && (
+                <button type="button" onClick={() => void restore(chart.missing.map((m) => m.wantedNumber))}>
+                  Add back all
+                </button>
+              )}
+              {restoreError && <p className="error">{restoreError}</p>}
+            </>
+          )}
+        </div>
       )}
 
       {editing && (

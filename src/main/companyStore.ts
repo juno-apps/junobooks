@@ -7,6 +7,7 @@ import {
   type CompanyProfile,
   type CompanySummary,
   type EntityChangeInput,
+  type EntityChangeResult,
   type NewCompanyInput
 } from '../shared/company'
 import { localDateString } from '../shared/dates'
@@ -15,8 +16,8 @@ import type { EntityTypeId } from '../shared/entities'
 import { isTemplateId, type TemplateId } from '../shared/templates'
 import type { AccountInput } from '../shared/accounts'
 import { addAccount, deleteAccount, setAccountActive, updateAccount, type ChartContext } from './accounts'
-import { accountCount, applyChart, getChart } from './chart'
-import { addEntityTypeChange, correctStartingEntityType, getHistory } from './companyHistory'
+import { accountCount, applyChart, getChart, restoreAccounts } from './chart'
+import { addEntityTypeChange, correctStartingEntityType, getHistory, removeEntityTypeChange } from './companyHistory'
 import { getSchemaVersion, LATEST_SCHEMA_VERSION, runMigrations } from './db/migrations'
 
 /**
@@ -200,14 +201,24 @@ export class CompanyBooks {
     return getHistory(this.db)
   }
 
-  changeEntityType(input: EntityChangeInput, now: Date = new Date()): CompanyProfile {
-    addEntityTypeChange(this.db, input, now)
+  changeEntityType(input: EntityChangeInput, now: Date = new Date()): EntityChangeResult {
+    return { ...addEntityTypeChange(this.db, input, now), profile: this.profile(now) }
+  }
+
+  correctStartingEntityType(entityType: string, now: Date = new Date()): EntityChangeResult {
+    return { ...correctStartingEntityType(this.db, entityType, now), profile: this.profile(now) }
+  }
+
+  removeEntityTypeChange(effectiveDate: string, now: Date = new Date()): CompanyProfile {
+    removeEntityTypeChange(this.db, effectiveDate)
     return this.profile(now)
   }
 
-  correctStartingEntityType(entityType: string, now: Date = new Date()): CompanyProfile {
-    correctStartingEntityType(this.db, entityType)
-    return this.profile(now)
+  /** Adds back standard accounts (by template number) that the chart is missing. */
+  restoreAccounts(wantedNumbers: string[], now: Date = new Date()): ChartView {
+    const p = this.profile(now)
+    if (p.template) restoreAccounts(this.db, p.template, p.entityType, wantedNumbers, now)
+    return this.chart(now)
   }
 
   private chartContext(now: Date): ChartContext {

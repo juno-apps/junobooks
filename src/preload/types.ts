@@ -5,6 +5,7 @@ import type {
   CompanyProfile,
   CompanySummary,
   EntityChangeInput,
+  EntityChangeResult,
   HistoryRow,
   NewCompanyInput,
   Result
@@ -18,6 +19,7 @@ export type {
   CompanyProfile,
   CompanySummary,
   EntityChangeInput,
+  EntityChangeResult,
   HistoryRow,
   NewCompanyInput,
   Result
@@ -35,8 +37,10 @@ export interface JunoApi {
   openCompany: (folder: string) => Promise<Result<CompanyProfile>>
   createCompany: (input: NewCompanyInput) => Promise<Result<CompanyProfile>>
   getHistory: () => Promise<CompanyHistory | null>
-  changeEntityType: (input: EntityChangeInput) => Promise<Result<CompanyProfile>>
-  correctStartingEntityType: (entityType: string) => Promise<Result<CompanyProfile>>
+  changeEntityType: (input: EntityChangeInput) => Promise<Result<EntityChangeResult>>
+  correctStartingEntityType: (entityType: string) => Promise<Result<EntityChangeResult>>
+  removeEntityTypeChange: (effectiveDate: string) => Promise<Result<CompanyProfile>>
+  restoreAccounts: (numbers: string[]) => Promise<Result<ChartView>>
   getChart: () => Promise<ChartView | null>
   setupChart: (template: string) => Promise<Result<CompanyProfile>>
   addAccount: (input: AccountInput) => Promise<Result<ChartView>>

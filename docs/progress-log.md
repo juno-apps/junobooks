@@ -78,3 +78,9 @@ Pointer log only — a few lines per round. Details live in git history.
 - Files: `src/main/companyHistory.ts`, `src/shared/company.ts` (`validateHistoryChange`), `entities.ts` (accountant note), `companyStore.ts`, IPC/preload, `EntityTypeChange.tsx`, `CompanyHome.tsx`, `companyHistory.test.ts`. No schema change.
 - 156 tests pass; typecheck clean.
 - Status: **confirmed** by owner. Next: step 2 (add accounts new to the entity type), step 3 (home state change).
+
+## Round 14 — Unit 1f, step 2: chart follows entity changes
+- Owner testing found gaps, so also built: restore missing standard accounts, remove an entity-type change, list what was skipped, clearer green result box.
+- Files: `src/main/chart.ts` (`placeAccounts`, `addEntityAccounts`, `missingAccounts`, `restoreAccounts`), `companyHistory.ts` (`removeEntityTypeChange`, chart update in same transaction), `companyStore.ts`, IPC/preload, `EntityTypeChange.tsx`, `ChartOfAccounts.tsx`, `CompanyHome.tsx`, styles, `shared/{company,chart}.ts`, `companyHistory.test.ts`, topic doc. No schema change.
+- 172 tests pass; typecheck clean.
+- Status: **confirmed** by owner. Next: step 3 (home state change).

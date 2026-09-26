@@ -86,6 +86,10 @@ app.whenReady().then(() => {
   ipcMain.handle('company:correctStartingEntityType', (_e, entityType: string) =>
     wrap(() => requireCompany().correctStartingEntityType(entityType))
   )
+  ipcMain.handle('company:removeEntityTypeChange', (_e, effectiveDate: string) =>
+    wrap(() => requireCompany().removeEntityTypeChange(effectiveDate))
+  )
+  ipcMain.handle('accounts:restore', (_e, numbers: string[]) => wrap(() => requireCompany().restoreAccounts(numbers)))
   ipcMain.handle('chart:get', () =>current?.chart() ?? null)
   ipcMain.handle('chart:setup', (_e, template: string) =>
     wrap(() => {

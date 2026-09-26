@@ -23,7 +23,18 @@ Numbering: 1xxx assets · 2xxx liabilities · 3xxx equity · 4xxx income · 5xxx
 
 Payroll set: Payroll liabilities, Officer compensation, Wages, Payroll taxes.
 
-`applyChart` inserts only account numbers that don't exist yet (the owner's own accounts always win) and records the template on `company_profile`. Re-running it for a new entity type (unit 1f) adds just the missing accounts. It matches by number only, so a template account the owner renumbered or deleted would come back; 1f must handle that.
+`applyChart` inserts only account numbers that don't exist yet (the owner's own accounts always win) and records the template on `company_profile`. It's used once, when a company is created or first set up.
+
+## Adding accounts after creation
+Code: `placeAccounts`, `addEntityAccounts`, `missingAccounts`, `restoreAccounts` in `src/main/chart.ts`. One set of rules decides where each wanted account goes:
+- Skipped quietly if an account with the same name exists (renumbered accounts don't return).
+- If its number holds an account with the same tax category, that account "covers" it: skipped, and reported (e.g. Owner draws covers Shareholder distributions).
+- If its number holds a different kind of account (Owner's capital on 3000), it takes the next free number in the same thousand-range (step 10) and is reported with the number it wanted. No free number → reported as not added.
+- Existing accounts are never changed or removed.
+
+**On an entity-type change** (or correcting the starting type): only accounts in the new type's chart that the old type didn't have are considered, so accounts the owner deleted or renumbered from the old type's set don't return. Added right away, even for a future start date. The result box on the change screen lists added, covered and not-added accounts. Old-type accounts (Owner's capital) stay; moving equity over is flagged for the accountant.
+
+**Restore standard accounts:** the chart screen lists standard accounts for the template and current entity type that the chart lacks (`ChartView.missing`), each with "Add back" and an "Add back all" button. Deleted accounts are gone for good (only unused accounts can be deleted); this is the way to bring a standard one back.
 
 ## Normal balance
 Stored per account. Assets/expenses are debit-normal; liabilities/equity/income are credit-normal. Contra accounts flip it: Accumulated depreciation (credit), Refunds and returns (debit), Owner draws / distributions / dividends (debit). The chart screen shows balances on the normal side (positive = normal; negative in red = unusual).

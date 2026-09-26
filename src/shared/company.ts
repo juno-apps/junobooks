@@ -46,6 +46,20 @@ export interface EntityChangeInput {
   effectiveDate: string
 }
 
+/** What an entity-type change did to the chart of accounts. */
+export interface EntityAccountChanges {
+  /** Accounts added. `wantedNumber` differs from `number` when the usual number was already taken. */
+  added: { number: string; name: string; wantedNumber: string }[]
+  /** Accounts that needed adding but had no free number in their range. */
+  notAdded: { number: string; name: string }[]
+  /** Accounts skipped because an existing account with the same tax category holds their number. */
+  covered: { number: string; name: string; by: string }[]
+}
+
+export interface EntityChangeResult extends EntityAccountChanges {
+  profile: CompanyProfile
+}
+
 export type Result<T> = { ok: true; value: T } | { ok: false; error: string }
 
 export const MAX_COMPANY_NAME_LENGTH = 100

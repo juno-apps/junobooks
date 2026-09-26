@@ -22,7 +22,7 @@ JunoBooks-code/
       ledger.ts        Ledger engine: post / void / reverse entries, period lock, balances
       chart.ts         Apply a template's accounts; build the chart-of-accounts view
       accounts.ts      Add / edit / deactivate / delete accounts
-      companyHistory.ts  Entity-type history: add a change with a start date, correct the starting type
+      companyHistory.ts  Entity-type history: add / remove a change, correct the starting type
       db/migrations.ts Numbered schema migrations
     preload/           contextBridge API exposed to the renderer as window.juno
     renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange)
@@ -51,7 +51,7 @@ JunoBooks-code/
 - New company form: name, entity type, home state (default CA), books start date (default Jan 1 this year), starting chart of accounts (template). The initial entity type and home state take effect on the books start date. The chart is created in the same transaction.
 - Companies created before templates existed show a one-time "Set up the chart of accounts" panel (refused if the company already has accounts).
 - Company home shows the profile and the chart of accounts. See `docs/topics/chart-of-accounts.md`.
-- **Entity type changes** (`companyHistory.ts`, "Change" link on company home): a new type plus a start date is added to `entity_type_history`. Rules (`validateHistoryChange` in `shared/company.ts`, reusable for home state): the date can't be before the books start, on or before the books-closed-through date, on a date that already has an entry, or change nothing. Future dates are allowed. "Correct starting type" replaces the first row's type (same date); refused if the books are closed through the books start date or later. Every change shows the "Check with your accountant" note. Existing accounts are never changed by either.
+- **Entity type changes** (`companyHistory.ts`, "Change" link on company home): a new type plus a start date is added to `entity_type_history`. Rules (`validateHistoryChange` in `shared/company.ts`, reusable for home state): the date can't be before the books start, on or before the books-closed-through date, on a date that already has an entry, or change nothing. Future dates are allowed. "Correct starting type" replaces the first row's type (same date); "Remove" deletes a later change (never the starting one). Both are refused if the books are closed through the date involved. Every change shows the "Check with your accountant" note. Each add/correct also adds the accounts the new type needs, in the same transaction (see `docs/topics/chart-of-accounts.md`); existing accounts are never changed or removed.
 
 ## Database schema
 Schema version is SQLite's `user_version` (0 = not a JunoBooks file). Migrations live in `src/main/db/migrations.ts`, each in its own transaction. Shipped migrations are never edited — add a new one.
@@ -125,4 +125,4 @@ None yet. Created only when the owner types "create new handoff."
 
 ## Status
 - **Phase 0 complete:** installs from GitHub, opens, updates itself.
-- **Phase 1:** 1a confirmed (create, list, switch companies). 1b confirmed (schema v2, integrity triggers, audit log). 1c confirmed (ledger engine, period lock, schema v3). 1d confirmed (templates, tax lines, chart screen, schema v4). 1e confirmed (account editing, schema v5). 1f in progress: entity-type change + correct starting type confirmed; chart update on entity change and home-state change to follow.
+- **Phase 1:** 1a confirmed (create, list, switch companies). 1b confirmed (schema v2, integrity triggers, audit log). 1c confirmed (ledger engine, period lock, schema v3). 1d confirmed (templates, tax lines, chart screen, schema v4). 1e confirmed (account editing, schema v5). 1f in progress: entity-type change, correct/remove, chart update and restore-missing-accounts confirmed; home-state change to follow.

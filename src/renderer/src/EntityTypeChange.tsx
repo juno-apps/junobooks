@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import type { CompanyHistory, CompanyProfile } from '../../preload/types'
+import type { CompanyHistory, CompanyProfile, EntityChangeResult } from '../../preload/types'
 import {
   ENTITY_CHANGE_NOTE,
   ENTITY_TYPES,
@@ -23,6 +23,7 @@ function EntityTypeChange({ currentEntityType, onChanged, onClose }: Props): JSX
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
+  const [summary, setSummary] = useState<EntityChangeResult | null>(null)
   const [correcting, setCorrecting] = useState(false)
   const [correctTo, setCorrectTo] = useState('')
   const [correctError, setCorrectError] = useState<string | null>(null)
@@ -30,6 +31,19 @@ function EntityTypeChange({ currentEntityType, onChanged, onClose }: Props): JSX
   useEffect(() => {
     void window.juno.getHistory().then(setHistory)
   }, [currentEntityType])
+
+  async function remove(date: string, label: string): Promise<void> {
+    if (!window.confirm(`Remove the change to ${label} starting ${date}? Accounts it added stay in the chart.`)) return
+    setError(null)
+    setSummary(null)
+    const result = await window.juno.removeEntityTypeChange(date)
+    if (!result.ok) {
+      setError(result.error)
+      return
+    }
+    setHistory(await window.juno.getHistory())
+    onChanged(result.value)
+  }
 
   async function correct(): Promise<void> {
     setCorrectError(null)
@@ -39,8 +53,9 @@ function EntityTypeChange({ currentEntityType, onChanged, onClose }: Props): JSX
       return
     }
     setCorrecting(false)
+    setSummary(result.value)
     setHistory(await window.juno.getHistory())
-    onChanged(result.value)
+    onChanged(result.value.profile)
   }
 
   async function submit(e: FormEvent): Promise<void> {
@@ -51,11 +66,13 @@ function EntityTypeChange({ currentEntityType, onChanged, onClose }: Props): JSX
     }
     setSaving(true)
     setError(null)
+    setSummary(null)
     const result = await window.juno.changeEntityType({ entityType, effectiveDate })
     setSaving(false)
     if (result.ok) {
       setEntityType('')
-      onChanged(result.value)
+      setSummary(result.value)
+      onChanged(result.value.profile)
     } else {
       setError(result.error)
     }
@@ -125,7 +142,15 @@ function EntityTypeChange({ currentEntityType, onChanged, onClose }: Props): JSX
                         </div>
                       </div>
                     )}
-                    {i > 0 && <div className="accountant-note">⚑ {ENTITY_CHANGE_NOTE}</div>}
+                    {i > 0 && (
+                      <>
+                        {' '}
+                        <button type="button" className="link-button" onClick={() => void remove(row.effectiveDate, type.label)}>
+                          Remove
+                        </button>
+                        <div className="accountant-note">⚑ {ENTITY_CHANGE_NOTE}</div>
+                      </>
+                    )}
                   </td>
                   <td>{TAX_FORM_LABELS[type.taxForm]}</td>
                 </tr>
@@ -134,6 +159,8 @@ function EntityTypeChange({ currentEntityType, onChanged, onClose }: Props): JSX
           </tbody>
         </table>
       )}
+
+      {summary && <ChangeSummary result={summary} />}
 
       <form className="form" onSubmit={submit}>
         <label>
@@ -175,6 +202,54 @@ function EntityTypeChange({ currentEntityType, onChanged, onClose }: Props): JSX
         </div>
       </form>
     </section>
+  )
+}
+
+/** Says what the change did to the chart of accounts. */
+function ChangeSummary({ result }: { result: EntityChangeResult }): JSX.Element {
+  const { added, notAdded, covered } = result
+  return (
+    <div className="change-summary">
+      <p>
+        <strong>Saved.</strong>{' '}
+        {added.length === 0
+          ? 'No accounts needed to be added to the chart.'
+          : `Added ${added.length} account${added.length === 1 ? '' : 's'} to the chart:`}
+      </p>
+      {added.length > 0 && (
+        <ul>
+          {added.map((a) => (
+            <li key={a.number}>
+              {a.number} {a.name}
+              {a.number !== a.wantedNumber && ` (usual number ${a.wantedNumber} is already used by another account)`}
+            </li>
+          ))}
+        </ul>
+      )}
+      {covered.length > 0 && (
+        <>
+          <p>Not added, because an account you already have does the same job:</p>
+          <ul>
+            {covered.map((c) => (
+              <li key={c.number}>
+                {c.name}: {c.by} ({c.number}) already covers it
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {notAdded.length > 0 && (
+        <p className="error">
+          Couldn&rsquo;t add (no free number in the range):{' '}
+          {notAdded.map((a) => `${a.number} ${a.name}`).join(', ')}. Add {notAdded.length === 1 ? 'it' : 'them'} by hand
+          from the chart screen.
+        </p>
+      )}
+      <p className="hint">
+        Existing accounts were left as they are. Old-type accounts (such as Owner&rsquo;s capital) stay so past records
+        keep making sense; check with your accountant how equity should be moved over.
+      </p>
+    </div>
   )
 }
 

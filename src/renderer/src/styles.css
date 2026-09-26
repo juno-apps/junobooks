@@ -306,3 +306,25 @@ button.danger {
   background: #fff6e0;
   border-left: 3px solid #e0a100;
 }
+
+.change-summary {
+  border: 1px solid #5fa35a;
+  border-left-width: 6px;
+  background: #e3f4df;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  margin: 1rem 0;
+}
+
+.change-summary p,
+.change-summary ul {
+  margin: 0.4rem 0;
+}
+
+.missing-accounts {
+  margin: 0.5rem 0 1rem;
+}
+
+.missing-accounts ul {
+  margin: 0.4rem 0;
+}

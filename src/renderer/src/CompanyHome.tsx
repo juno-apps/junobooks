@@ -14,6 +14,8 @@ interface Props {
 
 function CompanyHome({ company, onChanged }: Props): JSX.Element {
   const [changingEntity, setChangingEntity] = useState(false)
+  /** Bumped after an entity change so the chart reloads (new accounts, new tax lines). */
+  const [chartVersion, setChartVersion] = useState(0)
   const entity = getEntityType(company.entityType)
   const template = TEMPLATES.find((t) => t.id === company.template)
   return (
@@ -47,11 +49,14 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
       {changingEntity && (
         <EntityTypeChange
           currentEntityType={company.entityType}
-          onChanged={onChanged}
+          onChanged={(profile) => {
+            setChartVersion((v) => v + 1)
+            onChanged(profile)
+          }}
           onClose={() => setChangingEntity(false)}
         />
       )}
-      {company.template ?<ChartOfAccounts key={company.folder} /> : <SetupChart onDone={onChanged} />}
+      {company.template ?<ChartOfAccounts key={`${company.folder}-${chartVersion}`} /> : <SetupChart onDone={onChanged} />}
     </>
   )
 }
