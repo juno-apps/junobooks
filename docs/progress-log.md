@@ -28,4 +28,8 @@ Pointer log only — a few lines per round. Details live in git history.
 - Fixed along the way: GitHub Releases were publishing as drafts (invisible to the public update check). First attempt used `"draft": false`, which isn't a real electron-builder option and broke the whole `publish` config (confusing wall of schema errors in CI) — correct fix is `"releaseType": "release"`.
 - Sequencing note: v0.0.1 predates the update-check code, so it could never have offered an update — owner installed v0.0.2 (which has the code) so it can check for a newer release.
 - v0.0.3's build failed (see fix above); skipped straight to v0.0.4 rather than delete/retry the v0.0.3 tag (tag deletion is blocked by the auto-mode safety classifier as a destructive git action).
-- Status: not yet confirmed — v0.0.4 pushed; owner will relaunch her installed 0.0.2 app to see the update offer.
+- Status: **confirmed** — installed v0.0.2 showed the update popup, installed v0.0.4 on exit, and reopened at v0.0.4.
+
+## Round 6 — Unit 0e: docs, Phase 0 complete
+- Added `docs/topics/README.md` and `docs/handoffs/README.md` explaining when files land in each folder.
+- **Phase 0 done.** JunoBooks installs from GitHub, opens, and updates itself. Good point to start a fresh session before Phase 1 (Foundation: companies, entities, templates, chart of accounts, ledger engine).
