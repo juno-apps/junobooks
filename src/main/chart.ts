@@ -38,8 +38,12 @@ export function getChart(db: Database.Database, entity: EntityTypeId, today: str
   const balances = new Map(accountBalances(db, today).map((b) => [b.accountId, b.balanceCents]))
   const rows = db
     .prepare(
-      `SELECT id, number, name, type, subtype, normal_balance, is_active, tax_category, accountant_note
-       FROM accounts ORDER BY number`
+      `SELECT a.id, a.number, a.name, a.type, a.subtype, a.normal_balance, a.is_active, a.tax_category,
+         a.accountant_note, a.description,
+         EXISTS (SELECT 1 FROM journal_lines l WHERE l.account_id = a.id) AS used,
+         EXISTS (SELECT 1 FROM journal_lines l JOIN journal_entries e ON e.id = l.entry_id
+                 WHERE l.account_id = a.id AND e.status <> 'draft') AS posted
+       FROM accounts a ORDER BY a.number`
     )
     .all() as {
     id: number
@@ -51,6 +55,9 @@ export function getChart(db: Database.Database, entity: EntityTypeId, today: str
     is_active: number
     tax_category: TaxCategoryKey | null
     accountant_note: string
+    description: string
+    used: number
+    posted: number
   }[]
 
   const accounts: ChartAccount[] = rows.map((r) => {
@@ -66,7 +73,10 @@ export function getChart(db: Database.Database, entity: EntityTypeId, today: str
       taxCategory: r.tax_category,
       taxLine: r.tax_category ? getTaxLine(r.tax_category, form, taxYear) : null,
       accountantNote: r.accountant_note,
-      balanceCents: r.normal_balance === 'credit' ? -raw : raw
+      description: r.description,
+      balanceCents: r.normal_balance === 'credit' ? -raw : raw,
+      usedInEntries: r.used === 1,
+      hasPostings: r.posted === 1
     }
   })
   return { form, taxYear, tableYear: taxTableFor(taxYear).year, accounts }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { ChartAccount, ChartView } from '../../preload/types'
 import { TAX_FORM_LABELS } from '../../shared/entities'
 import { formatCents } from '../../shared/money'
+import AccountForm from './AccountForm'
 
 const GROUPS: { title: string; test: (a: ChartAccount) => boolean }[] = [
   { title: 'Assets', test: (a) => a.type === 'asset' },
@@ -17,8 +18,12 @@ function taxLineText(a: ChartAccount): string {
   return a.taxLine.ref ? `${a.taxLine.ref}: ${a.taxLine.label}` : a.taxLine.label
 }
 
+type Editing = { account: ChartAccount | null } | null
+
 function ChartOfAccounts(): JSX.Element {
   const [chart, setChart] = useState<ChartView | null>(null)
+  const [editing, setEditing] = useState<Editing>(null)
+  const [showInactive, setShowInactive] = useState(false)
 
   useEffect(() => {
     window.juno.getChart().then(setChart)
@@ -26,17 +31,47 @@ function ChartOfAccounts(): JSX.Element {
 
   if (!chart) return <p>Loading chart of accounts…</p>
 
-  const notes = chart.accounts.filter((a) => a.accountantNote).length
+  const active = chart.accounts.filter((a) => a.isActive)
+  const inactiveCount = chart.accounts.length - active.length
+  const shown = showInactive ? chart.accounts : active
+  const notes = active.filter((a) => a.accountantNote).length
+
+  function done(next: ChartView): void {
+    setChart(next)
+    setEditing(null)
+  }
 
   return (
     <section className="chart">
-      <h2>Chart of accounts</h2>
+      <div className="chart-header">
+        <h2>Chart of accounts</h2>
+        <button type="button" className="primary" onClick={() => setEditing({ account: null })} disabled={!!editing}>
+          Add account
+        </button>
+      </div>
       <p className="muted">
-        {chart.accounts.length} accounts · Tax lines for {TAX_FORM_LABELS[chart.form]}, from the {chart.tableYear} IRS
+        {active.length} accounts · Tax lines for {TAX_FORM_LABELS[chart.form]}, from the {chart.tableYear} IRS
         forms
         {chart.tableYear < chart.taxYear && ` (the ${chart.taxYear} forms aren't out yet)`}
         {notes > 0 && ` · ⚑ ${notes} notes for your accountant`}
       </p>
+      {inactiveCount > 0 && (
+        <label className="toggle">
+          <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />
+          Show {inactiveCount} inactive {inactiveCount === 1 ? 'account' : 'accounts'}
+        </label>
+      )}
+
+      {editing && (
+        <AccountForm
+          key={editing.account?.id ?? 'new'}
+          account={editing.account}
+          chart={chart}
+          onDone={done}
+          onCancel={() => setEditing(null)}
+        />
+      )}
+
       <table className="chart-table">
         <thead>
           <tr>
@@ -44,15 +79,16 @@ function ChartOfAccounts(): JSX.Element {
             <th>Account</th>
             <th>Tax line</th>
             <th className="amount">Balance</th>
+            <th className="actions" aria-label="Actions" />
           </tr>
         </thead>
         {GROUPS.map((g) => {
-          const rows = chart.accounts.filter(g.test)
+          const rows = shown.filter(g.test)
           if (rows.length === 0) return null
           return (
             <tbody key={g.title}>
               <tr className="group-row">
-                <th colSpan={4}>{g.title}</th>
+                <th colSpan={5}>{g.title}</th>
               </tr>
               {rows.map((a) => (
                 <tr key={a.id} className={a.isActive ? '' : 'inactive'}>
@@ -60,6 +96,7 @@ function ChartOfAccounts(): JSX.Element {
                   <td>
                     {a.name}
                     {!a.isActive && ' (inactive)'}
+                    {a.description && <div className="account-description">{a.description}</div>}
                     {a.accountantNote && (
                       <div className="accountant-note">
                         <span aria-hidden="true">⚑ </span>
@@ -69,6 +106,15 @@ function ChartOfAccounts(): JSX.Element {
                   </td>
                   <td className="tax-line">{taxLineText(a)}</td>
                   <td className={a.balanceCents < 0 ? 'amount unusual' : 'amount'}>{formatCents(a.balanceCents)}</td>
+                  <td className="actions">
+                    <button
+                      type="button"
+                      className="link-button"
+                      onClick={() => setEditing({ account: a })}
+                    >
+                      Edit
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

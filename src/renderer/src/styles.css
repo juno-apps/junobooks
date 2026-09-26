@@ -230,6 +230,74 @@ button:disabled {
   color: #999;
 }
 
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+  font-size: 0.9rem;
+}
+
+.chart-table .actions {
+  width: 3rem;
+  text-align: right;
+}
+
+.account-description {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.account-form {
+  max-width: 640px;
+  margin: 0 0 1.5rem;
+  padding: 1rem 1.2rem;
+  border: 1px solid #c8d6e5;
+  border-radius: 6px;
+  background: #f7fafd;
+}
+
+.account-form h3 {
+  margin-top: 0;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.form-row .narrow {
+  width: 7rem;
+}
+
+.form-row .grow {
+  flex: 1;
+}
+
+.form-actions-right {
+  display: flex;
+  gap: 0.6rem;
+  margin-left: auto;
+}
+
+button.danger {
+  border-color: #a12622;
+  color: #a12622;
+}
+
+.warning {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #7a4b00;
+}
+
 .accountant-note {
   margin-top: 0.2rem;
   padding: 0.2rem 0.4rem;

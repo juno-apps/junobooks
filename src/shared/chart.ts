@@ -14,8 +14,13 @@ export interface ChartAccount {
   /** Where this account lands on the company's current federal return. */
   taxLine: TaxLine | null
   accountantNote: string
+  description: string
   /** Balance on the account's normal side: positive = normal, negative = unusual. */
   balanceCents: number
+  /** Appears in any entry, even a draft: can't be deleted. */
+  usedInEntries: boolean
+  /** Appears in a posted or voided entry: type and kind can't change. */
+  hasPostings: boolean
 }
 
 export interface ChartView {

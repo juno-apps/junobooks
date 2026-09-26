@@ -179,6 +179,15 @@ export function voidEntry(db: Database.Database, id: number, reason: string): vo
   if (!reason.trim()) throw new LedgerError('Voiding an entry needs a reason.')
   const entry = requirePosted(db, id, 'voided')
   assertOpen(db, entry.date)
+  const inactive = db
+    .prepare(
+      `SELECT a.number, a.name FROM journal_lines l JOIN accounts a ON a.id = l.account_id
+       WHERE l.entry_id = ? AND a.is_active = 0 LIMIT 1`
+    )
+    .get(id) as { number: string; name: string } | undefined
+  if (inactive) {
+    throw new LedgerError(`Account ${inactive.number} ${inactive.name} is inactive. Reactivate it before voiding this entry.`)
+  }
   db.prepare("UPDATE journal_entries SET status = 'void', voided_at = ?, void_reason = ? WHERE id = ?").run(
     new Date().toISOString(),
     reason.trim(),

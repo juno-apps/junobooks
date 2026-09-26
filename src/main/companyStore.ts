@@ -6,6 +6,8 @@ import { localDateString } from '../shared/dates'
 import type { ChartView } from '../shared/chart'
 import type { EntityTypeId } from '../shared/entities'
 import { isTemplateId, type TemplateId } from '../shared/templates'
+import type { AccountInput } from '../shared/accounts'
+import { addAccount, deleteAccount, setAccountActive, updateAccount, type ChartContext } from './accounts'
 import { accountCount, applyChart, getChart } from './chart'
 import { getSchemaVersion, LATEST_SCHEMA_VERSION, runMigrations } from './db/migrations'
 
@@ -184,6 +186,31 @@ export class CompanyBooks {
     if (accountCount(this.db) > 0) throw new Error('This company already has a chart of accounts.')
     applyChart(this.db, template, this.profile(now).entityType, now)
     return this.profile(now)
+  }
+
+  private chartContext(now: Date): ChartContext {
+    const p = this.profile(now)
+    return { template: p.template, entity: p.entityType }
+  }
+
+  addAccount(input: AccountInput, now: Date = new Date()): ChartView {
+    addAccount(this.db, input, this.chartContext(now), now)
+    return this.chart(now)
+  }
+
+  updateAccount(id: number, input: AccountInput, now: Date = new Date()): ChartView {
+    updateAccount(this.db, id, input, this.chartContext(now), now)
+    return this.chart(now)
+  }
+
+  setAccountActive(id: number, active: boolean, now: Date = new Date()): ChartView {
+    setAccountActive(this.db, id, active, now)
+    return this.chart(now)
+  }
+
+  deleteAccount(id: number, now: Date = new Date()): ChartView {
+    deleteAccount(this.db, id)
+    return this.chart(now)
   }
 
   close(): void {

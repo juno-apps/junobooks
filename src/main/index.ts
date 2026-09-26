@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { autoUpdater } from 'electron-updater'
 import { join } from 'path'
+import type { AccountInput } from '../shared/accounts'
 import type { CompanyProfile, NewCompanyInput, Result } from '../shared/company'
 import { readAppSettings, writeAppSettings } from './appSettings'
 import { createCompany, listCompanies, openCompany, type CompanyBooks } from './companyStore'
@@ -23,6 +24,11 @@ function switchTo(folder: string): CompanyProfile {
 function closeCurrent(): void {
   current?.close()
   current = null
+}
+
+function requireCompany(): CompanyBooks {
+  if (!current) throw new Error('No company is open.')
+  return current
 }
 
 /** Turns thrown errors into a plain message the screen can show. */
@@ -80,6 +86,14 @@ app.whenReady().then(() => {
       return current.setupChart(template)
     })
   )
+  ipcMain.handle('accounts:add', (_e, input: AccountInput) => wrap(() => requireCompany().addAccount(input)))
+  ipcMain.handle('accounts:update', (_e, id: number, input: AccountInput) =>
+    wrap(() => requireCompany().updateAccount(id, input))
+  )
+  ipcMain.handle('accounts:setActive', (_e, id: number, active: boolean) =>
+    wrap(() => requireCompany().setAccountActive(id, active))
+  )
+  ipcMain.handle('accounts:delete', (_e, id: number) => wrap(() => requireCompany().deleteAccount(id)))
   ipcMain.handle('companies:create', (_e, input: NewCompanyInput) =>
     wrap(() => switchTo(createCompany(getCompaniesDir(), input)))
   )

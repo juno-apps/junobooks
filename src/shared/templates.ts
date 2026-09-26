@@ -67,7 +67,7 @@ function acct(
   }
 }
 
-const NOTE = {
+export const NOTE = {
   shipping:
     'Shipping charged to customers is recorded as sales (gross receipts). Confirm this is how you want it reported.',
   marketplaceFees:

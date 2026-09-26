@@ -65,3 +65,10 @@ Pointer log only — a few lines per round. Details live in git history.
 - Files: `src/shared/{taxLines,templates,chart}.ts`, `src/main/chart.ts`, migrations v4, `companyStore.ts`, IPC/preload, `ChartOfAccounts.tsx`, `TemplatePicker.tsx`, `CompanyHome.tsx`, `NewCompanyForm.tsx`, styles, `chart.test.ts`, new `docs/topics/chart-of-accounts.md`.
 - 119 tests pass; typecheck and build clean.
 - Status: **confirmed** by owner.
+
+## Round 12 — Unit 1e: account editing
+- Owner decisions: deactivating an account with a non-zero balance is **blocked**; sub-accounts parked in backlog.
+- Files: `src/shared/accounts.ts`, `src/main/accounts.ts`, migrations v5 (inactive-account triggers), `ledger.ts` (void refuses inactive accounts), `chart.ts` (usage flags, description), `companyStore.ts`, IPC/preload, `AccountForm.tsx`, `ChartOfAccounts.tsx`, styles, `accounts.test.ts`, topic doc.
+- Found for 1f: `applyChart` matches by number, so re-applying would bring back renumbered/deleted template accounts.
+- 139 tests pass; typecheck and build clean.
+- Status: **confirmed** by owner (the "1500" check in my test list clashed with Equipment; the duplicate-number block worked as intended).

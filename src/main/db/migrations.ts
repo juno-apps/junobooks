@@ -295,6 +295,43 @@ export const MIGRATIONS: Migration[] = [
       )}
       ${auditTriggersV2('company_profile', ['id', 'name', 'books_start_date', 'created_at', 'template'], false)}
     `
+  },
+  {
+    version: 5,
+    description: 'Inactive accounts: no new postings, no voids touching them, deactivate only at zero balance',
+    sql: `
+      CREATE TRIGGER jl_insert_account_active BEFORE INSERT ON journal_lines
+      WHEN (SELECT is_active FROM accounts WHERE id = NEW.account_id) = 0
+      BEGIN
+        SELECT RAISE(ABORT, 'That account is inactive, so it can''t be used in entries.');
+      END;
+
+      CREATE TRIGGER jl_update_account_active BEFORE UPDATE OF account_id ON journal_lines
+      WHEN NEW.account_id <> OLD.account_id
+        AND (SELECT is_active FROM accounts WHERE id = NEW.account_id) = 0
+      BEGIN
+        SELECT RAISE(ABORT, 'That account is inactive, so it can''t be used in entries.');
+      END;
+
+      -- Posting or voiding changes balances, so every account in the entry must be active.
+      CREATE TRIGGER je_status_accounts_active BEFORE UPDATE OF status ON journal_entries
+      WHEN NEW.status <> OLD.status AND EXISTS (
+        SELECT 1 FROM journal_lines l JOIN accounts a ON a.id = l.account_id
+        WHERE l.entry_id = NEW.id AND a.is_active = 0)
+      BEGIN
+        SELECT RAISE(ABORT, 'An account in this entry is inactive. Reactivate it first.');
+      END;
+
+      -- Deactivating must never hide money.
+      CREATE TRIGGER accounts_deactivate_zero_balance BEFORE UPDATE OF is_active ON accounts
+      WHEN NEW.is_active = 0 AND OLD.is_active = 1 AND (
+        SELECT COALESCE(SUM(l.amount_cents), 0)
+        FROM journal_lines l JOIN journal_entries e ON e.id = l.entry_id
+        WHERE l.account_id = OLD.id AND e.status = 'posted') <> 0
+      BEGIN
+        SELECT RAISE(ABORT, 'This account still has a balance, so it can''t be deactivated.');
+      END;
+    `
   }
 ]
 

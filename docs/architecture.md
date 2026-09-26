@@ -21,11 +21,13 @@ JunoBooks-code/
       companyStore.ts  Create / list / open companies, backups (no Electron imports, so testable)
       ledger.ts        Ledger engine: post / void / reverse entries, period lock, balances
       chart.ts         Apply a template's accounts; build the chart-of-accounts view
+      accounts.ts      Add / edit / deactivate / delete accounts
       db/migrations.ts Numbered schema migrations
     preload/           contextBridge API exposed to the renderer as window.juno
-    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, TemplatePicker)
+    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker)
     shared/            Code used by both main and renderer: entity types, US states, dates, money, company validation,
-                       templates.ts (starting charts), taxLines.ts (tax categories + per-year line tables), chart.ts (view types)
+                       templates.ts (starting charts), taxLines.ts (tax categories + per-year line tables), chart.ts (view types),
+                       accounts.ts (account input rules: kinds, debit/credit side, validation, number-range warning)
   scripts/run-tests.cjs
   test-data/           Dev data root (git-ignored, never real books)
     app-settings.json
@@ -74,6 +76,11 @@ Opening an older file backs it up first (`backups/books-<time>-before-upgrade-vX
 - `company_profile` adds template (NULL = no chart yet).
 - Audit triggers for both tables re-created to log the new columns.
 
+**v5** (triggers only)
+- No journal line may be added to (or moved onto) an inactive account.
+- Posting or voiding an entry is refused if any of its accounts is inactive.
+- An account can't be deactivated while its posted balance (all dates) is non-zero.
+
 Files open in WAL mode with foreign keys on. Dates are `YYYY-MM-DD` text.
 
 **Backups:** on close (and before any migration) the WAL is checkpointed and the file copied to `backups/books-<ISO time>[-label].sqlite`. Only the newest 30 are kept (sorted by name, since names start with the timestamp).
@@ -86,11 +93,11 @@ Sole proprietor, Single-member LLC → Schedule C · Multi-member LLC, Partnersh
 - **Money** is signed integer cents: positive = debit, negative = credit. `shared/money.ts` converts typed amounts ↔ cents with string handling only (`parseMoney`, `formatCents`). Max $10 trillion per line.
 - **Posting** (`postEntry`): valid date, ≥ 2 lines, whole non-zero cents, active accounts, debits = credits, date not locked. Draft → lines → posted in one transaction. A failure leaves nothing behind.
 - **Posted = locked:** a posted entry and its lines can't be edited or deleted. Only draft → posted → void is allowed.
-- **Void** (`voidEntry`): needs a reason. The entry stays on record but drops out of balances. Voided entries never change.
+- **Void** (`voidEntry`): needs a reason, and every account in the entry must be active. The entry stays on record but drops out of balances. Voided entries never change.
 - **Reverse** (`reverseEntry`): posts an equal-and-opposite entry (source `reversal`) linked by `reverses_entry_id`, dated on or after the original. It works even when the original's period is locked. An entry can have only one live reversal, and a reversed entry can't be voided (void the reversal first).
 - **Period lock** (`setLockedThrough`): one "books closed through" date per company. Nothing dated on or before it can be posted or voided. Moving it later needs no reason. Moving it earlier or clearing it (reopening) needs a reason, and every change is kept in `period_lock_history` and the audit log.
 - **Balances** (`accountBalances`): debits minus credits per account, posted entries only, optionally as of a date. Which side reads as "positive" on screen (debit- vs credit-normal accounts) is decided with the chart of accounts in 1d.
-- **Accounts** used by posted entries can't change type or be deleted (renaming is fine). Inactive accounts can't receive new postings.
+- **Accounts** used by posted entries can't change type or debit/credit side; accounts used in any entry can't be deleted (renaming is fine). Inactive accounts can't receive postings or voids, and only zero-balance accounts can be deactivated. Details in `docs/topics/chart-of-accounts.md`.
 - **Audit log** can't be edited or deleted. It rolls back with any failed change.
 
 ## Verification practice
@@ -109,11 +116,11 @@ Sole proprietor, Single-member LLC → Schedule C · Multi-member LLC, Partnersh
 See `JunoBooks-PLAN.md` §10 (inventory method, S-corp election timing, which bank CSVs, which Etsy exports). Home state resolved: California, switchable per company.
 
 ## Topic docs index
-- `docs/topics/chart-of-accounts.md`: templates, numbering, entity-specific accounts, tax-line mapping, accountant notes, chart screen.
+- `docs/topics/chart-of-accounts.md`: templates, numbering, entity-specific accounts, tax-line mapping, accountant notes, chart screen, editing accounts.
 
 ## Latest handoff
 None yet. Created only when the owner types "create new handoff."
 
 ## Status
 - **Phase 0 complete:** installs from GitHub, opens, updates itself.
-- **Phase 1:** 1a confirmed (create, list, switch companies). 1b confirmed (schema v2, integrity triggers, audit log). 1c confirmed (ledger engine, period lock, schema v3). 1d confirmed (templates, tax lines, chart screen, schema v4).
+- **Phase 1:** 1a confirmed (create, list, switch companies). 1b confirmed (schema v2, integrity triggers, audit log). 1c confirmed (ledger engine, period lock, schema v3). 1d confirmed (templates, tax lines, chart screen, schema v4). 1e confirmed (account editing, schema v5).

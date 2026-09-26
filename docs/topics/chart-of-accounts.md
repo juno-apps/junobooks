@@ -23,7 +23,7 @@ Numbering: 1xxx assets · 2xxx liabilities · 3xxx equity · 4xxx income · 5xxx
 
 Payroll set: Payroll liabilities, Officer compensation, Wages, Payroll taxes.
 
-`applyChart` inserts only account numbers that don't exist yet (the owner's own accounts always win) and records the template on `company_profile`. Re-running it for a new entity type (unit 1f) adds just the missing accounts.
+`applyChart` inserts only account numbers that don't exist yet (the owner's own accounts always win) and records the template on `company_profile`. Re-running it for a new entity type (unit 1f) adds just the missing accounts. It matches by number only, so a template account the owner renumbered or deleted would come back; 1f must handle that.
 
 ## Normal balance
 Stored per account. Assets/expenses are debit-normal; liabilities/equity/income are credit-normal. Contra accounts flip it: Accumulated depreciation (credit), Refunds and returns (debit), Owner draws / distributions / dividends (debit). The chart screen shows balances on the normal side (positive = normal; negative in red = unusual).
@@ -35,5 +35,18 @@ Stored per account. Assets/expenses are debit-normal; liabilities/equity/income 
 - Entity returns use Form 1125-A for cost of goods sold; materials go to its line 2 (Purchases).
 - The chart screen shows lines for the company's **current** return (today's entity type) and says which form year the numbers come from.
 
+## Editing accounts
+Code: `src/shared/accounts.ts` (rules shared with the screen), `src/main/accounts.ts`, `src/renderer/src/AccountForm.tsx`.
+- **Screen:** "Add account" button and an "Edit" link on each row open the account form above the table. Inactive accounts are hidden unless "Show inactive" is ticked.
+- **Fields:** number (digits only, unique), name (unique ignoring case, max 100), type, kind, tax category (only categories of that type, each showing its line on the current return), optional description.
+- **Kind** (stored as subtype): asset: regular / bank / inventory / fixed asset / contra; liability: regular / credit card / sales tax / payroll; equity: regular / draws; income: regular / contra (refunds). Expenses have no kind to pick: a `cogs_*` tax category makes it cost of goods sold, anything else a regular expense.
+- **Debit/credit side** is derived (`normalBalanceFor`): the type's natural side, flipped for contra and draw kinds. A test checks every template account follows this rule.
+- **Special accounts** (`SYSTEM_SUBTYPES`: opening balance equity) can't be created by the owner, can't change type, and can't be deleted.
+- **Number range:** outside 1xxx/2xxx/3xxx/4xxx/5xxx (COGS)/6xxx for its type → a warning under the field. Saving is still allowed.
+- **Always allowed:** rename, renumber, change tax category, change description, change kind within the same debit/credit side.
+- **Locked once the account is in a posted or voided entry:** type, and any kind change that flips the debit/credit side (also a database trigger for type).
+- **Deactivate:** refused while the posted balance, all dates, is non-zero; the message shows the amount. Enforced by a v5 trigger too. Reactivate any time.
+- **Delete:** only if the account was never used in any entry, even a draft. Otherwise the app says to deactivate. Deletes are in the audit log.
+
 ## Accountant notes
-`accountant_note` on an account marks a judgment call. It shows as "⚑ Check with your accountant: …" under the account name, and will feed the accountant package's "Notes for accountant" page. Current notes: shipping income as gross receipts · marketplace fees → Commissions and fees · meals 50% · small tools under the de minimis safe harbor · inventory method pending · materials line on Sch C vs 1125-A · packaging as cost of goods sold · postage/shipping expense line · everything mapped to "Other expenses" (a test enforces this) · interest income reported separately · officer reasonable compensation · LLC-as-S-corp "Members' capital" presentation · opening balance equity should end at zero · one set of partner accounts · C-corp income tax not deductible.
+`accountant_note` on an account marks a judgment call. It shows as "⚑ Check with your accountant: …" under the account name, and will feed the accountant package's "Notes for accountant" page. When the owner sets a tax category: the template's own choice for that account number gets the template's note; a new account in "Other expenses" gets the usual Other-expenses note; any other change to an existing account's category gets "The tax category was changed from X to Y. Confirm this is right." An unchanged category keeps its note. Current notes: shipping income as gross receipts · marketplace fees → Commissions and fees · meals 50% · small tools under the de minimis safe harbor · inventory method pending · materials line on Sch C vs 1125-A · packaging as cost of goods sold · postage/shipping expense line · everything mapped to "Other expenses" (a test enforces this) · interest income reported separately · officer reasonable compensation · LLC-as-S-corp "Members' capital" presentation · opening balance equity should end at zero · one set of partner accounts · C-corp income tax not deductible.
