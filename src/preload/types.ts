@@ -1,8 +1,27 @@
 import type { AccountInput } from '../shared/accounts'
 import type { ChartAccount, ChartView } from '../shared/chart'
-import type { CompanyProfile, CompanySummary, NewCompanyInput, Result } from '../shared/company'
+import type {
+  CompanyHistory,
+  CompanyProfile,
+  CompanySummary,
+  EntityChangeInput,
+  HistoryRow,
+  NewCompanyInput,
+  Result
+} from '../shared/company'
 
-export type { AccountInput, ChartAccount, ChartView, CompanyProfile, CompanySummary, NewCompanyInput, Result }
+export type {
+  AccountInput,
+  ChartAccount,
+  ChartView,
+  CompanyHistory,
+  CompanyProfile,
+  CompanySummary,
+  EntityChangeInput,
+  HistoryRow,
+  NewCompanyInput,
+  Result
+}
 
 export interface AppInfo {
   version: string
@@ -15,6 +34,9 @@ export interface JunoApi {
   getCurrentCompany: () => Promise<CompanyProfile | null>
   openCompany: (folder: string) => Promise<Result<CompanyProfile>>
   createCompany: (input: NewCompanyInput) => Promise<Result<CompanyProfile>>
+  getHistory: () => Promise<CompanyHistory | null>
+  changeEntityType: (input: EntityChangeInput) => Promise<Result<CompanyProfile>>
+  correctStartingEntityType: (entityType: string) => Promise<Result<CompanyProfile>>
   getChart: () => Promise<ChartView | null>
   setupChart: (template: string) => Promise<Result<CompanyProfile>>
   addAccount: (input: AccountInput) => Promise<Result<ChartView>>

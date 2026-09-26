@@ -36,6 +36,10 @@ export const TAX_FORM_LABELS: Record<TaxForm, string> = {
   '1120': 'Form 1120'
 }
 
+/** Shown wherever an entity-type change is entered or listed (judgment call for the accountant). */
+export const ENTITY_CHANGE_NOTE =
+  'Check with your accountant: changing entity type part-way through a year (for example an S-corp election on Form 2553) has tax consequences. Confirm the start date and how the year is split between the two returns.'
+
 export function isEntityTypeId(value: string): value is EntityTypeId {
   return ENTITY_TYPES.some((e) => e.id === value)
 }

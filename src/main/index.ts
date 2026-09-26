@@ -2,7 +2,7 @@ import { app, BrowserWindow, ipcMain } from 'electron'
 import { autoUpdater } from 'electron-updater'
 import { join } from 'path'
 import type { AccountInput } from '../shared/accounts'
-import type { CompanyProfile, NewCompanyInput, Result } from '../shared/company'
+import type { CompanyProfile, EntityChangeInput, NewCompanyInput, Result } from '../shared/company'
 import { readAppSettings, writeAppSettings } from './appSettings'
 import { createCompany, listCompanies, openCompany, type CompanyBooks } from './companyStore'
 import { getCompaniesDir, getDataRoot } from './paths'
@@ -79,7 +79,14 @@ app.whenReady().then(() => {
   ipcMain.handle('companies:list', () => listCompanies(getCompaniesDir()))
   ipcMain.handle('companies:current', () => current?.profile() ?? null)
   ipcMain.handle('companies:open', (_e, folder: string) => wrap(() => switchTo(folder)))
-  ipcMain.handle('chart:get', () => current?.chart() ?? null)
+  ipcMain.handle('company:history', () => current?.history() ?? null)
+  ipcMain.handle('company:changeEntityType', (_e, input: EntityChangeInput) =>
+    wrap(() => requireCompany().changeEntityType(input))
+  )
+  ipcMain.handle('company:correctStartingEntityType', (_e, entityType: string) =>
+    wrap(() => requireCompany().correctStartingEntityType(entityType))
+  )
+  ipcMain.handle('chart:get', () =>current?.chart() ?? null)
   ipcMain.handle('chart:setup', (_e, template: string) =>
     wrap(() => {
       if (!current) throw new Error('No company is open.')

@@ -1,7 +1,14 @@
 import Database from 'better-sqlite3'
 import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, unlinkSync } from 'fs'
 import { basename, join } from 'path'
-import { validateNewCompany, type CompanyProfile, type CompanySummary, type NewCompanyInput } from '../shared/company'
+import {
+  validateNewCompany,
+  type CompanyHistory,
+  type CompanyProfile,
+  type CompanySummary,
+  type EntityChangeInput,
+  type NewCompanyInput
+} from '../shared/company'
 import { localDateString } from '../shared/dates'
 import type { ChartView } from '../shared/chart'
 import type { EntityTypeId } from '../shared/entities'
@@ -9,6 +16,7 @@ import { isTemplateId, type TemplateId } from '../shared/templates'
 import type { AccountInput } from '../shared/accounts'
 import { addAccount, deleteAccount, setAccountActive, updateAccount, type ChartContext } from './accounts'
 import { accountCount, applyChart, getChart } from './chart'
+import { addEntityTypeChange, correctStartingEntityType, getHistory } from './companyHistory'
 import { getSchemaVersion, LATEST_SCHEMA_VERSION, runMigrations } from './db/migrations'
 
 /**
@@ -185,6 +193,20 @@ export class CompanyBooks {
     if (!isTemplateId(template)) throw new Error('Choose a starting chart of accounts.')
     if (accountCount(this.db) > 0) throw new Error('This company already has a chart of accounts.')
     applyChart(this.db, template, this.profile(now).entityType, now)
+    return this.profile(now)
+  }
+
+  history(): CompanyHistory {
+    return getHistory(this.db)
+  }
+
+  changeEntityType(input: EntityChangeInput, now: Date = new Date()): CompanyProfile {
+    addEntityTypeChange(this.db, input, now)
+    return this.profile(now)
+  }
+
+  correctStartingEntityType(entityType: string, now: Date = new Date()): CompanyProfile {
+    correctStartingEntityType(this.db, entityType)
     return this.profile(now)
   }
 

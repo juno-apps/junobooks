@@ -4,6 +4,7 @@ import { getEntityType, TAX_FORM_LABELS } from '../../shared/entities'
 import { getStateName } from '../../shared/states'
 import { TEMPLATES } from '../../shared/templates'
 import ChartOfAccounts from './ChartOfAccounts'
+import EntityTypeChange from './EntityTypeChange'
 import TemplatePicker from './TemplatePicker'
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
 }
 
 function CompanyHome({ company, onChanged }: Props): JSX.Element {
+  const [changingEntity, setChangingEntity] = useState(false)
   const entity = getEntityType(company.entityType)
   const template = TEMPLATES.find((t) => t.id === company.template)
   return (
@@ -20,7 +22,12 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
         <h1>{company.name}</h1>
         <dl className="details">
           <dt>Entity type</dt>
-          <dd>{entity.label}</dd>
+          <dd>
+            {entity.label}{' '}
+            <button type="button" className="link-button" onClick={() => setChangingEntity((v) => !v)}>
+              Change
+            </button>
+          </dd>
           <dt>Federal tax return</dt>
           <dd>{TAX_FORM_LABELS[entity.taxForm]}</dd>
           <dt>Home state</dt>
@@ -37,7 +44,14 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
           <dd className="path">{company.dir}</dd>
         </dl>
       </section>
-      {company.template ? <ChartOfAccounts key={company.folder} /> : <SetupChart onDone={onChanged} />}
+      {changingEntity && (
+        <EntityTypeChange
+          currentEntityType={company.entityType}
+          onChanged={onChanged}
+          onClose={() => setChangingEntity(false)}
+        />
+      )}
+      {company.template ?<ChartOfAccounts key={company.folder} /> : <SetupChart onDone={onChanged} />}
     </>
   )
 }

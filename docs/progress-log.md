@@ -72,3 +72,9 @@ Pointer log only — a few lines per round. Details live in git history.
 - Found for 1f: `applyChart` matches by number, so re-applying would bring back renumbered/deleted template accounts.
 - 139 tests pass; typecheck and build clean.
 - Status: **confirmed** by owner (the "1500" check in my test list clashed with Equipment; the duplicate-number block worked as intended).
+
+## Round 13 — Unit 1f, step 1: entity-type change
+- Owner decisions: start date can't be before the books start or inside a locked period; added "Correct starting type" (refused if books are closed through the start date).
+- Files: `src/main/companyHistory.ts`, `src/shared/company.ts` (`validateHistoryChange`), `entities.ts` (accountant note), `companyStore.ts`, IPC/preload, `EntityTypeChange.tsx`, `CompanyHome.tsx`, `companyHistory.test.ts`. No schema change.
+- 156 tests pass; typecheck clean.
+- Status: **confirmed** by owner. Next: step 2 (add accounts new to the entity type), step 3 (home state change).
