@@ -1,6 +1,7 @@
 import { isValidDate } from './dates'
 import { isEntityTypeId, type EntityTypeId } from './entities'
 import { isStateCode } from './states'
+import { isTemplateId, type TemplateId } from './templates'
 
 export interface CompanySummary {
   /** Folder name under Companies\ — the company's stable identifier on this PC. */
@@ -13,6 +14,8 @@ export interface CompanySummary {
 
 export interface CompanyProfile extends CompanySummary {
   booksStartDate: string
+  /** Null until a chart of accounts is set up. */
+  template: TemplateId | null
   dir: string
   schemaVersion: number
 }
@@ -22,6 +25,7 @@ export interface NewCompanyInput {
   entityType: string
   homeState: string
   booksStartDate: string
+  template: string
 }
 
 export type Result<T> = { ok: true; value: T } | { ok: false; error: string }
@@ -37,5 +41,6 @@ export function validateNewCompany(input: NewCompanyInput): string | null {
   if (!isEntityTypeId(input.entityType)) return 'Choose an entity type.'
   if (!isStateCode(input.homeState)) return 'Choose a home state.'
   if (!isValidDate(input.booksStartDate)) return 'Enter a valid books start date.'
+  if (!isTemplateId(input.template)) return 'Choose a starting chart of accounts.'
   return null
 }

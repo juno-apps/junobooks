@@ -1,6 +1,7 @@
+import type { ChartAccount, ChartView } from '../shared/chart'
 import type { CompanyProfile, CompanySummary, NewCompanyInput, Result } from '../shared/company'
 
-export type { CompanyProfile, CompanySummary, NewCompanyInput, Result }
+export type { ChartAccount, ChartView, CompanyProfile, CompanySummary, NewCompanyInput, Result }
 
 export interface AppInfo {
   version: string
@@ -13,4 +14,6 @@ export interface JunoApi {
   getCurrentCompany: () => Promise<CompanyProfile | null>
   openCompany: (folder: string) => Promise<Result<CompanyProfile>>
   createCompany: (input: NewCompanyInput) => Promise<Result<CompanyProfile>>
+  getChart: () => Promise<ChartView | null>
+  setupChart: (template: string) => Promise<Result<CompanyProfile>>
 }

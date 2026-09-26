@@ -3,7 +3,10 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, unlinkSync } 
 import { basename, join } from 'path'
 import { validateNewCompany, type CompanyProfile, type CompanySummary, type NewCompanyInput } from '../shared/company'
 import { localDateString } from '../shared/dates'
+import type { ChartView } from '../shared/chart'
 import type { EntityTypeId } from '../shared/entities'
+import { isTemplateId, type TemplateId } from '../shared/templates'
+import { accountCount, applyChart, getChart } from './chart'
 import { getSchemaVersion, LATEST_SCHEMA_VERSION, runMigrations } from './db/migrations'
 
 /**
@@ -67,6 +70,7 @@ export function createCompany(companiesDir: string, input: NewCompanyInput, now:
           input.booksStartDate,
           createdAt
         )
+        applyChart(db, input.template as TemplateId, input.entityType as EntityTypeId, now)
       })()
       db.pragma('wal_checkpoint(TRUNCATE)')
     } finally {
@@ -94,8 +98,9 @@ function valueAsOf(db: Database.Database, table: string, column: string, date: s
 }
 
 function readProfile(db: Database.Database, dir: string, folder: string, today: string): CompanyProfile {
-  const p = db.prepare('SELECT name, books_start_date FROM company_profile WHERE id = 1').get() as
-    | { name: string; books_start_date: string }
+  // SELECT * so older (not yet upgraded) files can still be listed.
+  const p = db.prepare('SELECT * FROM company_profile WHERE id = 1').get() as
+    | { name: string; books_start_date: string; template?: TemplateId | null }
     | undefined
   if (!p) throw new Error(`"${folder}" is missing its company profile.`)
   return {
@@ -103,6 +108,7 @@ function readProfile(db: Database.Database, dir: string, folder: string, today: 
     dir,
     name: p.name,
     booksStartDate: p.books_start_date,
+    template: p.template ?? null,
     entityType: valueAsOf(db, 'entity_type_history', 'entity_type', today) as EntityTypeId,
     homeState: valueAsOf(db, 'home_state_history', 'state_code', today),
     schemaVersion: getSchemaVersion(db)
@@ -166,6 +172,18 @@ export class CompanyBooks {
 
   profile(now: Date = new Date()): CompanyProfile {
     return readProfile(this.db, this.dir, this.folder, localDateString(now))
+  }
+
+  chart(now: Date = new Date()): ChartView {
+    return getChart(this.db, this.profile(now).entityType, localDateString(now))
+  }
+
+  /** One-time setup for a company created before templates existed. */
+  setupChart(template: string, now: Date = new Date()): CompanyProfile {
+    if (!isTemplateId(template)) throw new Error('Choose a starting chart of accounts.')
+    if (accountCount(this.db) > 0) throw new Error('This company already has a chart of accounts.')
+    applyChart(this.db, template, this.profile(now).entityType, now)
+    return this.profile(now)
   }
 
   close(): void {

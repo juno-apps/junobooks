@@ -6,7 +6,9 @@ const api: JunoApi = {
   listCompanies: () => ipcRenderer.invoke('companies:list'),
   getCurrentCompany: () => ipcRenderer.invoke('companies:current'),
   openCompany: (folder) => ipcRenderer.invoke('companies:open', folder),
-  createCompany: (input) => ipcRenderer.invoke('companies:create', input)
+  createCompany: (input) => ipcRenderer.invoke('companies:create', input),
+  getChart: () => ipcRenderer.invoke('chart:get'),
+  setupChart: (template) => ipcRenderer.invoke('chart:setup', template)
 }
 
 contextBridge.exposeInMainWorld('juno', api)

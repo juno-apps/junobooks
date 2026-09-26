@@ -16,7 +16,7 @@ export interface Migration {
 
 /** Audit triggers as first written for v2. Never edit it (that would change
  * shipped migrations). Later migrations may reuse it as is, or add a new helper. */
-function auditTriggersV2(table: string, columns: string[]): string {
+function auditTriggersV2(table: string, columns: string[], baseline = true): string {
   const json = (row: string): string => `json_object(${columns.map((c) => `'${c}', ${row}.${c}`).join(', ')})`
   const now = `strftime('%Y-%m-%dT%H:%M:%fZ', 'now')`
   return `
@@ -32,8 +32,12 @@ function auditTriggersV2(table: string, columns: string[]): string {
       INSERT INTO audit_log (at, action, table_name, record_id, old_values)
       VALUES (${now}, 'delete', '${table}', OLD.id, ${json('OLD')});
     END;
-    INSERT INTO audit_log (at, action, table_name, record_id, new_values)
-      SELECT ${now}, 'baseline', '${table}', r.id, ${json('r')} FROM ${table} AS r;
+    ${
+      baseline
+        ? `INSERT INTO audit_log (at, action, table_name, record_id, new_values)
+      SELECT ${now}, 'baseline', '${table}', r.id, ${json('r')} FROM ${table} AS r;`
+        : ''
+    }
   `
 }
 
@@ -257,6 +261,39 @@ export const MIGRATIONS: Migration[] = [
         WHERE reverses_entry_id IS NOT NULL AND status = 'posted';
 
       ${auditTriggersV2('period_lock_history', ['id', 'locked_through', 'reason', 'created_at'])}
+    `
+  },
+  {
+    version: 4,
+    description: 'Account details for templates and tax-line mapping; company template',
+    sql: `
+      ALTER TABLE accounts ADD COLUMN subtype TEXT NOT NULL DEFAULT '';
+      ALTER TABLE accounts ADD COLUMN normal_balance TEXT NOT NULL DEFAULT 'debit'
+        CHECK (normal_balance IN ('debit', 'credit'));
+      ALTER TABLE accounts ADD COLUMN tax_category TEXT;
+      ALTER TABLE accounts ADD COLUMN accountant_note TEXT NOT NULL DEFAULT '';
+      UPDATE accounts SET normal_balance = 'credit' WHERE type IN ('liability', 'equity', 'income');
+
+      -- NULL until a chart of accounts has been set up from a template.
+      ALTER TABLE company_profile ADD COLUMN template TEXT
+        CHECK (template IS NULL OR template IN ('general', 'product', 'retail', 'service'));
+
+      -- Re-create these tables' audit triggers so the new columns are logged too.
+      DROP TRIGGER audit_accounts_insert;
+      DROP TRIGGER audit_accounts_update;
+      DROP TRIGGER audit_accounts_delete;
+      DROP TRIGGER audit_company_profile_insert;
+      DROP TRIGGER audit_company_profile_update;
+      DROP TRIGGER audit_company_profile_delete;
+      ${auditTriggersV2(
+        'accounts',
+        [
+          'id', 'number', 'name', 'type', 'parent_id', 'description', 'is_active', 'created_at', 'updated_at',
+          'subtype', 'normal_balance', 'tax_category', 'accountant_note'
+        ],
+        false
+      )}
+      ${auditTriggersV2('company_profile', ['id', 'name', 'books_start_date', 'created_at', 'template'], false)}
     `
   }
 ]

@@ -50,7 +50,7 @@ function App(): JSX.Element {
       />
     )
   } else {
-    body = <CompanyHome company={current} />
+    body = <CompanyHome company={current} onChanged={setCurrent} />
   }
 
   return (

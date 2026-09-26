@@ -73,6 +73,13 @@ app.whenReady().then(() => {
   ipcMain.handle('companies:list', () => listCompanies(getCompaniesDir()))
   ipcMain.handle('companies:current', () => current?.profile() ?? null)
   ipcMain.handle('companies:open', (_e, folder: string) => wrap(() => switchTo(folder)))
+  ipcMain.handle('chart:get', () => current?.chart() ?? null)
+  ipcMain.handle('chart:setup', (_e, template: string) =>
+    wrap(() => {
+      if (!current) throw new Error('No company is open.')
+      return current.setupChart(template)
+    })
+  )
   ipcMain.handle('companies:create', (_e, input: NewCompanyInput) =>
     wrap(() => switchTo(createCompany(getCompaniesDir(), input)))
   )

@@ -1,25 +1,76 @@
+import { useState, type FormEvent } from 'react'
 import type { CompanyProfile } from '../../preload/types'
 import { getEntityType, TAX_FORM_LABELS } from '../../shared/entities'
 import { getStateName } from '../../shared/states'
+import { TEMPLATES } from '../../shared/templates'
+import ChartOfAccounts from './ChartOfAccounts'
+import TemplatePicker from './TemplatePicker'
 
-function CompanyHome({ company }: { company: CompanyProfile }): JSX.Element {
+interface Props {
+  company: CompanyProfile
+  onChanged: (profile: CompanyProfile) => void
+}
+
+function CompanyHome({ company, onChanged }: Props): JSX.Element {
   const entity = getEntityType(company.entityType)
+  const template = TEMPLATES.find((t) => t.id === company.template)
+  return (
+    <>
+      <section className="panel">
+        <h1>{company.name}</h1>
+        <dl className="details">
+          <dt>Entity type</dt>
+          <dd>{entity.label}</dd>
+          <dt>Federal tax return</dt>
+          <dd>{TAX_FORM_LABELS[entity.taxForm]}</dd>
+          <dt>Home state</dt>
+          <dd>{getStateName(company.homeState)}</dd>
+          <dt>Books start</dt>
+          <dd>{company.booksStartDate}</dd>
+          {template && (
+            <>
+              <dt>Chart of accounts</dt>
+              <dd>{template.label} template</dd>
+            </>
+          )}
+          <dt>Company folder</dt>
+          <dd className="path">{company.dir}</dd>
+        </dl>
+      </section>
+      {company.template ? <ChartOfAccounts key={company.folder} /> : <SetupChart onDone={onChanged} />}
+    </>
+  )
+}
+
+/** Shown once, for companies created before charts of accounts existed. */
+function SetupChart({ onDone }: { onDone: (profile: CompanyProfile) => void }): JSX.Element {
+  const [template, setTemplate] = useState('')
+  const [error, setError] = useState<string | null>(null)
+
+  async function submit(e: FormEvent): Promise<void> {
+    e.preventDefault()
+    if (!template) {
+      setError('Choose a starting chart of accounts.')
+      return
+    }
+    const result = await window.juno.setupChart(template)
+    if (result.ok) onDone(result.value)
+    else setError(result.error)
+  }
+
   return (
     <section className="panel">
-      <h1>{company.name}</h1>
-      <dl className="details">
-        <dt>Entity type</dt>
-        <dd>{entity.label}</dd>
-        <dt>Federal tax return</dt>
-        <dd>{TAX_FORM_LABELS[entity.taxForm]}</dd>
-        <dt>Home state</dt>
-        <dd>{getStateName(company.homeState)}</dd>
-        <dt>Books start</dt>
-        <dd>{company.booksStartDate}</dd>
-        <dt>Company folder</dt>
-        <dd className="path">{company.dir}</dd>
-      </dl>
-      <p className="muted">The chart of accounts appears here in unit 1d.</p>
+      <h2>Set up the chart of accounts</h2>
+      <p>This company doesn&rsquo;t have a chart of accounts yet.</p>
+      <form className="form" onSubmit={submit}>
+        <TemplatePicker value={template} onChange={setTemplate} />
+        {error && <p className="error">{error}</p>}
+        <div className="form-actions">
+          <button type="submit" className="primary">
+            Set up accounts
+          </button>
+        </div>
+      </form>
     </section>
   )
 }

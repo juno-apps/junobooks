@@ -3,6 +3,7 @@ import type { CompanyProfile, NewCompanyInput } from '../../preload/types'
 import { validateNewCompany } from '../../shared/company'
 import { ENTITY_TYPES, getEntityType, isEntityTypeId, TAX_FORM_LABELS } from '../../shared/entities'
 import { DEFAULT_STATE, US_STATES } from '../../shared/states'
+import TemplatePicker from './TemplatePicker'
 
 interface Props {
   isFirst: boolean
@@ -15,7 +16,8 @@ function NewCompanyForm({ isFirst, onCreated, onCancel }: Props): JSX.Element {
     name: '',
     entityType: '',
     homeState: DEFAULT_STATE,
-    booksStartDate: `${new Date().getFullYear()}-01-01`
+    booksStartDate: `${new Date().getFullYear()}-01-01`,
+    template: ''
   })
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -85,6 +87,8 @@ function NewCompanyForm({ isFirst, onCreated, onCancel }: Props): JSX.Element {
           <input type="date" value={input.booksStartDate} onChange={(e) => set('booksStartDate', e.target.value)} />
           <span className="hint">The first day these books cover, usually January 1.</span>
         </label>
+
+        <TemplatePicker value={input.template} onChange={(t) => set('template', t)} />
 
         {error && <p className="error">{error}</p>}
 

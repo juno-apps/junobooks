@@ -175,3 +175,66 @@ button:disabled {
 .muted {
   color: #888;
 }
+
+.chart {
+  margin-top: 2rem;
+  max-width: 1000px;
+}
+
+.chart-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.chart-table th,
+.chart-table td {
+  padding: 0.35rem 0.6rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid #eee;
+}
+
+.chart-table thead th {
+  border-bottom: 2px solid #ccc;
+  color: #555;
+}
+
+.chart-table .group-row th {
+  padding-top: 1rem;
+  background: #f7f7f7;
+  font-size: 0.95rem;
+}
+
+.chart-table .num {
+  width: 3.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-table .amount {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-table .amount.unusual {
+  color: #a12622;
+}
+
+.chart-table .tax-line {
+  color: #555;
+  font-size: 0.85rem;
+}
+
+.chart-table tr.inactive td {
+  color: #999;
+}
+
+.accountant-note {
+  margin-top: 0.2rem;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.8rem;
+  color: #7a4b00;
+  background: #fff6e0;
+  border-left: 3px solid #e0a100;
+}

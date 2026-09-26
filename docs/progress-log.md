@@ -58,3 +58,10 @@ Pointer log only — a few lines per round. Details live in git history.
 - Not wired to any screen yet (first use: chart of accounts in 1d).
 - 78 tests pass; typecheck and build clean.
 - Status: **confirmed** by owner.
+
+## Round 11 — Unit 1d: templates, tax lines, chart of accounts
+- Remaining Phase 1 re-split: 1e account editing, 1f entity/state changes + settings, 1g docs + data-folder switch.
+- Checked every tax line against the 2025 IRS PDFs (Sch C, 1065, 1120-S, 1120, 1125-A). 2026 forms not yet published, so 2026 uses the 2025 table.
+- Files: `src/shared/{taxLines,templates,chart}.ts`, `src/main/chart.ts`, migrations v4, `companyStore.ts`, IPC/preload, `ChartOfAccounts.tsx`, `TemplatePicker.tsx`, `CompanyHome.tsx`, `NewCompanyForm.tsx`, styles, `chart.test.ts`, new `docs/topics/chart-of-accounts.md`.
+- 119 tests pass; typecheck and build clean.
+- Status: **confirmed** by owner.

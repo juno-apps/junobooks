@@ -21,7 +21,8 @@ const juno: NewCompanyInput = {
   name: 'Juno Jewelry',
   entityType: 'smllc',
   homeState: 'CA',
-  booksStartDate: '2026-01-01'
+  booksStartDate: '2026-01-01',
+  template: 'product'
 }
 
 beforeEach(() => {

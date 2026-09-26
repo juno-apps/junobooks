@@ -205,11 +205,14 @@ describe('upgrading an existing company', () => {
       name: 'New Co',
       entityType: 's_corp',
       homeState: 'CA',
-      booksStartDate: '2026-01-01'
+      booksStartDate: '2026-01-01',
+      template: 'general'
     })
     const books = openCompany(root, folder)
     expect(getSchemaVersion(books.db)).toBe(LATEST_SCHEMA_VERSION)
-    const inserts = books.db.prepare("SELECT table_name FROM audit_log WHERE action = 'insert'").all()
+    const inserts = books.db
+      .prepare("SELECT table_name FROM audit_log WHERE action = 'insert' AND table_name <> 'accounts'")
+      .all()
     expect(inserts).toHaveLength(3)
     books.close()
   })

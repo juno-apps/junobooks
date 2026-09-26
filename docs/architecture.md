@@ -20,10 +20,12 @@ JunoBooks-code/
       appSettings.ts   Per-PC prefs (app-settings.json: last opened company)
       companyStore.ts  Create / list / open companies, backups (no Electron imports, so testable)
       ledger.ts        Ledger engine: post / void / reverse entries, period lock, balances
+      chart.ts         Apply a template's accounts; build the chart-of-accounts view
       db/migrations.ts Numbered schema migrations
     preload/           contextBridge API exposed to the renderer as window.juno
-    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome)
-    shared/            Code used by both main and renderer: entity types, US states, dates, money, company validation
+    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, TemplatePicker)
+    shared/            Code used by both main and renderer: entity types, US states, dates, money, company validation,
+                       templates.ts (starting charts), taxLines.ts (tax categories + per-year line tables), chart.ts (view types)
   scripts/run-tests.cjs
   test-data/           Dev data root (git-ignored, never real books)
     app-settings.json
@@ -43,7 +45,9 @@ JunoBooks-code/
 - A company = a folder under `Companies\`. The folder name is the company name made Windows-safe (`folderNameFor`). The folder name is the company's ID on this PC. Duplicate names are rejected.
 - The company list is built by scanning folders and reading each `books.sqlite` read-only. Folders that aren't JunoBooks companies (schema version 0, e.g. the old Phase 0 `Sample Company` smoke-test file) are skipped.
 - One company is open at a time. Switching opens the new one first, then closes (and backs up) the old one. The last opened company reopens on startup.
-- New company form: name, entity type, home state (default CA), books start date (default Jan 1 this year). The initial entity type and home state take effect on the books start date.
+- New company form: name, entity type, home state (default CA), books start date (default Jan 1 this year), starting chart of accounts (template). The initial entity type and home state take effect on the books start date. The chart is created in the same transaction.
+- Companies created before templates existed show a one-time "Set up the chart of accounts" panel (refused if the company already has accounts).
+- Company home shows the profile and the chart of accounts. See `docs/topics/chart-of-accounts.md`.
 
 ## Database schema
 Schema version is SQLite's `user_version` (0 = not a JunoBooks file). Migrations live in `src/main/db/migrations.ts`, each in its own transaction. Shipped migrations are never edited — add a new one.
@@ -64,6 +68,11 @@ Opening an older file backs it up first (`backups/books-<time>-before-upgrade-vX
 **v3**
 - `period_lock_history` (append-only): locked_through (date or NULL = nothing locked), reason, created_at. The latest row is the lock in force. Audited.
 - Unique index: at most one *posted* reversal per entry.
+
+**v4**
+- `accounts` adds subtype (e.g. bank, credit_card, sales_tax, inventory, cogs, contra, owner_draw), normal_balance (debit/credit), tax_category, accountant_note.
+- `company_profile` adds template (NULL = no chart yet).
+- Audit triggers for both tables re-created to log the new columns.
 
 Files open in WAL mode with foreign keys on. Dates are `YYYY-MM-DD` text.
 
@@ -94,17 +103,17 @@ Sole proprietor, Single-member LLC → Schedule C · Multi-member LLC, Partnersh
 - **Judgment calls are flagged, not decided.** Where the app makes a tax/accounting assumption it shows a "Check with your accountant" note, and all notes collect on the accountant package's "Notes for accountant" page.
 
 ## Phase 1 plan
-1a company manager · 1b core schema + audit log · 1c ledger engine · 1d templates + chart of accounts + tax-line mapping · 1e classification/state history screens + settings · 1f docs.
+1a company manager · 1b core schema + audit log · 1c ledger engine · 1d templates + chart of accounts + tax-line mapping · 1e add/rename/deactivate accounts · 1f entity-type / home-state changes with start dates + settings · 1g docs + decide when packaged builds move to `Documents\JunoBooks`.
 
 ## Open questions
 See `JunoBooks-PLAN.md` §10 (inventory method, S-corp election timing, which bank CSVs, which Etsy exports). Home state resolved: California, switchable per company.
 
 ## Topic docs index
-None yet — created as modules land.
+- `docs/topics/chart-of-accounts.md`: templates, numbering, entity-specific accounts, tax-line mapping, accountant notes, chart screen.
 
 ## Latest handoff
 None yet. Created only when the owner types "create new handoff."
 
 ## Status
 - **Phase 0 complete:** installs from GitHub, opens, updates itself.
-- **Phase 1:** 1a confirmed (create, list, switch companies). 1b confirmed (schema v2, integrity triggers, audit log). 1c confirmed (ledger engine, period lock, schema v3).
+- **Phase 1:** 1a confirmed (create, list, switch companies). 1b confirmed (schema v2, integrity triggers, audit log). 1c confirmed (ledger engine, period lock, schema v3). 1d confirmed (templates, tax lines, chart screen, schema v4).
