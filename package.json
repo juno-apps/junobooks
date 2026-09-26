@@ -1,6 +1,6 @@
 {
   "name": "junobooks",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "JunoBooks — offline-first accounting for small businesses",
   "main": "./out/main/index.js",
   "author": "JunoBooks",
