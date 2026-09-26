@@ -44,7 +44,7 @@ JunoBooks-code/
 ```
 
 ## Companies
-- **Data root:** dev (`npm start`) uses `<project>/test-data`. Packaged builds use `<userData>/test-data` until the ledger is finished, then switch to `Documents\JunoBooks\` (configurable in Settings). Nothing touches the owner's real books.
+- **Data root:** dev (`npm start`) uses `<project>/test-data`. Packaged builds use `<userData>/test-data`. **Decision:** both stay on test folders until the Phase 2 checkpoint (manual entry) passes; right after it, packaged builds move to `Documents\JunoBooks\` with a Settings screen to choose the folder (Phase 3 imports real bank files, so real books must not start before then). Nothing touches the owner's real books until then.
 - A company = a folder under `Companies\`. The folder name is the company name made Windows-safe (`folderNameFor`). The folder name is the company's ID on this PC. Duplicate names are rejected.
 - The company list is built by scanning folders and reading each `books.sqlite` read-only. Folders that aren't JunoBooks companies (schema version 0, e.g. the old Phase 0 `Sample Company` smoke-test file) are skipped.
 - One company is open at a time. Switching opens the new one first, then closes (and backs up) the old one. The last opened company reopens on startup.
@@ -98,7 +98,7 @@ Sole proprietor, Single-member LLC → Schedule C · Multi-member LLC, Partnersh
 - **Void** (`voidEntry`): needs a reason, and every account in the entry must be active. The entry stays on record but drops out of balances. Voided entries never change.
 - **Reverse** (`reverseEntry`): posts an equal-and-opposite entry (source `reversal`) linked by `reverses_entry_id`, dated on or after the original. It works even when the original's period is locked. An entry can have only one live reversal, and a reversed entry can't be voided (void the reversal first).
 - **Period lock** (`setLockedThrough`): one "books closed through" date per company. Nothing dated on or before it can be posted or voided. Moving it later needs no reason. Moving it earlier or clearing it (reopening) needs a reason, and every change is kept in `period_lock_history` and the audit log.
-- **Balances** (`accountBalances`): debits minus credits per account, posted entries only, optionally as of a date. Which side reads as "positive" on screen (debit- vs credit-normal accounts) is decided with the chart of accounts in 1d.
+- **Balances** (`accountBalances`): debits minus credits per account, posted entries only, optionally as of a date. Each account stores its normal side, and the chart screen shows balances on that side (see `docs/topics/chart-of-accounts.md`).
 - **Accounts** used by posted entries can't change type or debit/credit side; accounts used in any entry can't be deleted (renaming is fine). Inactive accounts can't receive postings or voids, and only zero-balance accounts can be deactivated. Details in `docs/topics/chart-of-accounts.md`.
 - **Audit log** can't be edited or deleted. It rolls back with any failed change.
 
@@ -106,23 +106,21 @@ Sole proprietor, Single-member LLC → Schedule C · Multi-member LLC, Partnersh
 - Small/low-risk changes: `npm run typecheck`.
 - Ledger math, schema, imports/exports: real automated tests (`npm test`).
 
-## Agreed design rules (not yet built)
-- **Home state has effective dates** (stored since v1, changed from company home; see Companies). Sales tax rates by state and date come in Phase 8.
-- **Sales tax rates are data with effective dates, not constants.** The owner adds a new rate and the date it starts. Old transactions keep the rate that applied on their date. Built in Phase 8.
+## Agreed design rules
+- **Home state has effective dates** (built; see Companies). Sales tax rates by state and date come in Phase 8.
+- **Sales tax rates are data with effective dates, not constants** (not built yet; Phase 8). The owner adds a new rate and the date it starts. Old transactions keep the rate that applied on their date.
 - **Judgment calls are flagged, not decided.** Where the app makes a tax/accounting assumption it shows a "Check with your accountant" note, and all notes collect on the accountant package's "Notes for accountant" page.
-
-## Phase 1 plan
-1a company manager · 1b core schema + audit log · 1c ledger engine · 1d templates + chart of accounts + tax-line mapping · 1e add/rename/deactivate accounts · 1f entity-type / home-state changes with start dates (the two Change panels stand in for a separate settings screen) · 1g docs + decide when packaged builds move to `Documents\JunoBooks`.
 
 ## Open questions
 See `JunoBooks-PLAN.md` §10 (inventory method, S-corp election timing, which bank CSVs, which Etsy exports). Home state resolved: California, switchable per company.
 
 ## Topic docs index
-- `docs/topics/chart-of-accounts.md`: templates, numbering, entity-specific accounts, tax-line mapping, accountant notes, chart screen, editing accounts.
+- `docs/topics/chart-of-accounts.md`: templates, numbering, entity-specific accounts, tax-line mapping, accountant notes, chart screen, editing accounts, adding/restoring accounts after creation.
 
 ## Latest handoff
 None yet. Created only when the owner types "create new handoff."
 
 ## Status
 - **Phase 0 complete:** installs from GitHub, opens, updates itself.
-- **Phase 1:** 1a confirmed (create, list, switch companies). 1b confirmed (schema v2, integrity triggers, audit log). 1c confirmed (ledger engine, period lock, schema v3). 1d confirmed (templates, tax lines, chart screen, schema v4). 1e confirmed (account editing, schema v5). 1f confirmed (entity-type and home-state changes with start dates, correct/remove, chart update on entity change, restore missing accounts; no schema change).
+- **Phase 1 complete (schema v5):** create/list/switch companies, core schema + audit log, ledger engine + period lock, templates + chart of accounts + tax lines, account editing, entity-type and home-state changes with start dates (correct/remove, chart follows entity changes, restore missing accounts). No screen posts entries yet; that starts in Phase 2.
+- **Next: Phase 2** (manual entry). Parked backlog item that may fit: sub-accounts (see `docs/backlog.md`).
