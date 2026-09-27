@@ -26,7 +26,7 @@ JunoBooks-code/
       entries.ts       Read-only entry list for the screens (writing stays in ledger.ts)
       db/migrations.ts Numbered schema migrations
     preload/           contextBridge API exposed to the renderer as window.juno
-    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange, JournalEntry, TransactionList, ExpenseEntry, AccountCombobox)
+    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange, JournalEntry, TransactionList, SimpleEntry, AccountCombobox)
     shared/            Code used by both main and renderer: entity types, US states, dates, money, company validation,
                        templates.ts (starting charts), taxLines.ts (tax categories + per-year line tables), chart.ts (view types),
                        accounts.ts (account input rules: kinds, debit/credit side, validation, number-range warning),

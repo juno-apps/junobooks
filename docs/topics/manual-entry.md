@@ -20,10 +20,14 @@ Screens for typing transactions in by hand. All of them post through `postManual
 - Clicking a row opens its lines and actions: **Duplicate** (always) opens the entry screen in copy mode; **Void…** (needs a reason) and **Reverse…** (date default today, optional memo) only on posted entries that aren't reversed. Each shows a one-line plain-English explanation. Errors come from the ledger.
 
 ## Everyday screens (`src/shared/everyday.ts`)
-Plain questions on screen, one balanced entry underneath, posted through `postManualEntry`. Company home has a **New expense** button beside **New journal entry**.
-- **Expense** (`ExpenseEntry.tsx`): date, "Paid to" (becomes the entry memo), "How did you pay?", then lines of "What was it for?" / amount / note (filling the last line adds another, for splits). Debits each category, credits the paid-from account once for the total. The paid-from account can't also be a category.
+Plain questions on screen, one balanced entry underneath, posted through `postManualEntry`. Company home has **New expense**, **New income** and **New journal entry** buttons.
+- **Expense and Income** share one screen, `SimpleEntry.tsx` (a `kind` prop sets the wording, account lists and direction). **Expense**: date, "Paid to" (becomes the entry memo), "How did you pay?", then lines of "What was it for?" / amount / note (filling the last line adds another, for splits). Debits each category, credits the paid-from account once for the total. The paid-from account can't also be a category.
   - *How did you pay?* (`paidFromGroups`): Bank and cash, Credit cards, Not paid yet (accounts payable), Other accounts (any other active asset/liability/equity account, e.g. owner contributions; the screen tells the owner to ask the accountant about paying personally).
   - *What was it for?* (`expenseCategoryGroups`): Expenses, Cost of goods sold, Inventory and equipment.
+- **Income**: date, "Received from" (entry memo), "Where was it deposited?", then lines of "What kind of income?" / amount / note. Credits each kind of income, debits the deposit account once for the total. The deposit account can't also be a category.
+  - *Where was it deposited?* (`depositToGroups`): Bank and cash, Not received yet (accounts receivable, for an unpaid invoice), Other accounts (other assets except inventory, equipment and contra assets).
+  - *What kind of income?* (`incomeCategoryGroups`): Income (contra accounts such as Refunds and returns left out) and Sales tax collected (sales-tax liability; the screen notes it is owed onward, not income).
+  - Both builders (`buildExpense`, `buildIncome`) share `buildSplit` in `everyday.ts`.
 - **Account boxes** (`AccountCombobox.tsx`, `filterGroups`): click to see the grouped list, type to narrow (any words, any order, number or name), arrows + Enter or click to choose. Only existing accounts can be chosen; other text reverts when leaving the box (text that fits exactly one account picks it). Enter never posts the form while the list is open.
 
 ## Shared rules (`src/shared/journal.ts`)

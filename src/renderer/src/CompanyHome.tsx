@@ -5,9 +5,9 @@ import { getStateName } from '../../shared/states'
 import { TEMPLATES } from '../../shared/templates'
 import ChartOfAccounts from './ChartOfAccounts'
 import EntityTypeChange from './EntityTypeChange'
-import ExpenseEntry from './ExpenseEntry'
 import HomeStateChange from './HomeStateChange'
 import JournalEntry from './JournalEntry'
+import SimpleEntry, { type SimpleKind } from './SimpleEntry'
 import TemplatePicker from './TemplatePicker'
 import TransactionList from './TransactionList'
 
@@ -19,15 +19,15 @@ interface Props {
 function CompanyHome({ company, onChanged }: Props): JSX.Element {
   const [changingEntity, setChangingEntity] = useState(false)
   const [changingState, setChangingState] = useState(false)
-  /** The entry screen: closed, an expense, a blank journal entry, or a copy of an existing entry. */
-  const [entering, setEntering] = useState<{ kind: 'journal'; copyOf?: EntryListItem } | { kind: 'expense' } | null>(null)
+  /** The entry screen: closed, an expense or income, a blank journal entry, or a copy of an existing entry. */
+  const [entering, setEntering] = useState<{ kind: 'journal'; copyOf?: EntryListItem } | { kind: SimpleKind } | null>(null)
   const [tab, setTab] = useState<'transactions' | 'chart'>('transactions')
   /** Bumped after anything that changes accounts or balances, so the chart and transaction list reload. */
   const [chartVersion, setChartVersion] = useState(0)
   const [entryKey, setEntryKey] = useState(0)
 
-  function startEntry(kind: 'journal' | 'expense', copyOf?: EntryListItem): void {
-    setEntering(kind === 'expense' ? { kind } : { kind, copyOf })
+  function startEntry(kind: 'journal' | SimpleKind, copyOf?: EntryListItem): void {
+    setEntering(kind === 'journal' ? { kind, copyOf } : { kind })
     setEntryKey((k) => k + 1)
   }
   const entity = getEntityType(company.entityType)
@@ -69,6 +69,9 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
             <button type="button" className="primary" onClick={() => startEntry('expense')}>
               New expense
             </button>
+            <button type="button" className="primary" onClick={() => startEntry('income')}>
+              New income
+            </button>
             <button type="button" onClick={() => startEntry('journal')}>
               New journal entry
             </button>
@@ -83,8 +86,13 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
           onClose={() => setEntering(null)}
         />
       )}
-      {entering?.kind === 'expense' && (
-        <ExpenseEntry key={entryKey} onPosted={() => setChartVersion((v) => v + 1)} onClose={() => setEntering(null)} />
+      {(entering?.kind === 'expense' || entering?.kind === 'income') && (
+        <SimpleEntry
+          key={entryKey}
+          kind={entering.kind}
+          onPosted={() => setChartVersion((v) => v + 1)}
+          onClose={() => setEntering(null)}
+        />
       )}
       {changingEntity && (
         <EntityTypeChange
