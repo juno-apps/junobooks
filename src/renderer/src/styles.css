@@ -445,3 +445,70 @@ button.danger {
 .entry-lines .amount {
   text-align: right;
 }
+
+.entry-table select {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  padding: 0.35rem;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+}
+
+.combobox {
+  position: relative;
+  font-weight: normal;
+}
+
+.combobox input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.combobox-list {
+  position: absolute;
+  z-index: 10;
+  left: 0;
+  right: 0;
+  max-height: 16rem;
+  overflow-y: auto;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+  background: #fff;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.combobox-list ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.combobox-group {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #666;
+  background: #f3f4f6;
+}
+
+.combobox-option {
+  padding: 0.3rem 0.9rem;
+  cursor: pointer;
+}
+
+.combobox-option.active {
+  background: #dbe8f8;
+}
+
+.combobox-option[aria-selected='true'] {
+  font-weight: 600;
+}
+
+.combobox-empty {
+  padding: 0.4rem 0.6rem;
+  color: #666;
+}

@@ -26,11 +26,12 @@ JunoBooks-code/
       entries.ts       Read-only entry list for the screens (writing stays in ledger.ts)
       db/migrations.ts Numbered schema migrations
     preload/           contextBridge API exposed to the renderer as window.juno
-    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange, JournalEntry, TransactionList)
+    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange, JournalEntry, TransactionList, ExpenseEntry, AccountCombobox)
     shared/            Code used by both main and renderer: entity types, US states, dates, money, company validation,
                        templates.ts (starting charts), taxLines.ts (tax categories + per-year line tables), chart.ts (view types),
                        accounts.ts (account input rules: kinds, debit/credit side, validation, number-range warning),
-                       journal.ts (entry-screen rows → ledger lines, live totals, two-line balancing, entry list type)
+                       journal.ts (entry-screen rows → ledger lines, live totals, two-line balancing, entry list type),
+                       everyday.ts (Expense/Income/Transfer screens: account groups, type-to-narrow filter, entry builders)
   scripts/run-tests.cjs
   test-data/           Dev data root (git-ignored, never real books)
     app-settings.json
@@ -117,7 +118,7 @@ Sole proprietor, Single-member LLC → Schedule C · Multi-member LLC, Partnersh
 See `JunoBooks-PLAN.md` §10 (inventory method, S-corp election timing, which bank CSVs, which Etsy exports). Home state resolved: California, switchable per company.
 
 ## Topic docs index
-- `docs/topics/manual-entry.md`: journal entry screen, transaction list (void, reverse, duplicate), entry-screen rules, the books-start-date rule for manual entries.
+- `docs/topics/manual-entry.md`: journal entry screen, transaction list (void, reverse, duplicate), everyday screens, entry-screen rules, the books-start-date rule for manual entries.
 - `docs/topics/chart-of-accounts.md`: templates, numbering, entity-specific accounts, tax-line mapping, accountant notes, chart screen, editing accounts, adding/restoring accounts after creation.
 
 ## Latest handoff

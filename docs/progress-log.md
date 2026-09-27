@@ -37,3 +37,7 @@ Pointer log only — a few lines per round. Details live in git history.
 ## Round 19 — Unit 2b: transaction list
 - Transactions / Chart of accounts tabs; transaction list with Duplicate, Void, Reverse; two-line entries keep balancing when line 1's amount changes (fixes duplicate + edit). Backlog: bank-import matching, cleared status + reconciliation.
 - Files: `main/entries.ts`, `TransactionList.tsx`, `JournalEntry.tsx`, `CompanyHome.tsx`, `shared/journal.ts` (+test), `companyStore.ts` (+test), IPC/preload, styles. No schema change. 191 tests pass. Status: **confirmed** by owner.
+
+## Round 20 — Unit 2c step 1: Expense screen
+- New expense screen (splits, grouped account lists), reusable type-to-narrow account box that only accepts real accounts.
+- Files: `shared/everyday.ts` (+test), `ExpenseEntry.tsx`, `AccountCombobox.tsx`, `CompanyHome.tsx`, styles. No schema change. 197 tests pass. Status: **confirmed** by owner.
