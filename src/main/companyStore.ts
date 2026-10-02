@@ -44,6 +44,19 @@ import {
   updatePurchase
 } from './inventory'
 import { adjustmentAccounts, inventoryYear, postInventoryAdjustment } from './inventoryReport'
+import * as sales from './sales'
+import type {
+  AgingRow,
+  BusinessDetails,
+  CertificateInput,
+  Customer,
+  CustomerInput,
+  Invoice,
+  InvoiceInput,
+  Payment,
+  PaymentInput,
+  ResaleCertificate
+} from '../shared/sales'
 import type { InventoryMethod } from '../shared/inventory'
 import type { CountSheet, InventoryOverview, InventoryYearReport, ItemInput, PurchaseInput } from '../shared/inventoryView'
 import type {
@@ -428,6 +441,99 @@ export class CompanyBooks {
   deleteRule(id: number): CategorizationRule[] {
     deleteRule(this.db, id)
     return listRules(this.db)
+  }
+
+  businessDetails(): BusinessDetails {
+    return sales.businessDetails(this.db)
+  }
+
+  setBusinessDetails(d: Omit<BusinessDetails, 'name'>): BusinessDetails {
+    sales.setBusinessDetails(this.db, d)
+    return sales.businessDetails(this.db)
+  }
+
+  customers(): Customer[] {
+    return sales.listCustomers(this.db)
+  }
+
+  addCustomer(input: CustomerInput, now: Date = new Date()): Customer[] {
+    sales.addCustomer(this.db, input, now)
+    return sales.listCustomers(this.db)
+  }
+
+  updateCustomer(id: number, input: CustomerInput & { isActive: boolean }, now: Date = new Date()): Customer[] {
+    sales.updateCustomer(this.db, id, input, now)
+    return sales.listCustomers(this.db)
+  }
+
+  certificates(customerId?: number): ResaleCertificate[] {
+    return sales.listCertificates(this.db, customerId)
+  }
+
+  addCertificate(input: CertificateInput, now: Date = new Date()): ResaleCertificate[] {
+    sales.addCertificate(this.db, this.dir, input, now)
+    return sales.listCertificates(this.db, input.customerId)
+  }
+
+  removeCertificate(id: number, customerId: number, now: Date = new Date()): ResaleCertificate[] {
+    sales.removeCertificate(this.db, id, now)
+    return sales.listCertificates(this.db, customerId)
+  }
+
+  certificateFile(id: number): string {
+    return sales.certificateFile(this.db, this.dir, id)
+  }
+
+  validCertificate(customerId: number, date: string): ResaleCertificate | null {
+    return sales.validCertificate(this.db, customerId, date)
+  }
+
+  invoices(customerId?: number): Invoice[] {
+    return sales.listInvoices(this.db, customerId)
+  }
+
+  invoice(id: number): Invoice {
+    return sales.getInvoice(this.db, id)
+  }
+
+  nextInvoiceNumber(): string {
+    return sales.nextInvoiceNumber(this.db)
+  }
+
+  saveInvoiceDraft(id: number | null, input: InvoiceInput, now: Date = new Date()): Invoice {
+    return sales.getInvoice(this.db, sales.saveDraft(this.db, id, input, now))
+  }
+
+  deleteInvoiceDraft(id: number): void {
+    sales.deleteDraft(this.db, id)
+  }
+
+  finalizeInvoice(id: number, now: Date = new Date()): Invoice {
+    sales.finalizeInvoice(this.db, id, this.profile(now).booksStartDate, now)
+    return sales.getInvoice(this.db, id)
+  }
+
+  voidInvoice(id: number, reason: string, now: Date = new Date()): Invoice {
+    sales.voidInvoice(this.db, id, reason, now)
+    return sales.getInvoice(this.db, id)
+  }
+
+  recordPayment(input: PaymentInput, now: Date = new Date()): Payment[] {
+    sales.recordPayment(this.db, input, this.profile(now).booksStartDate, now)
+    return sales.listPayments(this.db)
+  }
+
+  voidPayment(id: number, reason: string, now: Date = new Date()): Payment[] {
+    sales.voidPayment(this.db, id, reason, now)
+    return sales.listPayments(this.db)
+  }
+
+  payments(customerId?: number): Payment[] {
+    return sales.listPayments(this.db, customerId)
+  }
+
+  aging(asOf: string): AgingRow[] {
+    return sales.aging(this.db, asOf)
   }
 
   inventoryOverview(now: Date = new Date()): InventoryOverview {

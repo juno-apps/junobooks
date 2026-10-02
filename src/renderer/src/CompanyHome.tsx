@@ -13,6 +13,7 @@ import Inventory from './Inventory'
 import JournalEntry from './JournalEntry'
 import OpeningBalances from './OpeningBalances'
 import Reconcile from './Reconcile'
+import Sales from './Sales'
 import SimpleEntry, { type SimpleKind } from './SimpleEntry'
 import TemplatePicker from './TemplatePicker'
 import TransactionList from './TransactionList'
@@ -29,7 +30,7 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
   /** The entry screen: closed, an expense, income or transfer, a blank journal entry, or a copy of an existing entry. */
   const [entering, setEntering] = useState<
     | { kind: 'journal'; copyOf?: EntryListItem }
-    | { kind: SimpleKind | 'transfer' | 'opening' | 'import' | 'reconcile' | 'etsy' | 'inventory' }
+    | { kind: SimpleKind | 'transfer' | 'opening' | 'import' | 'reconcile' | 'etsy' | 'inventory' | 'sales' }
     | { kind: 'review'; accountId: number | null }
     | null
   >(null)
@@ -45,7 +46,7 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
   }, [chartVersion, company.folder])
 
   function startEntry(
-    kind: 'journal' | 'transfer' | 'opening' | 'import' | 'reconcile' | 'etsy' | 'inventory' | SimpleKind,
+    kind: 'journal' | 'transfer' | 'opening' | 'import' | 'reconcile' | 'etsy' | 'inventory' | 'sales' | SimpleKind,
     copyOf?: EntryListItem
   ): void {
     setEntering(kind === 'journal' ? { kind, copyOf } : { kind })
@@ -119,6 +120,9 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
             <button type="button" onClick={() => startEntry('inventory')}>
               Inventory
             </button>
+            <button type="button" onClick={() => startEntry('sales')}>
+              Invoices
+            </button>
             {toReview > 0 && (
               <button type="button" className="primary attention" onClick={() => startReview(null)}>
                 Review imported lines ({toReview})
@@ -134,6 +138,9 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
           onPosted={() => setChartVersion((v) => v + 1)}
           onClose={() => setEntering(null)}
         />
+      )}
+      {entering?.kind === 'sales' && (
+        <Sales key={entryKey} onChanged={() => setChartVersion((v) => v + 1)} onClose={() => setEntering(null)} />
       )}
       {entering?.kind === 'inventory' && (
         <Inventory key={entryKey} onChanged={() => setChartVersion((v) => v + 1)} onClose={() => setEntering(null)} />

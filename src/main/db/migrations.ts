@@ -649,6 +649,164 @@ export const MIGRATIONS: Migration[] = [
       ${auditTriggersV2('inventory_methods', ['id', 'year', 'method', 'reason', 'created_at'], false)}
       ${auditTriggersV2('inventory_adjustments', ['id', 'as_of_date', 'method', 'value_cents', 'entry_id', 'created_at'], false)}
     `
+  },
+  {
+    version: 11,
+    description: 'Direct sales: business contact details, customers, resale certificates, invoices, payments received',
+    sql: `
+      ALTER TABLE company_profile ADD COLUMN address TEXT NOT NULL DEFAULT '';
+      ALTER TABLE company_profile ADD COLUMN email TEXT NOT NULL DEFAULT '';
+      ALTER TABLE company_profile ADD COLUMN phone TEXT NOT NULL DEFAULT '';
+      DROP TRIGGER audit_company_profile_insert;
+      DROP TRIGGER audit_company_profile_update;
+      DROP TRIGGER audit_company_profile_delete;
+      ${auditTriggersV2('company_profile', ['id', 'name', 'books_start_date', 'created_at', 'template', 'address', 'email', 'phone'], false)}
+
+      CREATE TABLE customers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL CHECK (length(trim(name)) > 0),
+        email TEXT NOT NULL DEFAULT '',
+        phone TEXT NOT NULL DEFAULT '',
+        address TEXT NOT NULL DEFAULT '',
+        notes TEXT NOT NULL DEFAULT '',
+        is_wholesale INTEGER NOT NULL DEFAULT 0 CHECK (is_wholesale IN (0, 1)),
+        is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      ) STRICT;
+
+      CREATE TABLE resale_certificates (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        customer_id INTEGER NOT NULL REFERENCES customers(id),
+        cert_number TEXT NOT NULL,
+        state_code TEXT NOT NULL,
+        issued_date TEXT,
+        expires_date TEXT,
+        stored_path TEXT,
+        original_name TEXT,
+        notes TEXT NOT NULL DEFAULT '',
+        removed_at TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      ) STRICT;
+      CREATE TRIGGER resale_certificates_no_delete BEFORE DELETE ON resale_certificates BEGIN
+        SELECT RAISE(ABORT, 'Resale certificates are kept on record. Remove one instead.');
+      END;
+
+      CREATE TABLE invoices (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        number TEXT NOT NULL UNIQUE,
+        customer_id INTEGER NOT NULL REFERENCES customers(id),
+        issue_date TEXT NOT NULL,
+        due_date TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'open', 'void')),
+        memo TEXT NOT NULL DEFAULT '',
+        tax_rate_milli INTEGER NOT NULL DEFAULT 0 CHECK (tax_rate_milli >= 0),
+        tax_exempt INTEGER NOT NULL DEFAULT 0 CHECK (tax_exempt IN (0, 1)),
+        exempt_reason TEXT NOT NULL DEFAULT '',
+        subtotal_cents INTEGER NOT NULL DEFAULT 0,
+        tax_cents INTEGER NOT NULL DEFAULT 0,
+        total_cents INTEGER NOT NULL DEFAULT 0,
+        entry_id INTEGER REFERENCES journal_entries(id),
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        finalized_at TEXT,
+        voided_at TEXT,
+        void_reason TEXT
+      ) STRICT;
+      -- Once finalized, an invoice only changes by being voided.
+      CREATE TRIGGER invoices_fixed BEFORE UPDATE ON invoices
+      WHEN OLD.status <> 'draft' AND NOT (OLD.status = 'open' AND NEW.status = 'void'
+        AND NEW.number IS OLD.number AND NEW.total_cents IS OLD.total_cents AND NEW.customer_id IS OLD.customer_id)
+      BEGIN
+        SELECT RAISE(ABORT, 'A finalized invoice can''t be changed. Void it and make a new one.');
+      END;
+      CREATE TRIGGER invoices_delete_drafts_only BEFORE DELETE ON invoices WHEN OLD.status <> 'draft' BEGIN
+        SELECT RAISE(ABORT, 'Only a draft invoice can be deleted.');
+      END;
+
+      CREATE TABLE invoice_lines (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        invoice_id INTEGER NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
+        line_no INTEGER NOT NULL,
+        description TEXT NOT NULL,
+        quantity_milli INTEGER NOT NULL CHECK (quantity_milli > 0),
+        unit_price_cents INTEGER NOT NULL,
+        amount_cents INTEGER NOT NULL,
+        account_id INTEGER NOT NULL REFERENCES accounts(id),
+        taxable INTEGER NOT NULL DEFAULT 1 CHECK (taxable IN (0, 1))
+      ) STRICT;
+      CREATE TRIGGER invoice_lines_draft_only_i BEFORE INSERT ON invoice_lines
+      WHEN (SELECT status FROM invoices WHERE id = NEW.invoice_id) <> 'draft'
+      BEGIN
+        SELECT RAISE(ABORT, 'A finalized invoice can''t be changed.');
+      END;
+      CREATE TRIGGER invoice_lines_draft_only_u BEFORE UPDATE ON invoice_lines
+      WHEN (SELECT status FROM invoices WHERE id = OLD.invoice_id) <> 'draft'
+      BEGIN
+        SELECT RAISE(ABORT, 'A finalized invoice can''t be changed.');
+      END;
+      CREATE TRIGGER invoice_lines_draft_only_d BEFORE DELETE ON invoice_lines
+      WHEN (SELECT status FROM invoices WHERE id = OLD.invoice_id) <> 'draft'
+      BEGIN
+        SELECT RAISE(ABORT, 'A finalized invoice can''t be changed.');
+      END;
+
+      CREATE TABLE payments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        customer_id INTEGER NOT NULL REFERENCES customers(id),
+        payment_date TEXT NOT NULL,
+        amount_cents INTEGER NOT NULL CHECK (amount_cents > 0),
+        deposit_account_id INTEGER NOT NULL REFERENCES accounts(id),
+        method TEXT NOT NULL DEFAULT '',
+        reference TEXT NOT NULL DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'posted' CHECK (status IN ('posted', 'void')),
+        entry_id INTEGER REFERENCES journal_entries(id),
+        created_at TEXT NOT NULL,
+        voided_at TEXT,
+        void_reason TEXT
+      ) STRICT;
+      CREATE TRIGGER payments_no_delete BEFORE DELETE ON payments BEGIN
+        SELECT RAISE(ABORT, 'Payments are kept on record. Void one instead.');
+      END;
+
+      CREATE TABLE payment_applications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        payment_id INTEGER NOT NULL REFERENCES payments(id),
+        invoice_id INTEGER NOT NULL REFERENCES invoices(id),
+        amount_cents INTEGER NOT NULL CHECK (amount_cents > 0)
+      ) STRICT;
+      CREATE TRIGGER payment_applications_fixed_u BEFORE UPDATE ON payment_applications BEGIN
+        SELECT RAISE(ABORT, 'Payment applications can''t be changed. Void the payment instead.');
+      END;
+      CREATE TRIGGER payment_applications_fixed_d BEFORE DELETE ON payment_applications BEGIN
+        SELECT RAISE(ABORT, 'Payment applications can''t be changed. Void the payment instead.');
+      END;
+
+      ${auditTriggersV2('customers', ['id', 'name', 'email', 'phone', 'address', 'notes', 'is_wholesale', 'is_active', 'updated_at'], false)}
+      ${auditTriggersV2(
+        'resale_certificates',
+        ['id', 'customer_id', 'cert_number', 'state_code', 'issued_date', 'expires_date', 'stored_path', 'notes', 'removed_at', 'updated_at'],
+        false
+      )}
+      ${auditTriggersV2(
+        'invoices',
+        ['id', 'number', 'customer_id', 'issue_date', 'due_date', 'status', 'memo', 'tax_rate_milli', 'tax_exempt', 'exempt_reason',
+          'subtotal_cents', 'tax_cents', 'total_cents', 'entry_id', 'finalized_at', 'voided_at', 'void_reason'],
+        false
+      )}
+      ${auditTriggersV2(
+        'invoice_lines',
+        ['id', 'invoice_id', 'line_no', 'description', 'quantity_milli', 'unit_price_cents', 'amount_cents', 'account_id', 'taxable'],
+        false
+      )}
+      ${auditTriggersV2(
+        'payments',
+        ['id', 'customer_id', 'payment_date', 'amount_cents', 'deposit_account_id', 'method', 'reference', 'status', 'entry_id', 'voided_at', 'void_reason'],
+        false
+      )}
+      ${auditTriggersV2('payment_applications', ['id', 'payment_id', 'invoice_id', 'amount_cents'], false)}
+    `
   }
 ]
 

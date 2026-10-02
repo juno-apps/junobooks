@@ -6,11 +6,25 @@ import type { AccountInput } from '../shared/accounts'
 import type { ManualEntryInput } from '../shared/journal'
 import type { RegisterQuery } from '../shared/register'
 import type { OpeningBalanceInput } from '../shared/opening'
-import type { CompanyProfile, EntityChangeInput, HomeStateChangeInput, NewCompanyInput, Result } from '../shared/company'
+import type {
+  CompanyProfile,
+  EntityChangeInput,
+  HomeStateChangeInput,
+  NewCompanyInput,
+  Result
+} from '../shared/company'
 import { readAppSettings, writeAppSettings } from './appSettings'
 import { createCompany, listCompanies, openCompany, type CompanyBooks } from './companyStore'
 import { checkDataFolder, countCompanies, writeDataLocation } from './dataLocation'
-import { dataLocationFile, defaultDataRoot, devDataRoot, getCompaniesDir, getDataRoot, isDev as isDevCopy, oldTestDataRoot } from './paths'
+import {
+  dataLocationFile,
+  defaultDataRoot,
+  devDataRoot,
+  getCompaniesDir,
+  getDataRoot,
+  isDev as isDevCopy,
+  oldTestDataRoot
+} from './paths'
 import type { SettingsView } from '../shared/settings'
 import { readImportFile } from './bankImport'
 import type { PostBankLineInput, StageImportInput } from '../shared/bankImport'
@@ -18,6 +32,10 @@ import type { RuleInput } from '../shared/rules'
 import type { EtsyFilesInput, EtsyImportInput } from '../shared/etsyImport'
 import type { InventoryMethod } from '../shared/inventory'
 import type { ItemInput, PurchaseInput } from '../shared/inventoryView'
+import type { BusinessDetails, CertificateInput, CustomerInput, InvoiceInput, PaymentInput } from '../shared/sales'
+import { invoiceHtml } from '../shared/invoiceHtml'
+import { mkdirSync, writeFileSync } from 'fs'
+import { safeNamePart } from '../shared/attachments'
 import { BACKUPS_TO_KEEP } from './companyStore'
 
 const isDev = !app.isPackaged
@@ -68,6 +86,27 @@ function useDataFolder(dir: string | null): SettingsView {
   closeCurrent()
   writeDataLocation(dataLocationFile(), dir === null || dir === defaultDataRoot() ? null : dir)
   return settingsView()
+}
+
+/** Saves an invoice as a PDF in the company's exports\invoices folder and returns the file path. */
+async function saveInvoicePdf(id: number): Promise<string> {
+  const books = requireCompany()
+  const inv = books.invoice(id)
+  if (inv.status === 'draft') throw new Error('Finalize the invoice before saving it as a PDF.')
+  const customer = books.customers().find((c) => c.id === inv.customerId)!
+  const html = invoiceHtml(inv, books.businessDetails(), customer)
+  const win = new BrowserWindow({ show: false, webPreferences: { javascript: false } })
+  try {
+    await win.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
+    const pdf = await win.webContents.printToPDF({ pageSize: 'Letter', printBackground: true })
+    const dir = join(books.dir, 'exports', 'invoices')
+    mkdirSync(dir, { recursive: true })
+    const file = join(dir, `Invoice-${safeNamePart(inv.number) || inv.id}.pdf`)
+    writeFileSync(file, pdf)
+    return file
+  } finally {
+    win.destroy()
+  }
 }
 
 /** Turns thrown errors into a plain message the screen can show. */
@@ -155,7 +194,7 @@ app.whenReady().then(() => {
     wrap(() => requireCompany().removeHomeStateChange(effectiveDate))
   )
   ipcMain.handle('accounts:restore', (_e, numbers: string[]) => wrap(() => requireCompany().restoreAccounts(numbers)))
-  ipcMain.handle('chart:get', () =>current?.chart() ?? null)
+  ipcMain.handle('chart:get', () => current?.chart() ?? null)
   ipcMain.handle('chart:setup', (_e, template: string) =>
     wrap(() => {
       if (!current) throw new Error('No company is open.')
@@ -175,9 +214,13 @@ app.whenReady().then(() => {
   )
   ipcMain.handle('entries:list', () => current?.entries() ?? [])
   ipcMain.handle('opening:get', () => wrap(() => requireCompany().openingBalances()))
-  ipcMain.handle('opening:save', (_e, input: OpeningBalanceInput[]) => wrap(() => requireCompany().saveOpeningBalances(input)))
+  ipcMain.handle('opening:save', (_e, input: OpeningBalanceInput[]) =>
+    wrap(() => requireCompany().saveOpeningBalances(input))
+  )
   ipcMain.handle('attachments:list', (_e, entryId: number) => wrap(() => requireCompany().attachments(entryId)))
-  ipcMain.handle('attachments:add', (_e, entryId: number, paths: string[]) => wrap(() => requireCompany().attach(entryId, paths)))
+  ipcMain.handle('attachments:add', (_e, entryId: number, paths: string[]) =>
+    wrap(() => requireCompany().attach(entryId, paths))
+  )
   ipcMain.handle('attachments:pick', async (e, entryId: number) => {
     const win = BrowserWindow.fromWebContents(e.sender)
     const opts: Electron.OpenDialogOptions = {
@@ -242,16 +285,92 @@ app.whenReady().then(() => {
     wrap(() => requireCompany().updateRule(id, input))
   )
   ipcMain.handle('rules:delete', (_e, id: number) => wrap(() => requireCompany().deleteRule(id)))
+  ipcMain.handle('sales:business', () => wrap(() => requireCompany().businessDetails()))
+  ipcMain.handle('sales:setBusiness', (_e, d: Omit<BusinessDetails, 'name'>) =>
+    wrap(() => requireCompany().setBusinessDetails(d))
+  )
+  ipcMain.handle('sales:customers', () => wrap(() => requireCompany().customers()))
+  ipcMain.handle('sales:addCustomer', (_e, input: CustomerInput) => wrap(() => requireCompany().addCustomer(input)))
+  ipcMain.handle('sales:updateCustomer', (_e, id: number, input: CustomerInput & { isActive: boolean }) =>
+    wrap(() => requireCompany().updateCustomer(id, input))
+  )
+  ipcMain.handle('sales:certificates', (_e, customerId: number) =>
+    wrap(() => requireCompany().certificates(customerId))
+  )
+  ipcMain.handle('sales:pickCertificateFile', async (e) => {
+    const win = BrowserWindow.fromWebContents(e.sender)
+    const opts: Electron.OpenDialogOptions = {
+      title: 'Choose the resale certificate file',
+      properties: ['openFile'],
+      filters: [
+        { name: 'Certificates', extensions: ['pdf', 'jpg', 'jpeg', 'png', 'heic', 'tif', 'tiff'] },
+        { name: 'All files', extensions: ['*'] }
+      ]
+    }
+    const picked = win ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts)
+    return { ok: true, value: picked.canceled ? null : (picked.filePaths[0] ?? null) }
+  })
+  ipcMain.handle('sales:addCertificate', (_e, input: CertificateInput) =>
+    wrap(() => requireCompany().addCertificate(input))
+  )
+  ipcMain.handle('sales:removeCertificate', (_e, id: number, customerId: number) =>
+    wrap(() => requireCompany().removeCertificate(id, customerId))
+  )
+  ipcMain.handle('sales:openCertificate', async (_e, id: number) => {
+    const file = wrap(() => requireCompany().certificateFile(id))
+    if (!file.ok) return file
+    const problem = await shell.openPath(file.value)
+    return problem ? { ok: false, error: problem } : { ok: true, value: null }
+  })
+  ipcMain.handle('sales:validCertificate', (_e, customerId: number, date: string) =>
+    wrap(() => requireCompany().validCertificate(customerId, date))
+  )
+  ipcMain.handle('sales:invoices', () => wrap(() => requireCompany().invoices()))
+  ipcMain.handle('sales:nextNumber', () => wrap(() => requireCompany().nextInvoiceNumber()))
+  ipcMain.handle('sales:saveDraft', (_e, id: number | null, input: InvoiceInput) =>
+    wrap(() => requireCompany().saveInvoiceDraft(id, input))
+  )
+  ipcMain.handle('sales:deleteDraft', (_e, id: number) => wrap(() => requireCompany().deleteInvoiceDraft(id)))
+  ipcMain.handle('sales:finalize', (_e, id: number) => wrap(() => requireCompany().finalizeInvoice(id)))
+  ipcMain.handle('sales:voidInvoice', (_e, id: number, reason: string) =>
+    wrap(() => requireCompany().voidInvoice(id, reason))
+  )
+  ipcMain.handle('sales:savePdf', async (_e, id: number) => {
+    try {
+      return { ok: true, value: await saveInvoicePdf(id) }
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) }
+    }
+  })
+  ipcMain.handle('sales:openPdf', async (_e, id: number) => {
+    try {
+      const file = await saveInvoicePdf(id)
+      const problem = await shell.openPath(file)
+      return problem ? { ok: false, error: problem } : { ok: true, value: file }
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) }
+    }
+  })
+  ipcMain.handle('sales:recordPayment', (_e, input: PaymentInput) => wrap(() => requireCompany().recordPayment(input)))
+  ipcMain.handle('sales:voidPayment', (_e, id: number, reason: string) =>
+    wrap(() => requireCompany().voidPayment(id, reason))
+  )
+  ipcMain.handle('sales:payments', () => wrap(() => requireCompany().payments()))
+  ipcMain.handle('sales:aging', (_e, asOf: string) => wrap(() => requireCompany().aging(asOf)))
   ipcMain.handle('inventory:overview', () => wrap(() => requireCompany().inventoryOverview()))
   ipcMain.handle('inventory:addItem', (_e, input: ItemInput) => wrap(() => requireCompany().addInventoryItem(input)))
   ipcMain.handle('inventory:updateItem', (_e, id: number, input: ItemInput & { isActive: boolean }) =>
     wrap(() => requireCompany().updateInventoryItem(id, input))
   )
-  ipcMain.handle('inventory:addPurchase', (_e, input: PurchaseInput) => wrap(() => requireCompany().addInventoryPurchase(input)))
+  ipcMain.handle('inventory:addPurchase', (_e, input: PurchaseInput) =>
+    wrap(() => requireCompany().addInventoryPurchase(input))
+  )
   ipcMain.handle('inventory:updatePurchase', (_e, id: number, input: PurchaseInput) =>
     wrap(() => requireCompany().updateInventoryPurchase(id, input))
   )
-  ipcMain.handle('inventory:removePurchase', (_e, id: number) => wrap(() => requireCompany().removeInventoryPurchase(id)))
+  ipcMain.handle('inventory:removePurchase', (_e, id: number) =>
+    wrap(() => requireCompany().removeInventoryPurchase(id))
+  )
   ipcMain.handle('inventory:countSheet', (_e, date: string) => wrap(() => requireCompany().countSheet(date)))
   ipcMain.handle('inventory:saveCount', (_e, date: string, rows: { itemId: number; quantityMilli: number | null }[]) =>
     wrap(() => requireCompany().saveCount(date, rows))
@@ -276,8 +395,12 @@ app.whenReady().then(() => {
   ipcMain.handle('reconcile:clear', (_e, accountId: number, lineIds: number[], cleared: boolean) =>
     wrap(() => requireCompany().setCleared(accountId, lineIds, cleared))
   )
-  ipcMain.handle('reconcile:finish', (_e, accountId: number) => wrap(() => requireCompany().finishReconciliation(accountId)))
-  ipcMain.handle('reconcile:cancel', (_e, accountId: number) => wrap(() => requireCompany().cancelReconciliation(accountId)))
+  ipcMain.handle('reconcile:finish', (_e, accountId: number) =>
+    wrap(() => requireCompany().finishReconciliation(accountId))
+  )
+  ipcMain.handle('reconcile:cancel', (_e, accountId: number) =>
+    wrap(() => requireCompany().cancelReconciliation(accountId))
+  )
   ipcMain.handle('reconcile:undo', (_e, accountId: number, reason: string) =>
     wrap(() => requireCompany().undoLastReconciliation(accountId, reason))
   )

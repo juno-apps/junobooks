@@ -16,6 +16,18 @@ import type {
 import type { ColumnMapping } from '../shared/csvImport'
 import type { CategorizationRule, RuleInput } from '../shared/rules'
 import type { ReconcileView } from '../shared/reconcile'
+import type {
+  AgingRow,
+  BusinessDetails,
+  CertificateInput,
+  Customer,
+  CustomerInput,
+  Invoice,
+  InvoiceInput,
+  Payment,
+  PaymentInput,
+  ResaleCertificate
+} from '../shared/sales'
 import type { InventoryItem, InventoryMethod, InventoryPurchase, MethodSummary } from '../shared/inventory'
 import type { CountSheet, InventoryOverview, InventoryYearReport, ItemInput, PurchaseInput } from '../shared/inventoryView'
 import type {
@@ -42,6 +54,16 @@ import type {
 
 export type {
   AccountInput,
+  AgingRow,
+  BusinessDetails,
+  CertificateInput,
+  Customer,
+  CustomerInput,
+  Invoice,
+  InvoiceInput,
+  Payment,
+  PaymentInput,
+  ResaleCertificate,
   CountSheet,
   InventoryItem,
   InventoryMethod,
@@ -153,6 +175,31 @@ export interface JunoApi {
   addRule: (input: RuleInput) => Promise<Result<CategorizationRule[]>>
   updateRule: (id: number, input: RuleInput & { isActive: boolean }) => Promise<Result<CategorizationRule[]>>
   deleteRule: (id: number) => Promise<Result<CategorizationRule[]>>
+  businessDetails: () => Promise<Result<BusinessDetails>>
+  setBusinessDetails: (d: Omit<BusinessDetails, 'name'>) => Promise<Result<BusinessDetails>>
+  customers: () => Promise<Result<Customer[]>>
+  addCustomer: (input: CustomerInput) => Promise<Result<Customer[]>>
+  updateCustomer: (id: number, input: CustomerInput & { isActive: boolean }) => Promise<Result<Customer[]>>
+  certificates: (customerId: number) => Promise<Result<ResaleCertificate[]>>
+  /** File picker; null value = cancelled. */
+  pickCertificateFile: () => Promise<Result<string | null>>
+  addCertificate: (input: CertificateInput) => Promise<Result<ResaleCertificate[]>>
+  removeCertificate: (id: number, customerId: number) => Promise<Result<ResaleCertificate[]>>
+  openCertificate: (id: number) => Promise<Result<null>>
+  validCertificate: (customerId: number, date: string) => Promise<Result<ResaleCertificate | null>>
+  invoices: () => Promise<Result<Invoice[]>>
+  nextInvoiceNumber: () => Promise<Result<string>>
+  saveInvoiceDraft: (id: number | null, input: InvoiceInput) => Promise<Result<Invoice>>
+  deleteInvoiceDraft: (id: number) => Promise<Result<void>>
+  finalizeInvoice: (id: number) => Promise<Result<Invoice>>
+  voidInvoice: (id: number, reason: string) => Promise<Result<Invoice>>
+  /** Saves the PDF in exports\invoices and returns its path. */
+  saveInvoicePdf: (id: number) => Promise<Result<string>>
+  openInvoicePdf: (id: number) => Promise<Result<string>>
+  recordPayment: (input: PaymentInput) => Promise<Result<Payment[]>>
+  voidPayment: (id: number, reason: string) => Promise<Result<Payment[]>>
+  payments: () => Promise<Result<Payment[]>>
+  aging: (asOf: string) => Promise<Result<AgingRow[]>>
   inventoryOverview: () => Promise<Result<InventoryOverview>>
   addInventoryItem: (input: ItemInput) => Promise<Result<InventoryOverview>>
   updateInventoryItem: (id: number, input: ItemInput & { isActive: boolean }) => Promise<Result<InventoryOverview>>

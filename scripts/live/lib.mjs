@@ -72,7 +72,7 @@ export async function pickAccount(page, label, text) {
   const box = page.getByRole('combobox', { name: label })
   await box.click()
   await box.fill(text)
-  await page.getByRole('option').first().click()
+  await page.locator('.combobox-list [role=option]').first().click()
 }
 
 /** Text of the red error message on screen, or null. */
