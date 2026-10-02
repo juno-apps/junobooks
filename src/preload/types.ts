@@ -19,6 +19,7 @@ import type { ReconcileView } from '../shared/reconcile'
 import type { AmazonImportInput, AmazonImportResult, AmazonMapping, AmazonPreview } from '../shared/amazonImport'
 import type { TieOutRow } from '../shared/form1099k'
 import type { BalanceSheet, GeneralLedger, ProfitAndLoss, TrialBalance } from '../shared/reports'
+import type { ChannelSales, CogsSchedule, TaxLineSummary } from '../shared/reportsExtra'
 import type { RateInput, SalesTaxPaymentInput, SalesTaxRate, SalesTaxReport } from '../shared/salesTax'
 import type {
   AgingRow,
@@ -58,6 +59,9 @@ import type {
 
 export type {
   AccountInput,
+  ChannelSales,
+  CogsSchedule,
+  TaxLineSummary,
   BalanceSheet,
   GeneralLedger,
   ProfitAndLoss,
@@ -235,6 +239,9 @@ export interface JunoApi {
   importAmazon: (input: AmazonImportInput) => Promise<Result<AmazonImportResult>>
   amazonPayouts: () => Promise<Result<EtsyPayout[]>>
   profitAndLoss: (from: string, to: string, byMonth: boolean) => Promise<Result<ProfitAndLoss>>
+  salesByChannel: (from: string, to: string) => Promise<Result<ChannelSales>>
+  taxLineSummary: (year: number) => Promise<Result<TaxLineSummary>>
+  cogsSchedule: (year: number) => Promise<Result<CogsSchedule>>
   balanceSheet: (asOf: string) => Promise<Result<BalanceSheet>>
   trialBalance: (asOf: string) => Promise<Result<TrialBalance>>
   generalLedger: (from: string, to: string) => Promise<Result<GeneralLedger>>

@@ -393,6 +393,9 @@ app.whenReady().then(() => {
   ipcMain.handle('reports:pl', (_e, from: string, to: string, byMonth: boolean) =>
     wrap(() => requireCompany().profitAndLoss(from, to, byMonth))
   )
+  ipcMain.handle('reports:channels', (_e, from: string, to: string) => wrap(() => requireCompany().salesByChannel(from, to)))
+  ipcMain.handle('reports:taxLines', (_e, year: number) => wrap(() => requireCompany().taxLineSummary(year)))
+  ipcMain.handle('reports:cogs', (_e, year: number) => wrap(() => requireCompany().cogsSchedule(year)))
   ipcMain.handle('reports:bs', (_e, asOf: string) => wrap(() => requireCompany().balanceSheet(asOf)))
   ipcMain.handle('reports:tb', (_e, asOf: string) => wrap(() => requireCompany().trialBalance(asOf)))
   ipcMain.handle('reports:gl', (_e, from: string, to: string) => wrap(() => requireCompany().generalLedger(from, to)))

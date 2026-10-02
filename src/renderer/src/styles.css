@@ -1056,3 +1056,16 @@ button.attention {
 .inventory-tab .count-dates button {
   font-weight: normal;
 }
+
+.taxline-row td {
+  background: #f6f7f9;
+}
+
+.small-note {
+  font-size: 0.8rem;
+  margin-top: 0.2rem;
+}
+
+.cogs-table {
+  max-width: 640px;
+}

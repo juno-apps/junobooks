@@ -35,6 +35,8 @@ import { AMAZON_ACCOUNTS } from '../shared/amazon'
 import type { AmazonImportInput, AmazonImportResult, AmazonPreview } from '../shared/amazonImport'
 import { set1099k, tieOut } from './form1099k'
 import { balanceSheet, generalLedger, profitAndLoss, trialBalance } from './reports'
+import { cogsSchedule, salesByChannel, taxLineSummary } from './reportsExtra'
+import type { ChannelSales, CogsSchedule, TaxLineSummary } from '../shared/reportsExtra'
 import type { BalanceSheet, GeneralLedger, ProfitAndLoss, TrialBalance } from '../shared/reports'
 import { addRate, homeRateOn, listRates, recordSalesTaxPayment, removeRate, salesTaxReport } from './salesTax'
 import type { RateInput, SalesTaxPaymentInput, SalesTaxRate, SalesTaxReport } from '../shared/salesTax'
@@ -629,6 +631,18 @@ export class CompanyBooks {
 
   profitAndLoss(from: string, to: string, byMonth = false): ProfitAndLoss {
     return profitAndLoss(this.db, from, to, byMonth)
+  }
+
+  salesByChannel(from: string, to: string): ChannelSales {
+    return salesByChannel(this.db, from, to)
+  }
+
+  taxLineSummary(year: number): TaxLineSummary {
+    return taxLineSummary(this.db, year)
+  }
+
+  cogsSchedule(year: number): CogsSchedule {
+    return cogsSchedule(this.db, year)
   }
 
   balanceSheet(asOf: string): BalanceSheet {
