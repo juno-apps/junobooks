@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import type { ChartAccount, EntryListItem } from '../../preload/types'
+import type { ChartAccount, EntryListItem, ManualEntryInput } from '../../preload/types'
 import { localDateString } from '../../shared/dates'
 import { blankRow, mirrorPair, rowsToLines, rowTotals, type EntryRow } from '../../shared/journal'
 import { formatCents } from '../../shared/money'
+import { useFormError } from './useFormError'
 
 interface Props {
   /** An existing entry to copy (Duplicate). The copy is dated today. */
@@ -60,15 +61,25 @@ function rowsFrom(entry: EntryListItem): Row[] {
   return [...rows, newRow()]
 }
 
+/** The screen's own checks before posting: every account typed must be a real one, and the lines must make sense. */
+function checkRows(rows: Row[]): { error: string; lines?: undefined } | { error: null; lines: ManualEntryInput['lines'] } {
+  const unmatched = rows.findIndex((r) => r.accountText.trim() && r.accountId === null)
+  if (unmatched >= 0) {
+    return { error: `Line ${unmatched + 1}: "${rows[unmatched].accountText}" doesn't match an account. Pick one from the list.` }
+  }
+  const checked = rowsToLines(rows)
+  return 'error' in checked ? { error: checked.error } : { error: null, lines: checked.lines }
+}
+
 function JournalEntry({ copyOf, onPosted, onClose }: Props): JSX.Element {
   const [accounts, setAccounts] = useState<ChartAccount[] | null>(null)
   const [date, setDate] = useState(localDateString())
   const [memo, setMemo] = useState(copyOf?.memo ?? '')
   const [rows, setRows] = useState<Row[]>(copyOf ? rowsFrom(copyOf) : [newRow(), newRow()])
-  const [error, setError] = useState<string | null>(null)
   const [posted, setPosted] = useState<number | null>(null)
   const [busy, setBusy] = useState(false)
   const firstAccount = useRef<HTMLInputElement>(null)
+  const { error, showCheck, showSave, clear } = useFormError(() => checkRows(rows).error, [date, memo, rows])
 
   useEffect(() => {
     window.juno.getChart().then((chart) => setAccounts(chart ? chart.accounts.filter((a) => a.isActive) : []))
@@ -117,22 +128,17 @@ function JournalEntry({ copyOf, onPosted, onClose }: Props): JSX.Element {
 
   async function submit(e: FormEvent): Promise<void> {
     e.preventDefault()
-    setError(null)
-    const unmatched = rows.findIndex((r) => r.accountText.trim() && r.accountId === null)
-    if (unmatched >= 0) {
-      setError(`Line ${unmatched + 1}: "${rows[unmatched].accountText}" doesn't match an account. Pick one from the list.`)
-      return
-    }
-    const checked = rowsToLines(rows)
-    if ('error' in checked) {
-      setError(checked.error)
+    clear()
+    const checked = checkRows(rows)
+    if (checked.error !== null) {
+      showCheck(checked.error)
       return
     }
     setBusy(true)
     const result = await window.juno.postManualEntry({ date, memo, lines: checked.lines })
     setBusy(false)
     if (!result.ok) {
-      setError(result.error)
+      showSave(result.error)
       return
     }
     setPosted(result.value)

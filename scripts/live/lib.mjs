@@ -66,3 +66,17 @@ export function done(errors = []) {
   console.log(failures ? `${failures} live-check failure(s)` : 'Live check passed')
   process.exitCode = failures ? 1 : 0
 }
+
+/** Chooses an account in an AccountCombobox: click, type, click the first matching option. */
+export async function pickAccount(page, label, text) {
+  const box = page.getByRole('combobox', { name: label })
+  await box.click()
+  await box.fill(text)
+  await page.getByRole('option').first().click()
+}
+
+/** Text of the red error message on screen, or null. */
+export async function errorText(page) {
+  const e = page.locator('.error')
+  return (await e.count()) ? (await e.first().innerText()).trim() : null
+}

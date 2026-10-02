@@ -4,6 +4,7 @@ import { localDateString } from '../../shared/dates'
 import { buildTransfer, transferGroups } from '../../shared/everyday'
 import { formatCents, parseMoney } from '../../shared/money'
 import AccountCombobox from './AccountCombobox'
+import { useFormError } from './useFormError'
 
 interface Props {
   onPosted: () => void
@@ -18,11 +19,17 @@ function TransferEntry({ onPosted, onClose }: Props): JSX.Element {
   const [toId, setToId] = useState<number | null>(null)
   const [amount, setAmount] = useState('')
   const [memo, setMemo] = useState('')
-  const [error, setError] = useState<string | null>(null)
   const [posted, setPosted] = useState<{ id: number; text: string } | null>(null)
   const [busy, setBusy] = useState(false)
   /** Bumped after posting so the account boxes start empty again. */
   const [round, setRound] = useState(0)
+  const nameOf = (id: number | null): string => accounts?.find((a) => a.id === id)?.name ?? ''
+  const build = () =>
+    buildTransfer({ date, memo: memo.trim() || `Transfer from ${nameOf(fromId)} to ${nameOf(toId)}`, fromId, toId, amount })
+  const { error, showCheck, showSave, clear } = useFormError(() => {
+    const built = build()
+    return 'error' in built ? built.error : null
+  }, [date, fromId, toId, amount, memo])
 
   useEffect(() => {
     window.juno.getChart().then((chart) => setAccounts(chart ? chart.accounts : []))
@@ -31,21 +38,20 @@ function TransferEntry({ onPosted, onClose }: Props): JSX.Element {
   if (!accounts) return <p>Loading accounts…</p>
 
   const groups = transferGroups(accounts)
-  const nameOf = (id: number | null): string => accounts.find((a) => a.id === id)?.name ?? ''
 
   async function submit(e: FormEvent): Promise<void> {
     e.preventDefault()
-    setError(null)
-    const built = buildTransfer({ date, memo: memo.trim() || `Transfer from ${nameOf(fromId)} to ${nameOf(toId)}`, fromId, toId, amount })
+    clear()
+    const built = build()
     if ('error' in built) {
-      setError(built.error)
+      showCheck(built.error)
       return
     }
     setBusy(true)
     const result = await window.juno.postManualEntry(built.entry)
     setBusy(false)
     if (!result.ok) {
-      setError(result.error)
+      showSave(result.error)
       return
     }
     setPosted({ id: result.value, text: `${formatCents(parseMoney(amount) ?? 0)} from ${nameOf(fromId)} to ${nameOf(toId)}` })

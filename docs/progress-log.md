@@ -58,5 +58,8 @@ Pointer log only — a few lines per round. Details live in git history.
 - Owner approved allowing web search/fetch and deletes inside the project/scratch folder; the settings edit is done by the owner (Claude can't edit its own permissions).
 - Round 22 polish ideas (1)–(3) approved; Transfer treated as done, pending owner review.
 
-## Build run
-- **Resume point:** not started. Starts when the owner says "go" in a new session. First steps: trigger the screen-control pop-up for the owner to approve, then set up Playwright and rewrite `docs/topics/live-checks.md`, then 2d (account register).
+## Build run (started 2026-10-02; status of every unit: verified by Claude, owner review pending)
+- Remaining Phase 2 plan: 2d register · 2e opening balances · 2f receipts (schema v6) · 2g data to `Documents\JunoBooks` + Settings. Then Phases 3–11 per `JunoBooks-PLAN.md` §8.
+- B1: Playwright live checks set up (`scripts/live/`, data in `test-data\live` via `JUNOBOOKS_DATA_ROOT`); `live-checks.md` rewritten.
+- B2: round-22 polish: red error clears once fixed (`useFormError.ts`, all four entry screens), wider account lists, empty Transactions text names all four buttons. Live check `polish.mjs`. 205 tests.
+- **Resume point:** 2d (account register) next.

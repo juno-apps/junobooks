@@ -14,6 +14,7 @@ import {
 } from '../../shared/everyday'
 import { formatCents } from '../../shared/money'
 import AccountCombobox from './AccountCombobox'
+import { useFormError } from './useFormError'
 
 export type SimpleKind = 'expense' | 'income'
 
@@ -87,12 +88,16 @@ function SimpleEntry({ kind, onPosted, onClose }: Props): JSX.Element {
   const [who, setWho] = useState('')
   const [otherId, setOtherId] = useState<number | null>(null)
   const [lines, setLines] = useState<SplitLine[]>([blankLine()])
-  const [error, setError] = useState<string | null>(null)
   const [posted, setPosted] = useState<{ id: number; text: string } | null>(null)
   const [busy, setBusy] = useState(false)
   /** Bumped after posting so the category boxes start empty again. */
   const [round, setRound] = useState(0)
   const whoRef = useRef<HTMLInputElement>(null)
+  const recheck = (): string | null => {
+    const built = mode.build({ date, who, otherId, lines })
+    return 'error' in built ? built.error : null
+  }
+  const { error, showCheck, showSave, clear } = useFormError(recheck, [date, who, otherId, lines])
 
   useEffect(() => {
     window.juno.getChart().then((chart) => setAccounts(chart ? chart.accounts : []))
@@ -117,17 +122,17 @@ function SimpleEntry({ kind, onPosted, onClose }: Props): JSX.Element {
 
   async function submit(e: FormEvent): Promise<void> {
     e.preventDefault()
-    setError(null)
+    clear()
     const built = mode.build({ date, who, otherId, lines })
     if ('error' in built) {
-      setError(built.error)
+      showCheck(built.error)
       return
     }
     setBusy(true)
     const result = await window.juno.postManualEntry(built.entry)
     setBusy(false)
     if (!result.ok) {
-      setError(result.error)
+      showSave(result.error)
       return
     }
     const otherName = accounts!.find((a) => a.id === otherId)?.name ?? ''

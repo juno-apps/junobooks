@@ -68,7 +68,7 @@ function TransactionList({ version, onChanged, onDuplicate }: Props): JSX.Elemen
         <h2>Transactions</h2>
       </div>
       {entries.length === 0 ? (
-        <p className="muted">No transactions yet. Use New journal entry to add one.</p>
+        <p className="muted">No transactions yet. Use New expense, New income, New transfer or New journal entry above to add one.</p>
       ) : (
         <table className="chart-table entry-list">
           <thead>
