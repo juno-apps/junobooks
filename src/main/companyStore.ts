@@ -37,6 +37,9 @@ import { set1099k, tieOut } from './form1099k'
 import { balanceSheet, generalLedger, profitAndLoss, trialBalance } from './reports'
 import { cogsSchedule, salesByChannel, taxLineSummary } from './reportsExtra'
 import * as records from './records'
+import { accountantNotes } from './accountantNotes'
+import { buildPackage } from './accountantPackage'
+import type { AccountantNote, PackageResult } from '../shared/pkg'
 import type {
   Contractor,
   ContractorInput,
@@ -644,6 +647,20 @@ export class CompanyBooks {
 
   profitAndLoss(from: string, to: string, byMonth = false): ProfitAndLoss {
     return profitAndLoss(this.db, from, to, byMonth)
+  }
+
+  /** Entity type in force on a date. */
+  entityTypeOn(date: string): EntityTypeId {
+    return valueAsOf(this.db, 'entity_type_history', 'entity_type', date) as EntityTypeId
+  }
+
+  accountantNotes(year: number, now: Date = new Date()): AccountantNote[] {
+    return accountantNotes(this.db, year, this.profile(now).booksStartDate)
+  }
+
+  buildPackage(year: number, pdf?: Buffer, now: Date = new Date()): Promise<PackageResult> {
+    const p = this.profile(now)
+    return buildPackage({ db: this.db, companyDir: this.dir, companyName: p.name, booksStart: p.booksStartDate, year, pdf, now })
   }
 
   contractors(): Contractor[] {

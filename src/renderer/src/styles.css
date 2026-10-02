@@ -1113,3 +1113,19 @@ button.attention {
 .chart-table .sub-account td {
   color: #444;
 }
+
+.package {
+  max-width: 900px;
+}
+
+.note-list {
+  padding-left: 1.2rem;
+}
+
+.note-list li {
+  margin: 0.25rem 0;
+}
+
+.package-result {
+  margin-top: 0.8rem;
+}

@@ -20,6 +20,7 @@ import type { AmazonImportInput, AmazonImportResult, AmazonMapping, AmazonPrevie
 import type { TieOutRow } from '../shared/form1099k'
 import type { BalanceSheet, GeneralLedger, ProfitAndLoss, TrialBalance } from '../shared/reports'
 import type { ChannelSales, CogsSchedule, TaxLineSummary } from '../shared/reportsExtra'
+import type { AccountantNote, PackageResult } from '../shared/pkg'
 import type {
   Contractor,
   ContractorInput,
@@ -71,6 +72,8 @@ import type {
 
 export type {
   AccountInput,
+  AccountantNote,
+  PackageResult,
   Contractor,
   ContractorInput,
   FixedAsset,
@@ -261,6 +264,9 @@ export interface JunoApi {
   importAmazon: (input: AmazonImportInput) => Promise<Result<AmazonImportResult>>
   amazonPayouts: () => Promise<Result<EtsyPayout[]>>
   profitAndLoss: (from: string, to: string, byMonth: boolean) => Promise<Result<ProfitAndLoss>>
+  accountantNotes: (year: number) => Promise<Result<AccountantNote[]>>
+  buildPackage: (year: number) => Promise<Result<PackageResult>>
+  showPackage: (path: string) => Promise<Result<null>>
   contractors: () => Promise<Result<Contractor[]>>
   saveContractor: (id: number | null, c: ContractorInput & { isActive?: boolean }) => Promise<Result<Contractor[]>>
   necReport: (year: number) => Promise<Result<NecReport>>

@@ -15,6 +15,7 @@ import Inventory from './Inventory'
 import JournalEntry from './JournalEntry'
 import OpeningBalances from './OpeningBalances'
 import Reconcile from './Reconcile'
+import AccountantPackage from './AccountantPackage'
 import Reports from './Reports'
 import YearEndRecords from './YearEndRecords'
 import Sales from './Sales'
@@ -50,6 +51,7 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
           | 'salesTax'
           | 'reports'
           | 'records'
+          | 'package'
       }
     | { kind: 'review'; accountId: number | null }
     | null
@@ -80,6 +82,7 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
       | 'salesTax'
       | 'reports'
       | 'records'
+      | 'package'
       | SimpleKind,
     copyOf?: EntryListItem
   ): void {
@@ -163,6 +166,9 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
             <button type="button" onClick={() => startEntry('records')}>
               Year-end records
             </button>
+            <button type="button" onClick={() => startEntry('package')}>
+              Accountant package
+            </button>
             <button type="button" onClick={() => startEntry('reconcile')}>
               Reconcile
             </button>
@@ -198,6 +204,13 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
         <AmazonImport
           key={entryKey}
           onImported={() => setChartVersion((v) => v + 1)}
+          onClose={() => setEntering(null)}
+        />
+      )}
+      {entering?.kind === 'package' && (
+        <AccountantPackage
+          key={entryKey}
+          firstYear={Number(company.booksStartDate.slice(0, 4))}
           onClose={() => setEntering(null)}
         />
       )}

@@ -41,9 +41,11 @@ JunoBooks-code/
       reports.ts       Profit & loss, balance sheet, trial balance, general ledger
       reportsExtra.ts  Sales by channel, tax-line summary, cost of goods sold schedule
       records.ts       Contractors + 1099-NEC list, fixed assets, mileage log, home office
+      accountantNotes.ts  Notes and checks for the accountant for a year
+      accountantPackage.ts  Year-end ZIP: Excel workbook, CSVs, receipts (exceljs, jszip)
       db/migrations.ts Numbered schema migrations
     preload/           contextBridge API exposed to the renderer as window.juno
-    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange, JournalEntry, TransactionList, SimpleEntry, TransferEntry, AccountCombobox, AccountRegister, OpeningBalances, Receipts, Settings, ImportWizard, BankReview, RulesManager, Reconcile, EtsyImport, AmazonImport, Form1099K, Inventory, Sales, SalesTax, Reports, ReportsExtra, ReportBits, YearEndRecords; useFormError hook)
+    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange, JournalEntry, TransactionList, SimpleEntry, TransferEntry, AccountCombobox, AccountRegister, OpeningBalances, Receipts, Settings, ImportWizard, BankReview, RulesManager, Reconcile, EtsyImport, AmazonImport, Form1099K, Inventory, Sales, SalesTax, Reports, ReportsExtra, ReportBits, YearEndRecords, AccountantPackage; useFormError hook)
     shared/            Code used by both main and renderer: entity types, US states, dates, money, company validation,
                        templates.ts (starting charts), taxLines.ts (tax categories + per-year line tables), chart.ts (view types),
                        accounts.ts (account input rules: kinds, debit/credit side, validation, number-range warning),
@@ -56,7 +58,8 @@ JunoBooks-code/
                        etsyImport.ts (Etsy import types), inventory.ts (quantities, the four methods), inventoryView.ts (inventory screen types),
                        sales.ts (direct-sales types, tax rates, invoice totals, aging), invoiceHtml.ts (printable invoice),
                        amazon.ts / amazonImport.ts (Amazon settlement reading, kinds, plan, types), form1099k.ts (tie-out types), salesTax.ts (rates in force, quarters, report types),
-                       reports.ts (report shapes, CSV helpers), reportsExtra.ts (detail report shapes), records.ts (year-end record types, 1099-NEC threshold, home-office math)
+                       reports.ts (report shapes, CSV helpers), reportsExtra.ts (detail report shapes), records.ts (year-end record types, 1099-NEC threshold, home-office math),
+                       pkg.ts (notes and package types), summaryHtml.ts (PDF summary page)
   scripts/run-tests.cjs
   scripts/live/         Playwright live checks (dev-only; see docs/topics/live-checks.md)
   samples/              Made-up example files (bank CSVs, Etsy statement and orders, Amazon settlement) for trying imports and live checks
@@ -176,7 +179,7 @@ Sole proprietor, Single-member LLC → Schedule C · Multi-member LLC, Partnersh
 ## Agreed design rules
 - **Home state has effective dates** (built; see Companies). Sales tax rates by state and date come in Phase 8.
 - **Sales tax rates are data with effective dates, not constants** (built; `docs/topics/sales-tax.md`). The owner adds a new rate and the date it starts. Old transactions keep the rate that applied on their date.
-- **Judgment calls are flagged, not decided.** Where the app makes a tax/accounting assumption it shows a "Check with your accountant" note, and all notes collect on the accountant package's "Notes for accountant" page.
+- **Judgment calls are flagged, not decided.** Where the app makes a tax/accounting assumption it shows a "Check with your accountant" note, and all notes collect on the accountant package's "Notes for accountant" page (built; `docs/topics/accountant-package.md`).
 
 ## Open questions
 See `JunoBooks-PLAN.md` §10 (inventory method, S-corp election timing, which bank CSVs, which Etsy exports). Home state resolved: California, switchable per company.
@@ -191,6 +194,7 @@ See `JunoBooks-PLAN.md` §10 (inventory method, S-corp election timing, which ba
 - `docs/topics/amazon-1099k.md`: Amazon settlement import (kinds, reserves, payout), 1099-K tie-out.
 - `docs/topics/sales-tax.md`: dated sales tax rates, invoice rate prefill, period report for the CDTFA return, paying sales tax.
 - `docs/topics/reports.md`: reports screen, financial reports, CSV export, year-end detail reports.
+- `docs/topics/accountant-package.md`: notes for the accountant, the year-end ZIP (workbook tabs, PDF summary, CSVs, receipts).
 - `docs/topics/chart-of-accounts.md`: templates, numbering, entity-specific accounts, tax-line mapping, accountant notes, chart screen, editing accounts, adding/restoring accounts after creation.
 
 ## Latest handoff
@@ -207,4 +211,5 @@ None yet. Created only when the owner types "create new handoff."
 - **Phase 7 complete (schema v12):** Amazon settlement importer and 1099-K tie-out (`docs/topics/amazon-1099k.md`). Real Amazon reports untested (backlog).
 - **Phase 8 complete (schema v13):** sales tax rates by date and the period report (`docs/topics/sales-tax.md`).
 - **Phase 9 complete (schema v14):** sub-accounts (chart and reports), Reports screen with profit & loss, balance sheet, trial balance, general ledger, sales by channel, tax-line summary, cost of goods sold, inventory methods, CSV export, and Year-end records (contractors/1099-NEC, fixed assets, mileage, home office; schema v14) (`docs/topics/reports.md`).
+- **Phase 10 complete:** accountant package (`docs/topics/accountant-package.md`).
 - Build run in progress: see `progress-log.md` → Build run for the resume point.

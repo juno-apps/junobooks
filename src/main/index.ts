@@ -37,6 +37,8 @@ import type { InventoryMethod } from '../shared/inventory'
 import type { ItemInput, PurchaseInput } from '../shared/inventoryView'
 import type { BusinessDetails, CertificateInput, CustomerInput, InvoiceInput, PaymentInput } from '../shared/sales'
 import { invoiceHtml } from '../shared/invoiceHtml'
+import { summaryHtml } from '../shared/summaryHtml'
+import { getEntityType, TAX_FORM_LABELS as FORM_LABELS } from '../shared/entities'
 import { mkdirSync, writeFileSync } from 'fs'
 import { safeNamePart } from '../shared/attachments'
 import { BACKUPS_TO_KEEP } from './companyStore'
@@ -89,6 +91,39 @@ function useDataFolder(dir: string | null): SettingsView {
   closeCurrent()
   writeDataLocation(dataLocationFile(), dir === null || dir === defaultDataRoot() ? null : dir)
   return settingsView()
+}
+
+/** Renders HTML to PDF bytes in a hidden window. */
+async function htmlToPdf(html: string): Promise<Buffer> {
+  const win = new BrowserWindow({ show: false, webPreferences: { javascript: false } })
+  try {
+    await win.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
+    return await win.webContents.printToPDF({ pageSize: 'Letter', printBackground: true })
+  } finally {
+    win.destroy()
+  }
+}
+
+/** Builds the year's accountant package (with the PDF summary) and returns the result. */
+async function buildAccountantPackage(year: number) {
+  const books = requireCompany()
+  const p = books.profile()
+  const to = `${year}-12-31`
+  const entity = getEntityType(books.entityTypeOn(to))
+  const html = summaryHtml({
+    companyName: p.name,
+    year,
+    entityLabel: entity.label,
+    formLabel: FORM_LABELS[entity.taxForm],
+    prepared: new Date().toISOString().slice(0, 10),
+    pl: books.profitAndLoss(`${year}-01-01`, to),
+    bs: books.balanceSheet(to),
+    channels: books.salesByChannel(`${year}-01-01`, to),
+    cogs: books.cogsSchedule(year),
+    tieOut: books.tieOut1099k(year),
+    notes: books.accountantNotes(year)
+  })
+  return books.buildPackage(year, await htmlToPdf(html))
 }
 
 /** Saves an invoice as a PDF in the company's exports\invoices folder and returns the file path. */
@@ -394,21 +429,46 @@ app.whenReady().then(() => {
   ipcMain.handle('reports:pl', (_e, from: string, to: string, byMonth: boolean) =>
     wrap(() => requireCompany().profitAndLoss(from, to, byMonth))
   )
+  ipcMain.handle('package:notes', (_e, year: number) => wrap(() => requireCompany().accountantNotes(year)))
+  ipcMain.handle('package:build', async (_e, year: number) => {
+    try {
+      return { ok: true, value: await buildAccountantPackage(year) }
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) }
+    }
+  })
+  ipcMain.handle('package:show', (_e, path: string) =>
+    wrap(() => {
+      const books = requireCompany()
+      if (!path.startsWith(join(books.dir, 'exports')))
+        throw new Error('That file is not in this company’s exports folder.')
+      shell.showItemInFolder(path)
+      return null
+    })
+  )
   ipcMain.handle('records:contractors', () => wrap(() => requireCompany().contractors()))
   ipcMain.handle('records:saveContractor', (_e, id: number | null, c: ContractorInput & { isActive?: boolean }) =>
     wrap(() => requireCompany().saveContractor(id, c))
   )
   ipcMain.handle('records:nec', (_e, year: number) => wrap(() => requireCompany().necReport(year)))
   ipcMain.handle('records:fixedAssets', () => wrap(() => requireCompany().fixedAssets()))
-  ipcMain.handle('records:saveFixedAsset', (_e, id: number | null, f: FixedAssetInput) => wrap(() => requireCompany().saveFixedAsset(id, f)))
+  ipcMain.handle('records:saveFixedAsset', (_e, id: number | null, f: FixedAssetInput) =>
+    wrap(() => requireCompany().saveFixedAsset(id, f))
+  )
   ipcMain.handle('records:fixedAssetReport', (_e, year: number) => wrap(() => requireCompany().fixedAssetReport(year)))
   ipcMain.handle('records:addTrip', (_e, t: TripInput) => wrap(() => requireCompany().addTrip(t)))
-  ipcMain.handle('records:removeTrip', (_e, id: number, year: number) => wrap(() => requireCompany().removeTrip(id, year)))
-  ipcMain.handle('records:setMileageRate', (_e, year: number, rate: number | null) => wrap(() => requireCompany().setMileageRate(year, rate)))
+  ipcMain.handle('records:removeTrip', (_e, id: number, year: number) =>
+    wrap(() => requireCompany().removeTrip(id, year))
+  )
+  ipcMain.handle('records:setMileageRate', (_e, year: number, rate: number | null) =>
+    wrap(() => requireCompany().setMileageRate(year, rate))
+  )
   ipcMain.handle('records:mileage', (_e, year: number) => wrap(() => requireCompany().mileageReport(year)))
   ipcMain.handle('records:homeOffice', (_e, year: number) => wrap(() => requireCompany().homeOffice(year)))
   ipcMain.handle('records:saveHomeOffice', (_e, h: HomeOffice) => wrap(() => requireCompany().saveHomeOffice(h)))
-  ipcMain.handle('reports:channels', (_e, from: string, to: string) => wrap(() => requireCompany().salesByChannel(from, to)))
+  ipcMain.handle('reports:channels', (_e, from: string, to: string) =>
+    wrap(() => requireCompany().salesByChannel(from, to))
+  )
   ipcMain.handle('reports:taxLines', (_e, year: number) => wrap(() => requireCompany().taxLineSummary(year)))
   ipcMain.handle('reports:cogs', (_e, year: number) => wrap(() => requireCompany().cogsSchedule(year)))
   ipcMain.handle('reports:bs', (_e, asOf: string) => wrap(() => requireCompany().balanceSheet(asOf)))
@@ -434,8 +494,12 @@ app.whenReady().then(() => {
   ipcMain.handle('salesTax:addRate', (_e, input: RateInput) => wrap(() => requireCompany().addSalesTaxRate(input)))
   ipcMain.handle('salesTax:removeRate', (_e, id: number) => wrap(() => requireCompany().removeSalesTaxRate(id)))
   ipcMain.handle('salesTax:homeRate', (_e, date: string) => wrap(() => requireCompany().homeRateOn(date)))
-  ipcMain.handle('salesTax:report', (_e, from: string, to: string) => wrap(() => requireCompany().salesTaxReport(from, to)))
-  ipcMain.handle('salesTax:pay', (_e, input: SalesTaxPaymentInput) => wrap(() => requireCompany().recordSalesTaxPayment(input)))
+  ipcMain.handle('salesTax:report', (_e, from: string, to: string) =>
+    wrap(() => requireCompany().salesTaxReport(from, to))
+  )
+  ipcMain.handle('salesTax:pay', (_e, input: SalesTaxPaymentInput) =>
+    wrap(() => requireCompany().recordSalesTaxPayment(input))
+  )
   ipcMain.handle('1099k:get', (_e, year: number) => wrap(() => requireCompany().tieOut1099k(year)))
   ipcMain.handle('1099k:set', (_e, year: number, platform: string, cents: number | null, notes: string) =>
     wrap(() => requireCompany().set1099k(year, platform, cents, notes))
