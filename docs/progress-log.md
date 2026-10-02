@@ -53,12 +53,12 @@ Pointer log only — a few lines per round. Details live in git history.
 - Status: Transfer awaiting the owner's own confirmation (committed as a savepoint).
 - (Round 22 polish ideas were approved and built in the build run.)
 
-## Round 23 — Build run agreed (not started)
-- Owner approved an autonomous build run through Phase 11 (rules in `CLAUDE.md` §10): no checkpoint stops, Opus throughout, live checks via Playwright, commits/pushes without asking, no releases, owner-only choices parked in backlog under "Needs owner decision", final list in `docs/build-run-changes.md`.
+## Round 23 — Build run agreed
+- Owner approved an autonomous build run through Phase 11 (rules were in `CLAUDE.md` §10, removed at the end): no checkpoint stops, Opus throughout, live checks via Playwright, commits/pushes without asking, no releases, owner-only choices parked in backlog under "Needs owner decision", final list in `docs/build-run-changes.md`.
 - Owner approved allowing web search/fetch and deletes inside the project/scratch folder; the settings edit is done by the owner (Claude can't edit its own permissions).
 - Round 22 polish ideas (1)–(3) approved; Transfer treated as done, pending owner review.
 
-## Build run (started 2026-10-02; status of every unit: verified by Claude, owner review pending)
+## Build run (2026-10-02; status of every unit: verified by Claude, owner review pending)
 - Remaining Phase 2 plan: 2d register · 2e opening balances · 2f receipts (schema v6) · 2g data to `Documents\JunoBooks` + Settings. Then Phases 3–11 per `JunoBooks-PLAN.md` §8.
 - B1: Playwright live checks set up (`scripts/live/`, data in `test-data\live` via `JUNOBOOKS_DATA_ROOT`); `live-checks.md` rewritten.
 - B2: round-22 polish: red error clears once fixed (`useFormError.ts`, all four entry screens), wider account lists, empty Transactions text names all four buttons. Live check `polish.mjs`. 205 tests.
@@ -93,3 +93,5 @@ Pointer log only — a few lines per round. Details live in git history.
 - Phase 11 plan (polish): 11a Close books screen: lock the books through a date (end of last month, quarter or year), reopen with a reason, history (the ledger rules already exist) · 11b year-end close: a closing entry dated Dec 31 (source `closing`) moves the year's income and expenses into equity (Owner's or Partners' capital, or Retained earnings for corporations; the account is a choice with an accountant note), then locks the year; profit & loss, tax lines, sales by channel, cost of goods sold, sales tax and the year-end trial balance leave closing entries out so the year's figures stay visible; redo after reopening · 11c dashboard on company home (this year's sales, expenses, net income, cash, owed to you, owed by you, things to do) and the home buttons grouped (Enter, Import, Sales, Year end).
 - B23 (11a+11b): Close books screen: close through a date (quick links), reopen with a reason, history; close a finished year into equity (default by entity; closing entry dated Dec 31 then locked; redo after reopening). Profit & loss and detail reports leave closing entries out; trial balance leaves out those on its date. Files: `main/closing.ts` (+test), `shared/closing.ts`, `CloseBooks.tsx`, `reports.ts`, `reportsExtra.ts`, `salesTax.ts`, `accountantNotes.ts`, `inventoryReport.ts`, `companyStore.ts`, IPC/preload. New topic doc `closing.md`. Live check `closing.mjs`. 338 tests.
 - B24 (11c): company home: one-line profile with Details, buttons grouped (Enter, Bring in, Sell and make, Year end), dashboard figures (sales, costs, net income, cash, owed to you, you owe) and a To do list that opens the right screen. Files: `main/dashboard.ts` (+test), `shared/dashboard.ts`, `DashboardPanel.tsx`, `CompanyHome.tsx`, styles, IPC/preload; three live checks use exact button names. Live check `dashboard.mjs`. 339 tests. **Phase 11 complete. Build run complete.**
+- End of run: `docs/build-run-changes.md` written (plain-English list, what was parked, what to try); `CLAUDE.md` §10 removed. No release made; suggested next.
+- **Resume point:** owner review of the build run (start with `docs/build-run-changes.md`), then a release when the owner is ready. Open owner decision: inventory method filed for 2026 (backlog).
