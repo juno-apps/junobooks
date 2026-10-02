@@ -5,18 +5,23 @@ Clicking through the running app to confirm a change really works, instead of re
 ## Standing permission
 The owner has given full access to whatever is needed to control for live checks, in every session, until they say to put access permission back the way it was (then delete this section and `CLAUDE.md` §9). The tool still shows its own approval pop-up each session; call it and carry on. This does not change `CLAUDE.md` §8 (test data only, nothing destructive without asking).
 
-## Steps that work (Windows, dev build)
-1. Run `npm run typecheck` and `npm test` first.
-2. Start the app in the background: `npm start`. It opens a window titled "JunoBooks" owned by the project's own `node_modules\electron\dist\electron.exe`.
-3. Ask for access to **`JunoBooks`** and **`electron.exe`** (the installed packaged JunoBooks and the dev copy are different programs; the dev copy is the one under test).
-4. The window can start behind others or off to the side. Bring it forward from PowerShell (`ShowWindow` / `SetForegroundWindow` on the `electron` process whose `MainWindowTitle` is "JunoBooks"). Maximize it by double-clicking the title bar.
-5. Use a **new test company** (name it "Live check"), never an existing test company. Companies are created through the app's New company form; this adds a folder under `test-data\Companies`.
-6. Check the happy path, the refusals (wrong input gives a plain-English message), and the resulting balances on the Chart of accounts tab.
-7. Tidy up: stop the `electron.exe` processes and the `node.exe` running `electron-vite` that you started, and set `lastCompany` in `test-data\app-settings.json` back to the company the owner had open.
+## Main method: Playwright (dev-only tool, never shipped)
+- `playwright` is a dev dependency. It launches the built app (`out/`) through Electron and drives the real window: clicks, typing, reading text, screenshots.
+- The app's data folder is pointed at **`test-data\live`** with the `JUNOBOOKS_DATA_ROOT` environment variable (honoured only in unpackaged runs, `src/main/paths.ts`). The owner's normal test companies in `test-data\Companies` and their last-opened company are never touched.
+- Helpers in `scripts/live/lib.mjs`: `launch({ fresh })` (fresh wipes `test-data\live` first), `createCompany(page)` (makes the **"Live check"** company through the New company form: single-member LLC, Product template, books start 2026-01-01), `shot(page, name)` (full-page screenshot into `test-data\live-shots\`), `check(cond, label)`, `done(errors)` (also fails on any page error).
+- One script per unit in `scripts/live/checks/` (e.g. `smoke.mjs`). Each prints `ok` / `FAIL` lines and "Live check passed".
 
-## Traps
-- **Don't use `open_application` on "Electron".** It starts a blank Electron welcome window, not JunoBooks.
-- Clicking the Windows taskbar needs a separate "File Explorer" access grant; skip it and use the PowerShell step above.
-- In date boxes, arrow keys change the day. Type the whole date (e.g. `01012026`) instead.
-- A message that disappears (e.g. "Entry posted") moves the buttons below it up; re-check coordinates with a fresh screenshot before clicking.
-- Screenshots may show the owner's personal desktop behind the app. Only act inside the JunoBooks window.
+### Steps
+1. `npm run typecheck` and `npm test`.
+2. `npm run build` (live checks run the built app, not the dev server).
+3. `node scripts/live/checks/<name>.mjs`.
+4. Open the screenshots in `test-data\live-shots\` and look at them (layout, wording, wrapping).
+5. Check the happy path, the refusals (wrong input gives a plain-English message), and the resulting balances.
+
+### Traps
+- Date inputs: `fill('2026-03-15')` works (Playwright sets the value directly).
+- The account boxes (`AccountCombobox`) need a click, typing, then a click on the option (or Enter); `fill` alone leaves the text unmatched.
+- A Playwright run opens a real window briefly; it closes itself at the end of the script.
+
+## Backup method: real screen control
+Only when Playwright can't do something. Start the app with `npm start`, ask computer-use for access to **`JunoBooks`** (and the dev `electron.exe` window if offered), bring the window forward from PowerShell (`SetForegroundWindow` on the `electron` process titled "JunoBooks"), use a "Live check" company, and stop the processes afterwards. Don't use `open_application` on "Electron" (opens a blank welcome window). In date boxes type the whole date (`01012026`). The installed JunoBooks is a different program from the dev copy. Screenshots may show the owner's desktop; act only inside the JunoBooks window.
