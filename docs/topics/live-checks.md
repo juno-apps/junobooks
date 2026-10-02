@@ -7,14 +7,15 @@ The owner has given full access to whatever is needed to control for live checks
 
 ## Main method: Playwright (dev-only tool, never shipped)
 - `playwright` is a dev dependency. It launches the built app (`out/`) through Electron and drives the real window: clicks, typing, reading text, screenshots.
-- The app's data folder is pointed at **`test-data\live`** with the `JUNOBOOKS_DATA_ROOT` environment variable (honoured only in unpackaged runs, `src/main/paths.ts`). The owner's normal test companies in `test-data\Companies` and their last-opened company are never touched.
+- The `JUNOBOOKS_DATA_ROOT` environment variable replaces the development copy's whole test-data area with **`test-data\live`** (`src/main/paths.ts`, development copy only): companies, app settings and the Settings folder pointer all live there. The owner's normal test companies in `test-data\Companies` and their last-opened company are never touched.
 - Helpers in `scripts/live/lib.mjs`: `launch({ fresh })` (fresh wipes `test-data\live` first), `createCompany(page)` (makes the **"Live check"** company through the New company form: single-member LLC, Product template, books start 2026-01-01), `shot(page, name)` (full-page screenshot into `test-data\live-shots\`), `check(cond, label)`, `done(errors)` (also fails on any page error).
 - One script per unit in `scripts/live/checks/` (e.g. `smoke.mjs`). Each prints `ok` / `FAIL` lines and "Live check passed".
 
+- File pickers and "open in Windows" are stubbed from the script with `app.evaluate(({ dialog, shell }) => ...)` (see `receipts.mjs`, `settings.mjs`).
+
 ### Steps
 1. `npm run typecheck` and `npm test`.
-2. `npm run build` (live checks run the built app, not the dev server).
-3. `node scripts/live/checks/<name>.mjs`.
+2. `npm run live` builds and runs every check (`scripts/live/all.mjs`); or `npm run build` then `node scripts/live/checks/<name>.mjs` for one.
 4. Open the screenshots in `test-data\live-shots\` and look at them (layout, wording, wrapping).
 5. Check the happy path, the refusals (wrong input gives a plain-English message), and the resulting balances.
 

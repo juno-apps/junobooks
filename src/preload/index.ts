@@ -3,6 +3,10 @@ import type { JunoApi } from './types'
 
 const api: JunoApi = {
   getAppInfo: () => ipcRenderer.invoke('app:getInfo'),
+  getSettings: () => ipcRenderer.invoke('settings:get'),
+  chooseDataFolder: () => ipcRenderer.invoke('settings:chooseFolder'),
+  useDataFolder: (dir) => ipcRenderer.invoke('settings:useFolder', dir),
+  openDataFolder: () => ipcRenderer.invoke('settings:openFolder'),
   listCompanies: () => ipcRenderer.invoke('companies:list'),
   getCurrentCompany: () => ipcRenderer.invoke('companies:current'),
   openCompany: (folder) => ipcRenderer.invoke('companies:open', folder),

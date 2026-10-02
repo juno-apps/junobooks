@@ -9,7 +9,10 @@ import type { OpeningBalanceInput } from '../shared/opening'
 import type { CompanyProfile, EntityChangeInput, HomeStateChangeInput, NewCompanyInput, Result } from '../shared/company'
 import { readAppSettings, writeAppSettings } from './appSettings'
 import { createCompany, listCompanies, openCompany, type CompanyBooks } from './companyStore'
-import { getCompaniesDir, getDataRoot } from './paths'
+import { checkDataFolder, countCompanies, writeDataLocation } from './dataLocation'
+import { dataLocationFile, defaultDataRoot, devDataRoot, getCompaniesDir, getDataRoot, isDev as isDevCopy, oldTestDataRoot } from './paths'
+import type { SettingsView } from '../shared/settings'
+import { BACKUPS_TO_KEEP } from './companyStore'
 
 const isDev = !app.isPackaged
 
@@ -33,6 +36,32 @@ function closeCurrent(): void {
 function requireCompany(): CompanyBooks {
   if (!current) throw new Error('No company is open.')
   return current
+}
+
+function settingsView(): SettingsView {
+  const dataRoot = getDataRoot()
+  const old = oldTestDataRoot()
+  const oldCount = old ? countCompanies(old) : 0
+  return {
+    dataRoot,
+    defaultRoot: defaultDataRoot(),
+    isDefault: dataRoot === defaultDataRoot(),
+    isDev: isDevCopy(),
+    companyCount: countCompanies(dataRoot),
+    oldTestData: old && oldCount > 0 && old !== dataRoot ? { path: old, companyCount: oldCount } : null,
+    backupsKept: BACKUPS_TO_KEEP
+  }
+}
+
+/** Points JunoBooks at another data folder (nothing is moved or copied). Closes the open company first. */
+function useDataFolder(dir: string | null): SettingsView {
+  if (dir !== null) {
+    const problem = checkDataFolder(dir, isDevCopy() ? devDataRoot() : undefined)
+    if (problem) throw new Error(problem)
+  }
+  closeCurrent()
+  writeDataLocation(dataLocationFile(), dir === null || dir === defaultDataRoot() ? null : dir)
+  return settingsView()
 }
 
 /** Turns thrown errors into a plain message the screen can show. */
@@ -80,6 +109,23 @@ app.whenReady().then(() => {
     buildDate: __BUILD_DATE__
   }))
 
+  ipcMain.handle('settings:get', () => settingsView())
+  ipcMain.handle('settings:chooseFolder', async (e) => {
+    const win = BrowserWindow.fromWebContents(e.sender)
+    const opts: Electron.OpenDialogOptions = {
+      title: 'Choose the JunoBooks data folder',
+      defaultPath: getDataRoot(),
+      properties: ['openDirectory', 'createDirectory']
+    }
+    const picked = win ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts)
+    if (picked.canceled || picked.filePaths.length === 0) return { ok: true, value: null }
+    return wrap(() => useDataFolder(picked.filePaths[0]))
+  })
+  ipcMain.handle('settings:useFolder', (_e, dir: string | null) => wrap(() => useDataFolder(dir)))
+  ipcMain.handle('settings:openFolder', async () => {
+    const problem = await shell.openPath(getDataRoot())
+    return problem ? { ok: false, error: problem } : { ok: true, value: null }
+  })
   ipcMain.handle('companies:list', () => listCompanies(getCompaniesDir()))
   ipcMain.handle('companies:current', () => current?.profile() ?? null)
   ipcMain.handle('companies:open', (_e, folder: string) => wrap(() => switchTo(folder)))

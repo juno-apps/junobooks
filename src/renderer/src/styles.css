@@ -580,6 +580,15 @@ button.danger {
   white-space: nowrap;
 }
 
+.header-settings {
+  margin-left: auto;
+}
+
+.settings h2 {
+  font-size: 1.1rem;
+  margin-bottom: 0.3rem;
+}
+
 .account-link {
   color: inherit;
   text-decoration: none;

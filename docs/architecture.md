@@ -16,8 +16,9 @@ JunoBooks-code/
   src/
     main/              Electron main process
       index.ts         Window, IPC handlers, the one open company
-      paths.ts         Data root (dev vs packaged)
-      appSettings.ts   Per-PC prefs (app-settings.json: last opened company)
+      paths.ts         Data root (installed vs development copy, Settings choice)
+      dataLocation.ts  Data-folder pointer file and folder checks (no Electron imports)
+      appSettings.ts   Per-PC prefs in the data root (app-settings.json: last opened company)
       companyStore.ts  Create / list / open companies, backups (no Electron imports, so testable)
       ledger.ts        Ledger engine: post / void / reverse entries, period lock, balances
       chart.ts         Apply a template's accounts; build the chart-of-accounts view
@@ -29,13 +30,13 @@ JunoBooks-code/
       attachments.ts   Receipt files: copy into receipts\<year>\, list, remove (kept on record)
       db/migrations.ts Numbered schema migrations
     preload/           contextBridge API exposed to the renderer as window.juno
-    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange, JournalEntry, TransactionList, SimpleEntry, TransferEntry, AccountCombobox, AccountRegister, OpeningBalances, Receipts; useFormError hook)
+    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange, JournalEntry, TransactionList, SimpleEntry, TransferEntry, AccountCombobox, AccountRegister, OpeningBalances, Receipts, Settings; useFormError hook)
     shared/            Code used by both main and renderer: entity types, US states, dates, money, company validation,
                        templates.ts (starting charts), taxLines.ts (tax categories + per-year line tables), chart.ts (view types),
                        accounts.ts (account input rules: kinds, debit/credit side, validation, number-range warning),
                        journal.ts (entry-screen rows → ledger lines, live totals, two-line balancing, entry list type),
                        everyday.ts (Expense/Income/Transfer screens: account groups, type-to-narrow filter, entry builders),
-                       register.ts (register view types, column wording), opening.ts (opening-balance types, difference),
+                       register.ts (register view types, column wording), opening.ts (opening-balance types, difference), settings.ts (Settings view type),
                        attachments.ts (receipt naming, accepted types)
   scripts/run-tests.cjs
   test-data/           Dev data root (git-ignored, never real books)
@@ -52,7 +53,7 @@ JunoBooks-code/
 ```
 
 ## Companies
-- **Data root:** dev (`npm start`) uses `<project>/test-data`. Packaged builds use `<userData>/test-data`. **Decision:** both stay on test folders until the Phase 2 checkpoint (manual entry) passes; right after it, packaged builds move to `Documents\JunoBooks\` with a Settings screen to choose the folder (Phase 3 imports real bank files, so real books must not start before then). Nothing touches the owner's real books until then.
+- **Data root** (`paths.ts`): the installed app uses `Documents\JunoBooks\`; a development copy (`npm start`) uses `<project>\test-data\` (live checks replace it with `JUNOBOOKS_DATA_ROOT`). **Settings** (header link, `Settings.tsx`) shows the folder and its company count, opens it, and switches to another folder or back to the standard one. The choice is a pointer file outside the data root (installed: `<userData>\data-location.json`; development: `test-data\data-location.json`). Switching closes (and backs up) the open company and never moves or copies files. `checkDataFolder` refuses a single company's folder, the `Companies` folder itself, a file, or a folder JunoBooks can't write to; a development copy only accepts folders inside its test data, so it can never open real books. Practice companies from earlier installed test versions stay in `<userData>\test-data\`; Settings mentions them with a "Use that folder" link.
 - A company = a folder under `Companies\`. The folder name is the company name made Windows-safe (`folderNameFor`). The folder name is the company's ID on this PC. Duplicate names are rejected.
 - The company list is built by scanning folders and reading each `books.sqlite` read-only. Folders that aren't JunoBooks companies (schema version 0, e.g. the old Phase 0 `Sample Company` smoke-test file) are skipped.
 - One company is open at a time. Switching opens the new one first, then closes (and backs up) the old one. The last opened company reopens on startup.
@@ -137,4 +138,5 @@ None yet. Created only when the owner types "create new handoff."
 ## Status
 - **Phase 0 complete:** installs from GitHub, opens, updates itself.
 - **Phase 1 complete (schema v5 at the end of Phase 1):** create/list/switch companies, core schema + audit log, ledger engine + period lock, templates + chart of accounts + tax lines, account editing, entity-type and home-state changes with start dates (correct/remove, chart follows entity changes, restore missing accounts). 
-- **Phase 2 in progress** (manual entry). 2a–2f built: journal entry screen, transaction list, Expense / Income / Transfer screens, account register, opening balances, receipts (schema v6) (see `docs/topics/manual-entry.md`). Build-run units are verified by Claude, owner review pending. Resume point: see `progress-log.md` → Build run. Units: 2a journal entry screen · 2b transaction list (void, reverse, duplicate) · 2c Expense/Income/Transfer screens · 2d account register · 2e opening balances · 2f receipts (schema v6) · 2g move packaged data to `Documents\JunoBooks` + Settings. Sub-accounts stay parked until Phase 9.
+- **Phase 2 complete (schema v6):** journal entry screen, transaction list, Expense / Income / Transfer, account register, opening balances, receipts, data folder `Documents\JunoBooks` + Settings (see `docs/topics/manual-entry.md`). 2d–2g verified by Claude, owner review pending. Sub-accounts stay parked until Phase 9.
+- Build run in progress: see `progress-log.md` → Build run for the resume point.

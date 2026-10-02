@@ -3,8 +3,9 @@ import type { AppInfo, CompanyProfile, CompanySummary } from '../../preload/type
 import CompanyHome from './CompanyHome'
 import CompanyPicker from './CompanyPicker'
 import NewCompanyForm from './NewCompanyForm'
+import Settings from './Settings'
 
-type View = 'home' | 'picker' | 'new'
+type View = 'home' | 'picker' | 'new' | 'settings'
 
 function App(): JSX.Element {
   const [info, setInfo] = useState<AppInfo | null>(null)
@@ -32,6 +33,8 @@ function App(): JSX.Element {
   let body: JSX.Element
   if (companies === null) {
     body = <p>Loading…</p>
+  } else if (view === 'settings') {
+    body = <Settings onFolderChanged={() => void refresh()} onClose={() => setView(current ? 'home' : 'picker')} />
   } else if (view === 'new' || companies.length === 0) {
     body = (
       <NewCompanyForm
@@ -64,6 +67,11 @@ function App(): JSX.Element {
               Switch company
             </button>
           </>
+        )}
+        {view !== 'settings' && (
+          <button className="link-button header-settings" onClick={() => setView('settings')}>
+            Settings
+          </button>
         )}
       </header>
       <main className="app-main">{body}</main>

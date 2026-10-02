@@ -3,6 +3,7 @@ import type { EntryListItem, ManualEntryInput } from '../shared/journal'
 import type { ChartAccount, ChartView } from '../shared/chart'
 import type { RegisterQuery, RegisterRow, RegisterView } from '../shared/register'
 import type { Attachment, AttachResult } from '../shared/attachments'
+import type { SettingsView } from '../shared/settings'
 import type { OpeningBalanceInput, OpeningBalancesView } from '../shared/opening'
 import type {
   CompanyHistory,
@@ -37,7 +38,8 @@ export type {
   RegisterQuery,
   RegisterRow,
   RegisterView,
-  Result
+  Result,
+  SettingsView
 }
 
 export interface AppInfo {
@@ -47,6 +49,12 @@ export interface AppInfo {
 
 export interface JunoApi {
   getAppInfo: () => Promise<AppInfo>
+  getSettings: () => Promise<SettingsView>
+  /** Opens a folder picker; null value = cancelled. */
+  chooseDataFolder: () => Promise<Result<SettingsView | null>>
+  /** null = back to the default folder. */
+  useDataFolder: (dir: string | null) => Promise<Result<SettingsView>>
+  openDataFolder: () => Promise<Result<null>>
   listCompanies: () => Promise<CompanySummary[]>
   getCurrentCompany: () => Promise<CompanyProfile | null>
   openCompany: (folder: string) => Promise<Result<CompanyProfile>>
