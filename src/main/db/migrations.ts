@@ -842,6 +842,71 @@ export const MIGRATIONS: Migration[] = [
       ) STRICT;
       ${auditTriggersV2('sales_tax_rates', ['id', 'state_code', 'place', 'rate_milli', 'effective_date', 'notes', 'created_at'], false)}
     `
+  },
+  {
+    version: 14,
+    description: 'Year-end records: contractors (1099-NEC), fixed assets, mileage log and rates, home office',
+    sql: `
+      CREATE TABLE contractors (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL CHECK (length(trim(name)) > 0),
+        address TEXT NOT NULL DEFAULT '',
+        w9_on_file INTEGER NOT NULL DEFAULT 0 CHECK (w9_on_file IN (0, 1)),
+        tin_last4 TEXT NOT NULL DEFAULT '',
+        match_text TEXT NOT NULL,
+        notes TEXT NOT NULL DEFAULT '',
+        is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      ) STRICT;
+
+      CREATE TABLE fixed_assets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL CHECK (length(trim(name)) > 0),
+        account_id INTEGER REFERENCES accounts(id),
+        in_service_date TEXT NOT NULL,
+        cost_cents INTEGER NOT NULL CHECK (cost_cents >= 0),
+        disposed_date TEXT,
+        notes TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      ) STRICT;
+
+      CREATE TABLE mileage_trips (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        trip_date TEXT NOT NULL,
+        miles_tenths INTEGER NOT NULL CHECK (miles_tenths > 0),
+        purpose TEXT NOT NULL CHECK (length(trim(purpose)) > 0),
+        from_place TEXT NOT NULL DEFAULT '',
+        to_place TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL
+      ) STRICT;
+
+      CREATE TABLE mileage_rates (
+        year INTEGER PRIMARY KEY,
+        rate_tenth_cents INTEGER NOT NULL CHECK (rate_tenth_cents >= 0),
+        updated_at TEXT NOT NULL
+      ) STRICT;
+
+      CREATE TABLE home_office (
+        year INTEGER PRIMARY KEY,
+        office_sqft INTEGER NOT NULL CHECK (office_sqft >= 0),
+        home_sqft INTEGER NOT NULL CHECK (home_sqft >= 0),
+        rent_cents INTEGER NOT NULL DEFAULT 0,
+        mortgage_interest_cents INTEGER NOT NULL DEFAULT 0,
+        property_tax_cents INTEGER NOT NULL DEFAULT 0,
+        utilities_cents INTEGER NOT NULL DEFAULT 0,
+        insurance_cents INTEGER NOT NULL DEFAULT 0,
+        repairs_cents INTEGER NOT NULL DEFAULT 0,
+        other_cents INTEGER NOT NULL DEFAULT 0,
+        notes TEXT NOT NULL DEFAULT '',
+        updated_at TEXT NOT NULL
+      ) STRICT;
+
+      ${auditTriggersV2('contractors', ['id', 'name', 'address', 'w9_on_file', 'tin_last4', 'match_text', 'notes', 'is_active', 'updated_at'], false)}
+      ${auditTriggersV2('fixed_assets', ['id', 'name', 'account_id', 'in_service_date', 'cost_cents', 'disposed_date', 'notes', 'updated_at'], false)}
+      ${auditTriggersV2('mileage_trips', ['id', 'trip_date', 'miles_tenths', 'purpose', 'from_place', 'to_place', 'created_at'], false)}
+    `
   }
 ]
 

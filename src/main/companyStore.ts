@@ -36,6 +36,19 @@ import type { AmazonImportInput, AmazonImportResult, AmazonPreview } from '../sh
 import { set1099k, tieOut } from './form1099k'
 import { balanceSheet, generalLedger, profitAndLoss, trialBalance } from './reports'
 import { cogsSchedule, salesByChannel, taxLineSummary } from './reportsExtra'
+import * as records from './records'
+import type {
+  Contractor,
+  ContractorInput,
+  FixedAsset,
+  FixedAssetInput,
+  FixedAssetReport,
+  HomeOffice,
+  HomeOfficeSummary,
+  MileageReport,
+  NecReport,
+  TripInput
+} from '../shared/records'
 import type { ChannelSales, CogsSchedule, TaxLineSummary } from '../shared/reportsExtra'
 import type { BalanceSheet, GeneralLedger, ProfitAndLoss, TrialBalance } from '../shared/reports'
 import { addRate, homeRateOn, listRates, recordSalesTaxPayment, removeRate, salesTaxReport } from './salesTax'
@@ -631,6 +644,60 @@ export class CompanyBooks {
 
   profitAndLoss(from: string, to: string, byMonth = false): ProfitAndLoss {
     return profitAndLoss(this.db, from, to, byMonth)
+  }
+
+  contractors(): Contractor[] {
+    return records.listContractors(this.db)
+  }
+
+  saveContractor(id: number | null, c: ContractorInput & { isActive?: boolean }, now: Date = new Date()): Contractor[] {
+    records.saveContractor(this.db, id, c, now)
+    return records.listContractors(this.db)
+  }
+
+  necReport(year: number): NecReport {
+    return records.necReport(this.db, year)
+  }
+
+  fixedAssets(): FixedAsset[] {
+    return records.listFixedAssets(this.db)
+  }
+
+  saveFixedAsset(id: number | null, f: FixedAssetInput, now: Date = new Date()): FixedAsset[] {
+    records.saveFixedAsset(this.db, id, f, now)
+    return records.listFixedAssets(this.db)
+  }
+
+  fixedAssetReport(year: number): FixedAssetReport {
+    return records.fixedAssetReport(this.db, year)
+  }
+
+  addTrip(t: TripInput, now: Date = new Date()): MileageReport {
+    records.addTrip(this.db, t, now)
+    return records.mileageReport(this.db, Number(t.date.slice(0, 4)))
+  }
+
+  removeTrip(id: number, year: number): MileageReport {
+    records.removeTrip(this.db, id)
+    return records.mileageReport(this.db, year)
+  }
+
+  setMileageRate(year: number, rate: number | null, now: Date = new Date()): MileageReport {
+    records.setMileageRate(this.db, year, rate, now)
+    return records.mileageReport(this.db, year)
+  }
+
+  mileageReport(year: number): MileageReport {
+    return records.mileageReport(this.db, year)
+  }
+
+  homeOffice(year: number): HomeOfficeSummary {
+    return records.getHomeOffice(this.db, year)
+  }
+
+  saveHomeOffice(h: HomeOffice, now: Date = new Date()): HomeOfficeSummary {
+    records.saveHomeOffice(this.db, h, now)
+    return records.getHomeOffice(this.db, h.year)
   }
 
   salesByChannel(from: string, to: string): ChannelSales {

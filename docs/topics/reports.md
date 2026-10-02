@@ -18,5 +18,12 @@ From/To dates (or "As of" for balance reports), with quick links for each year s
 - **Inventory methods** (year): the four methods side by side (same as the Inventory screen), with the filed one marked and items not counted at year end.
 - The period picker and CSV buttons live in `ReportBits.tsx`.
 
+## Year-end records (`src/main/records.ts`, `src/shared/records.ts`, `YearEndRecords.tsx`; company home → **Year-end records**; schema v14)
+Year picker and four tabs, each with CSV buttons and a "Check with your accountant" note.
+- **Contractors (1099-NEC)**: contractors with address, "I have their W-9", the last four digits of their tax ID only (never the full number), and words to find their payments (default: the name). The list for the year totals debits to Contract labor and Legal and professional accounts whose entry or line memo contains those words (longest match wins); payments whose other side is a credit card are shown separately and left out (the card company reports them). "Needs a 1099-NEC" when bank/cash/check payments reach the threshold (`necThresholdCents`: $600 through 2025, $2,000 from 2026). Unmatched contract-labor payments are listed so a contractor can be added.
+- **Fixed assets**: name, account (fixed-asset accounts), cost, in-service date, sold/scrapped date, notes. The year's list shows assets in service during the year (new / in use / sold or scrapped) and compares the cost of those in use with the fixed-asset accounts in the books at year end. Depreciation is the accountant's.
+- **Mileage**: trips (date, miles to a tenth, business purpose (required), from, to; Remove), the year's total, and the standard rate typed in for the year (¢ per mile) giving miles × rate.
+- **Home office**: office and home square feet plus the year's home expenses; shows the office share, the simplified method ($5 per sq ft up to 300 sq ft) and the regular method (share of the expenses).
+
 ## Saving
 Every report has **Open in Excel** and **Save as CSV**: the report is written to `<company>\exports\reports\<report name and dates>.csv` (UTF-8 with BOM so Excel reads it; amounts as plain numbers like 1234.56). Open in Excel also opens the file.

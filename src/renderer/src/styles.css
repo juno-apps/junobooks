@@ -1069,3 +1069,38 @@ button.attention {
 .cogs-table {
   max-width: 640px;
 }
+
+.records {
+  max-width: 1000px;
+}
+
+.records .tabs {
+  margin-top: 0.6rem;
+}
+
+.records-tab {
+  margin-top: 0.8rem;
+}
+
+.records .narrow-date {
+  width: 11rem;
+}
+
+.office-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 0.6rem 1rem;
+}
+
+.mileage-total {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.align-end {
+  align-self: flex-end;
+}
+
+.office-summary p {
+  margin: 0.2rem 0;
+}

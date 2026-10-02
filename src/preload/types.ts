@@ -20,6 +20,18 @@ import type { AmazonImportInput, AmazonImportResult, AmazonMapping, AmazonPrevie
 import type { TieOutRow } from '../shared/form1099k'
 import type { BalanceSheet, GeneralLedger, ProfitAndLoss, TrialBalance } from '../shared/reports'
 import type { ChannelSales, CogsSchedule, TaxLineSummary } from '../shared/reportsExtra'
+import type {
+  Contractor,
+  ContractorInput,
+  FixedAsset,
+  FixedAssetInput,
+  FixedAssetReport,
+  HomeOffice,
+  HomeOfficeSummary,
+  MileageReport,
+  NecReport,
+  TripInput
+} from '../shared/records'
 import type { RateInput, SalesTaxPaymentInput, SalesTaxRate, SalesTaxReport } from '../shared/salesTax'
 import type {
   AgingRow,
@@ -59,6 +71,16 @@ import type {
 
 export type {
   AccountInput,
+  Contractor,
+  ContractorInput,
+  FixedAsset,
+  FixedAssetInput,
+  FixedAssetReport,
+  HomeOffice,
+  HomeOfficeSummary,
+  MileageReport,
+  NecReport,
+  TripInput,
   ChannelSales,
   CogsSchedule,
   TaxLineSummary,
@@ -239,6 +261,18 @@ export interface JunoApi {
   importAmazon: (input: AmazonImportInput) => Promise<Result<AmazonImportResult>>
   amazonPayouts: () => Promise<Result<EtsyPayout[]>>
   profitAndLoss: (from: string, to: string, byMonth: boolean) => Promise<Result<ProfitAndLoss>>
+  contractors: () => Promise<Result<Contractor[]>>
+  saveContractor: (id: number | null, c: ContractorInput & { isActive?: boolean }) => Promise<Result<Contractor[]>>
+  necReport: (year: number) => Promise<Result<NecReport>>
+  fixedAssets: () => Promise<Result<FixedAsset[]>>
+  saveFixedAsset: (id: number | null, f: FixedAssetInput) => Promise<Result<FixedAsset[]>>
+  fixedAssetReport: (year: number) => Promise<Result<FixedAssetReport>>
+  addTrip: (t: TripInput) => Promise<Result<MileageReport>>
+  removeTrip: (id: number, year: number) => Promise<Result<MileageReport>>
+  setMileageRate: (year: number, rateTenthCents: number | null) => Promise<Result<MileageReport>>
+  mileageReport: (year: number) => Promise<Result<MileageReport>>
+  homeOffice: (year: number) => Promise<Result<HomeOfficeSummary>>
+  saveHomeOffice: (h: HomeOffice) => Promise<Result<HomeOfficeSummary>>
   salesByChannel: (from: string, to: string) => Promise<Result<ChannelSales>>
   taxLineSummary: (year: number) => Promise<Result<TaxLineSummary>>
   cogsSchedule: (year: number) => Promise<Result<CogsSchedule>>

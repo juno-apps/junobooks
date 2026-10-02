@@ -32,6 +32,7 @@ import type { RuleInput } from '../shared/rules'
 import type { EtsyFilesInput, EtsyImportInput } from '../shared/etsyImport'
 import type { AmazonImportInput } from '../shared/amazonImport'
 import type { RateInput, SalesTaxPaymentInput } from '../shared/salesTax'
+import type { ContractorInput, FixedAssetInput, HomeOffice, TripInput } from '../shared/records'
 import type { InventoryMethod } from '../shared/inventory'
 import type { ItemInput, PurchaseInput } from '../shared/inventoryView'
 import type { BusinessDetails, CertificateInput, CustomerInput, InvoiceInput, PaymentInput } from '../shared/sales'
@@ -393,6 +394,20 @@ app.whenReady().then(() => {
   ipcMain.handle('reports:pl', (_e, from: string, to: string, byMonth: boolean) =>
     wrap(() => requireCompany().profitAndLoss(from, to, byMonth))
   )
+  ipcMain.handle('records:contractors', () => wrap(() => requireCompany().contractors()))
+  ipcMain.handle('records:saveContractor', (_e, id: number | null, c: ContractorInput & { isActive?: boolean }) =>
+    wrap(() => requireCompany().saveContractor(id, c))
+  )
+  ipcMain.handle('records:nec', (_e, year: number) => wrap(() => requireCompany().necReport(year)))
+  ipcMain.handle('records:fixedAssets', () => wrap(() => requireCompany().fixedAssets()))
+  ipcMain.handle('records:saveFixedAsset', (_e, id: number | null, f: FixedAssetInput) => wrap(() => requireCompany().saveFixedAsset(id, f)))
+  ipcMain.handle('records:fixedAssetReport', (_e, year: number) => wrap(() => requireCompany().fixedAssetReport(year)))
+  ipcMain.handle('records:addTrip', (_e, t: TripInput) => wrap(() => requireCompany().addTrip(t)))
+  ipcMain.handle('records:removeTrip', (_e, id: number, year: number) => wrap(() => requireCompany().removeTrip(id, year)))
+  ipcMain.handle('records:setMileageRate', (_e, year: number, rate: number | null) => wrap(() => requireCompany().setMileageRate(year, rate)))
+  ipcMain.handle('records:mileage', (_e, year: number) => wrap(() => requireCompany().mileageReport(year)))
+  ipcMain.handle('records:homeOffice', (_e, year: number) => wrap(() => requireCompany().homeOffice(year)))
+  ipcMain.handle('records:saveHomeOffice', (_e, h: HomeOffice) => wrap(() => requireCompany().saveHomeOffice(h)))
   ipcMain.handle('reports:channels', (_e, from: string, to: string) => wrap(() => requireCompany().salesByChannel(from, to)))
   ipcMain.handle('reports:taxLines', (_e, year: number) => wrap(() => requireCompany().taxLineSummary(year)))
   ipcMain.handle('reports:cogs', (_e, year: number) => wrap(() => requireCompany().cogsSchedule(year)))
