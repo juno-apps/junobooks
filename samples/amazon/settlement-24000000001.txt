@@ -1,0 +1,17 @@
+settlement-id	settlement-start-date	settlement-end-date	deposit-date	total-amount	currency	transaction-type	order-id	merchant-order-id	adjustment-id	shipment-id	marketplace-name	amount-type	amount-description	amount	fulfillment-id	posted-date	posted-date-time	order-item-code	merchant-order-item-id	merchant-adjustment-item-id	sku	quantity-purchased	promotion-id
+24000000001	2026-03-01 00:00:00 UTC	2026-03-15 00:00:00 UTC	2026-03-17 00:00:00 UTC	59.39	USD																		
+24000000001					USD	Order	111-0000001-0000001				Amazon.com	ItemPrice	Principal	85.00	MFN	2026-03-03	2026-03-03 10:00:00 UTC				RING-STK-7	1	
+24000000001					USD	Order	111-0000001-0000001				Amazon.com	ItemPrice	Shipping	5.00	MFN	2026-03-03	2026-03-03 10:00:00 UTC				RING-STK-7	1	
+24000000001					USD	Order	111-0000001-0000001				Amazon.com	ItemPrice	Tax	6.98	MFN	2026-03-03	2026-03-03 10:00:00 UTC				RING-STK-7	1	
+24000000001					USD	Order	111-0000001-0000001				Amazon.com	ItemWithheldTax	MarketplaceFacilitatorTax-Principal	-6.98	MFN	2026-03-03	2026-03-03 10:00:00 UTC				RING-STK-7	1	
+24000000001					USD	Order	111-0000001-0000001				Amazon.com	ItemFees	Commission	-13.50	MFN	2026-03-03	2026-03-03 10:00:00 UTC				RING-STK-7	1	
+24000000001					USD	Order	111-0000001-0000001				Amazon.com	ItemFees	ShippingChargeback	-4.10	MFN	2026-03-03	2026-03-03 10:00:00 UTC				RING-STK-7	1	
+24000000001					USD	Order	111-0000002-0000002				Amazon.com	ItemPrice	Principal	60.00	MFN	2026-03-07	2026-03-07 10:00:00 UTC				HOOP-GV-20	1	
+24000000001					USD	Order	111-0000002-0000002				Amazon.com	Promotion	Principal	-6.00	MFN	2026-03-07	2026-03-07 10:00:00 UTC				HOOP-GV-20	1	
+24000000001					USD	Order	111-0000002-0000002				Amazon.com	ItemFees	Commission	-8.10	MFN	2026-03-07	2026-03-07 10:00:00 UTC				HOOP-GV-20	1	
+24000000001					USD	Refund	111-0000001-0000001				Amazon.com	ItemPrice	Principal	-20.00	MFN	2026-03-10	2026-03-10 10:00:00 UTC				RING-STK-7		
+24000000001					USD	Refund	111-0000001-0000001				Amazon.com	ItemFees	RefundCommission	0.60	MFN	2026-03-10	2026-03-10 10:00:00 UTC				RING-STK-7		
+24000000001					USD	Refund	111-0000001-0000001				Amazon.com	ItemFees	Commission	3.00	MFN	2026-03-10	2026-03-10 10:00:00 UTC				RING-STK-7		
+24000000001					USD	other-transaction					Amazon.com	other-transaction	Subscription Fee	-39.99	MFN	2026-03-12	2026-03-12 10:00:00 UTC						
+24000000001					USD	other-transaction					Amazon.com	other-transaction	Current Reserve Amount	-12.00	MFN	2026-03-15	2026-03-15 10:00:00 UTC						
+24000000001					USD	other-transaction					Amazon.com	other-transaction	Previous Reserve Amount Balance	9.48	MFN	2026-03-15	2026-03-15 10:00:00 UTC						

@@ -10,6 +10,8 @@ Ideas parked for later. Items are added when the owner starts a message with "ba
 
 - Test the Etsy importer with real exports (monthly payments statement CSV and Sold Orders CSV). Phase 4 was built from Etsy's publicly described columns and made-up files in `samples/etsy/`; row types or titles Etsy words differently will show up as "Other Etsy activity" on the import screen.
 
+- Test the Amazon importer with a real settlement report (flat file V2). Phase 7 was built from Amazon's documented layout and the made-up file in `samples/amazon/`.
+
 ## Feature ideas
 - Sub-accounts: nest accounts under a parent (e.g. "Etsy fees" under "Commissions and fees") on the chart screen and in reports. `accounts.parent_id` already exists. Parked from unit 1e.
 
