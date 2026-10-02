@@ -52,3 +52,11 @@ Pointer log only — a few lines per round. Details live in git history.
 - Files: `shared/everyday.ts` (+test), `TransferEntry.tsx`, `CompanyHome.tsx`, `main/chart.ts`, `companyStore.test.ts`, docs. No schema change.
 - Status: Transfer awaiting the owner's own confirmation (committed as a savepoint).
 - **Resume point:** start **2d, the account register** when the owner says so. Open polish ideas awaiting the owner's yes/no: (1) clear a red error message once the cause is fixed, (2) widen the category list boxes so group headings don't wrap, (3) empty-company Transactions text should mention New expense/income/transfer too.
+
+## Round 23 — Build run agreed (not started)
+- Owner approved an autonomous build run through Phase 11 (rules in `CLAUDE.md` §10): no checkpoint stops, Opus throughout, live checks via Playwright, commits/pushes without asking, no releases, owner-only choices parked in backlog under "Needs owner decision", final list in `docs/build-run-changes.md`.
+- Owner approved allowing web search/fetch and deletes inside the project/scratch folder; the settings edit is done by the owner (Claude can't edit its own permissions).
+- Round 22 polish ideas (1)–(3) approved; Transfer treated as done, pending owner review.
+
+## Build run
+- **Resume point:** not started. Starts when the owner says "go" in a new session. First steps: set up Playwright and rewrite `docs/topics/live-checks.md`, then 2d (account register).

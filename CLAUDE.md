@@ -65,3 +65,19 @@ JunoBooks is a Windows desktop accounting app (Electron + SQLite) for small busi
 - This only covers driving the app under test (and the helper windows needed to see it). It does not loosen anything in §8 or the normal safety rules: test data only, no real books, nothing destructive without asking.
 - How to do it step by step, and the traps to avoid: `docs/topics/live-checks.md`. Read it before a live check.
 
+
+## 10. Autonomous build run (temporary — remove when the run ends)
+Approved by the owner on 2026-10-02. In force from the moment the owner says **"go"** (or "continue the build run") until the final change list is delivered. Where this section conflicts with §6 or §7, this section wins. §8 and the normal safety rules are unchanged.
+- **Goal:** build everything that's left, unit by unit, straight through Phase 11: rest of Phase 2 (2d register, 2e opening balances, 2f receipts, 2g move data to `Documents\JunoBooks` + Settings), then Phases 3–11 from `JunoBooks-PLAN.md` §8.
+- **No stopping for the owner:** no plan approvals, no checkpoint confirmations. At the start of each phase, write a short unit plan into `progress-log.md` (include backlog items that fit the phase and need no owner choice), then build it.
+- **Model:** the owner stays on Opus 5.5 the whole run. No model-switch suggestions until the run ends.
+- **Each unit:** build → typecheck + tests (real tests for ledger, schema, imports, exports) → live check with Playwright → fix → update docs → commit and push. Status label in docs: "verified by Claude, owner review pending" (not "confirmed").
+- **Live checks:** use Playwright driving the Electron app (dev-only tool, never shipped; set it up first and rewrite `docs/topics/live-checks.md` to match). Real screen control only as a backup. Test data only, in a new "Live check" company.
+- **Polish:** fix polish issues as found. The three pending ideas from round 22 are approved (clear red error once fixed, wider category lists, empty Transactions text mentions New expense/income/transfer). Transfer screen is treated as done; list it for owner review.
+- **Owner-only choices:** if a decision truly needs the owner, build around it and park it in `docs/backlog.md` under a **"Needs owner decision"** heading with the question and the options. Tax/accounting judgment calls are still flagged in the app for the accountant (§8).
+- **Phases 4 (Etsy) and 7 (Amazon):** build from publicly documented export formats with made-up sample files; park "test with real exports" in the backlog. Never sign in to Etsy, Amazon, banks or any account.
+- **Commits:** commit and push after each verified unit without asking. **No releases** (no version tags/installers) during the run; suggest one at the end.
+- **Still ask first:** force-push, hard reset, git clean, deleting data outside the project folder or scratch folder, touching real company files.
+- **If stuck on one unit:** park it in the backlog with what's wrong and move on. Stop the whole run only if something risks the books' integrity.
+- **Resume:** after any stop or condensed context, re-read `progress-log.md` (the "Build run" section has the resume point), `architecture.md`, and this section, then carry on.
+- **End of run:** write `docs/build-run-changes.md`, a plain-English list of everything that changed, unit by unit, plus what was parked and why and what the owner should try. Then delete this §10, turn §6 model suggestions back on, and tell the owner it's a good time for a fresh session.
