@@ -7,3 +7,5 @@ transactions or real bank exports; they only follow the column layouts banks com
 - `bank/checking-march-april-2026.csv`: overlaps the March file (to show duplicates being skipped).
 - `bank/card-amex-style-march-2026.csv`: a card where charges are shown as positive amounts.
 - `bank/card-split-columns-march-2026.csv`: a card with separate Debit and Credit columns.
+- `etsy/etsy_statement_2026_3.csv`: an Etsy monthly payments statement layout (sales, fees, ads, label, refund, sales tax, deposit).
+- `etsy/EtsySoldOrders2026-3.csv`: the matching Sold Orders layout (splits each sale into items and shipping).

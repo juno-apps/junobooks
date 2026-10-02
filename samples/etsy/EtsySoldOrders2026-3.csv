@@ -1,0 +1,3 @@
+Sale Date,Order ID,Buyer User ID,Full Name,Number of Items,Payment Method,Date Shipped,Ship City,Ship State,Ship Zipcode,Ship Country,Currency,Order Value,Coupon Code,Coupon Details,Discount Amount,Shipping Discount,Shipping,Sales Tax,Order Total,Status,Card Processing Fees,Order Net,Adjusted Order Total,Adjusted Card Processing Fees,Adjusted Net Order Amount
+03/03/26,3301000001,buyer1,Sample Buyer One,1,Credit Card,03/04/26,Portland,OR,97201,United States,USD,58.00,,,0,0,6.00,5.12,69.12,Completed,2.17,61.83,49.12,1.72,47.40
+03/05/26,3301000002,buyer2,Sample Buyer Two,1,Credit Card,03/06/26,Austin,TX,78701,United States,USD,120.00,SPRING10,10% off,12.00,0,12.00,0,120.00,Completed,3.85,116.15,,,

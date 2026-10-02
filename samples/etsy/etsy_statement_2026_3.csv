@@ -1,0 +1,16 @@
+Date,Type,Title,Info,Currency,Amount,"Fees & Taxes",Net,"Tax Details"
+"March 2, 2026",Listing,"Listing fee","Listing #1462100001",USD,--,-$0.20,-$0.20,--
+"March 3, 2026",Sale,"Payment for Order #3301000001",,USD,$64.00,-$2.17,$61.83,--
+"March 3, 2026",Fee,"Transaction fee: Sterling silver stacking ring","Listing #1462100001",USD,--,-$3.71,-$3.71,--
+"March 3, 2026",Fee,"Transaction fee: Shipping","Order #3301000001",USD,--,-$0.42,-$0.42,--
+"March 3, 2026",Fee,"Processing fee","Order #3301000001",USD,--,$0.00,$0.00,--
+"March 3, 2026",Tax,"Sales tax paid by buyer","Order #3301000001",USD,$5.12,-$5.12,$0.00,--
+"March 5, 2026",Sale,"Payment for Order #3301000002",,USD,$120.00,-$3.85,$116.15,--
+"March 5, 2026",Fee,"Transaction fee: Gold vermeil hoops","Listing #1462100002",USD,--,-$7.80,-$7.80,--
+"March 5, 2026",Marketing,"Offsite Ads fee for Order #3301000002","Order #3301000002",USD,--,-$18.00,-$18.00,--
+"March 9, 2026",Marketing,"Etsy Ads","Daily budget",USD,--,-$12.40,-$12.40,--
+"March 10, 2026",Shipping,"USPS shipping label","Order #3301000002",USD,--,-$5.25,-$5.25,--
+"March 12, 2026",Refund,"Refund to buyer for Order #3301000001",,USD,-$20.00,$0.45,-$19.55,--
+"March 15, 2026",Deposit,"$110.65 sent to your bank account",,USD,--,--,--,--
+"March 20, 2026",Fee,"Regulatory operating fee","Order #3301000002",USD,--,-$0.13,-$0.13,--
+"March 31, 2026",Subscription,"Etsy Plus subscription",,USD,--,-$10.00,-$10.00,--
