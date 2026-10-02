@@ -12,6 +12,8 @@ import { createCompany, listCompanies, openCompany, type CompanyBooks } from './
 import { checkDataFolder, countCompanies, writeDataLocation } from './dataLocation'
 import { dataLocationFile, defaultDataRoot, devDataRoot, getCompaniesDir, getDataRoot, isDev as isDevCopy, oldTestDataRoot } from './paths'
 import type { SettingsView } from '../shared/settings'
+import { readImportFile } from './bankImport'
+import type { PostBankLineInput, StageImportInput } from '../shared/bankImport'
 import { BACKUPS_TO_KEEP } from './companyStore'
 
 const isDev = !app.isPackaged
@@ -201,6 +203,32 @@ app.whenReady().then(() => {
   ipcMain.handle('attachments:remove', (_e, id: number, reason: string) =>
     wrap(() => requireCompany().removeAttachment(id, reason))
   )
+  ipcMain.handle('imports:pickFile', async (e) => {
+    const win = BrowserWindow.fromWebContents(e.sender)
+    const opts: Electron.OpenDialogOptions = {
+      title: 'Choose a bank or card download',
+      properties: ['openFile'],
+      filters: [
+        { name: 'Bank downloads (CSV)', extensions: ['csv', 'txt'] },
+        { name: 'All files', extensions: ['*'] }
+      ]
+    }
+    const picked = win ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts)
+    if (picked.canceled || picked.filePaths.length === 0) return { ok: true, value: null }
+    return wrap(() => readImportFile(picked.filePaths[0]))
+  })
+  ipcMain.handle('imports:readFile', (_e, path: string) => wrap(() => readImportFile(path)))
+  ipcMain.handle('imports:savedMapping', (_e, accountId: number, text: string, hasHeader: boolean) =>
+    wrap(() => requireCompany().savedMapping(accountId, text, hasHeader))
+  )
+  ipcMain.handle('imports:stage', (_e, input: StageImportInput) => wrap(() => requireCompany().stageImport(input)))
+  ipcMain.handle('imports:review', (_e, accountId?: number) => wrap(() => requireCompany().linesToReview(accountId)))
+  ipcMain.handle('imports:ignored', (_e, accountId: number) => wrap(() => requireCompany().ignoredLines(accountId)))
+  ipcMain.handle('imports:counts', () => (current ? current.reviewCounts() : []))
+  ipcMain.handle('imports:post', (_e, items: PostBankLineInput[]) => wrap(() => requireCompany().postBankLines(items)))
+  ipcMain.handle('imports:ignore', (_e, ids: number[]) => wrap(() => requireCompany().ignoreBankLines(ids)))
+  ipcMain.handle('imports:restore', (_e, id: number) => wrap(() => requireCompany().restoreBankLine(id)))
+  ipcMain.handle('imports:history', () => wrap(() => requireCompany().importHistory()))
   ipcMain.handle('accounts:register', (_e, q: RegisterQuery) => wrap(() => requireCompany().register(q)))
   ipcMain.handle('entries:void', (_e, id: number, reason: string) => wrap(() => requireCompany().voidEntry(id, reason)))
   ipcMain.handle('entries:reverse', (_e, id: number, date: string, memo?: string) =>

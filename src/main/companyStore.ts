@@ -19,6 +19,26 @@ import type { AccountInput } from '../shared/accounts'
 import type { EntryListItem, ManualEntryInput } from '../shared/journal'
 import { listEntries } from './entries'
 import { accountRegister } from './register'
+import {
+  ignoreBankLines,
+  ignoredLines,
+  importHistory,
+  linesToReview,
+  postBankLines,
+  restoreBankLine,
+  reviewCounts,
+  savedMapping,
+  stageImport
+} from './bankImport'
+import type {
+  BankLine,
+  ImportBatchSummary,
+  PostBankLineInput,
+  PostBankLinesResult,
+  StageImportInput,
+  StageImportResult
+} from '../shared/bankImport'
+import type { ColumnMapping } from '../shared/csvImport'
 import { addAttachments, attachmentFile, listAttachments, removeAttachment } from './attachments'
 import type { Attachment, AttachResult } from '../shared/attachments'
 import { getOpeningBalances, saveOpeningBalances } from './openingBalances'
@@ -312,6 +332,42 @@ export class CompanyBooks {
 
   removeAttachment(id: number, reason = '', now: Date = new Date()): void {
     removeAttachment(this.db, this.dir, id, reason, now)
+  }
+
+  savedMapping(accountId: number, text: string, hasHeader: boolean): ColumnMapping | null {
+    return savedMapping(this.db, accountId, text, hasHeader)
+  }
+
+  stageImport(input: StageImportInput, now: Date = new Date()): StageImportResult {
+    return stageImport(this.db, this.profile(now).booksStartDate, input, now)
+  }
+
+  linesToReview(accountId?: number): BankLine[] {
+    return linesToReview(this.db, accountId)
+  }
+
+  ignoredLines(accountId: number): BankLine[] {
+    return ignoredLines(this.db, accountId)
+  }
+
+  reviewCounts(): { accountId: number; count: number }[] {
+    return reviewCounts(this.db)
+  }
+
+  postBankLines(items: PostBankLineInput[], now: Date = new Date()): PostBankLinesResult {
+    return postBankLines(this.db, this.profile(now).booksStartDate, items, now)
+  }
+
+  ignoreBankLines(ids: number[], now: Date = new Date()): void {
+    ignoreBankLines(this.db, ids, now)
+  }
+
+  restoreBankLine(id: number, now: Date = new Date()): void {
+    restoreBankLine(this.db, id, now)
+  }
+
+  importHistory(): ImportBatchSummary[] {
+    return importHistory(this.db)
   }
 
   register(q: RegisterQuery): RegisterView {

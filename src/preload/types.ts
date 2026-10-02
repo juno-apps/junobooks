@@ -4,6 +4,16 @@ import type { ChartAccount, ChartView } from '../shared/chart'
 import type { RegisterQuery, RegisterRow, RegisterView } from '../shared/register'
 import type { Attachment, AttachResult } from '../shared/attachments'
 import type { SettingsView } from '../shared/settings'
+import type {
+  BankLine,
+  ImportBatchSummary,
+  ImportFile,
+  PostBankLineInput,
+  PostBankLinesResult,
+  StageImportInput,
+  StageImportResult
+} from '../shared/bankImport'
+import type { ColumnMapping } from '../shared/csvImport'
 import type { OpeningBalanceInput, OpeningBalancesView } from '../shared/opening'
 import type {
   CompanyHistory,
@@ -19,6 +29,14 @@ import type {
 
 export type {
   AccountInput,
+  BankLine,
+  ColumnMapping,
+  ImportBatchSummary,
+  ImportFile,
+  PostBankLineInput,
+  PostBankLinesResult,
+  StageImportInput,
+  StageImportResult,
   Attachment,
   AttachResult,
   ChartAccount,
@@ -86,6 +104,18 @@ export interface JunoApi {
   removeAttachment: (id: number, reason: string) => Promise<Result<void>>
   /** The disk path of a file dropped on the window. */
   pathForFile: (file: File) => string
+  /** File picker for a CSV; null value = cancelled. */
+  pickImportFile: () => Promise<Result<ImportFile | null>>
+  readImportFile: (path: string) => Promise<Result<ImportFile>>
+  savedMapping: (accountId: number, text: string, hasHeader: boolean) => Promise<Result<ColumnMapping | null>>
+  stageImport: (input: StageImportInput) => Promise<Result<StageImportResult>>
+  linesToReview: (accountId?: number) => Promise<Result<BankLine[]>>
+  ignoredLines: (accountId: number) => Promise<Result<BankLine[]>>
+  reviewCounts: () => Promise<{ accountId: number; count: number }[]>
+  postBankLines: (items: PostBankLineInput[]) => Promise<Result<PostBankLinesResult>>
+  ignoreBankLines: (ids: number[]) => Promise<Result<void>>
+  restoreBankLine: (id: number) => Promise<Result<void>>
+  importHistory: () => Promise<Result<ImportBatchSummary[]>>
   getRegister: (q: RegisterQuery) => Promise<Result<RegisterView>>
   voidEntry: (id: number, reason: string) => Promise<Result<EntryListItem[]>>
   reverseEntry: (id: number, date: string, memo?: string) => Promise<Result<EntryListItem[]>>

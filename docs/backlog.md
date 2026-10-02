@@ -5,6 +5,7 @@ Ideas parked for later. Items are added when the owner starts a message with "ba
 ## Needs owner decision
 
 ## Data/logic changes
+- Test bank and card imports with real downloads from the owner's banks (Phase 3 was built from public layouts and made-up sample files in `samples/bank/`). Note any file whose columns or signs were guessed wrong.
 
 ## Feature ideas
 - Bank import matching (Phase 3): when an imported bank line has the same amount as an entry already typed in, a few days apart (payment made today, clears later), suggest linking them instead of creating a duplicate.

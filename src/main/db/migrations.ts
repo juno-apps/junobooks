@@ -367,6 +367,93 @@ export const MIGRATIONS: Migration[] = [
         false
       )}
     `
+  },
+  {
+    version: 7,
+    description: 'Bank and card imports: import batches, imported lines, saved column mappings, categorization rules',
+    sql: `
+      CREATE TABLE import_batches (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        account_id INTEGER NOT NULL REFERENCES accounts(id),
+        file_name TEXT NOT NULL,
+        imported_at TEXT NOT NULL,
+        mapping TEXT NOT NULL,
+        added_count INTEGER NOT NULL,
+        duplicate_count INTEGER NOT NULL,
+        problem_count INTEGER NOT NULL,
+        early_count INTEGER NOT NULL
+      ) STRICT;
+
+      CREATE TABLE bank_lines (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        batch_id INTEGER NOT NULL REFERENCES import_batches(id),
+        account_id INTEGER NOT NULL REFERENCES accounts(id),
+        txn_date TEXT NOT NULL,
+        description TEXT NOT NULL,
+        amount_cents INTEGER NOT NULL CHECK (amount_cents <> 0),
+        fingerprint TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'new' CHECK (status IN ('new', 'posted', 'matched', 'ignored')),
+        entry_id INTEGER REFERENCES journal_entries(id),
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      ) STRICT;
+      CREATE INDEX bank_lines_account_fp ON bank_lines(account_id, fingerprint);
+      CREATE INDEX bank_lines_status ON bank_lines(status);
+
+      -- What the bank said never changes; only the line's status and link do.
+      CREATE TRIGGER bank_lines_no_delete BEFORE DELETE ON bank_lines BEGIN
+        SELECT RAISE(ABORT, 'Imported bank lines are kept on record. Ignore a line instead.');
+      END;
+      CREATE TRIGGER bank_lines_fixed BEFORE UPDATE ON bank_lines
+      WHEN NEW.batch_id IS NOT OLD.batch_id OR NEW.account_id IS NOT OLD.account_id OR NEW.txn_date IS NOT OLD.txn_date
+        OR NEW.description IS NOT OLD.description OR NEW.amount_cents IS NOT OLD.amount_cents
+        OR NEW.fingerprint IS NOT OLD.fingerprint OR NEW.created_at IS NOT OLD.created_at
+      BEGIN
+        SELECT RAISE(ABORT, 'What the bank file said can''t be changed.');
+      END;
+      CREATE TRIGGER import_batches_no_change BEFORE UPDATE ON import_batches BEGIN
+        SELECT RAISE(ABORT, 'Import records can''t be changed.');
+      END;
+      CREATE TRIGGER import_batches_no_delete BEFORE DELETE ON import_batches BEGIN
+        SELECT RAISE(ABORT, 'Import records are kept.');
+      END;
+
+      CREATE TABLE import_profiles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        account_id INTEGER NOT NULL REFERENCES accounts(id),
+        layout_key TEXT NOT NULL,
+        mapping TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        UNIQUE (account_id, layout_key)
+      ) STRICT;
+
+      CREATE TABLE categorization_rules (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        match_text TEXT NOT NULL CHECK (length(trim(match_text)) > 0),
+        account_id INTEGER NOT NULL REFERENCES accounts(id),
+        payee TEXT NOT NULL DEFAULT '',
+        bank_account_id INTEGER REFERENCES accounts(id),
+        is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      ) STRICT;
+
+      ${auditTriggersV2(
+        'import_batches',
+        ['id', 'account_id', 'file_name', 'imported_at', 'added_count', 'duplicate_count', 'problem_count', 'early_count'],
+        false
+      )}
+      ${auditTriggersV2(
+        'bank_lines',
+        ['id', 'batch_id', 'account_id', 'txn_date', 'description', 'amount_cents', 'status', 'entry_id', 'updated_at'],
+        false
+      )}
+      ${auditTriggersV2(
+        'categorization_rules',
+        ['id', 'match_text', 'account_id', 'payee', 'bank_account_id', 'is_active', 'created_at', 'updated_at'],
+        false
+      )}
+    `
   }
 ]
 

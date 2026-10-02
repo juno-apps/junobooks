@@ -589,6 +589,78 @@ button.danger {
   margin-bottom: 0.3rem;
 }
 
+.import-wizard,
+.bank-review {
+  max-width: 1100px;
+}
+
+.import-wizard .import-account,
+.import-wizard .drop-zone {
+  max-width: 560px;
+}
+
+.drop-zone {
+  margin: 0.8rem 0;
+  padding: 0.8rem;
+  border: 2px dashed #ccc;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.drop-zone.dragging {
+  border-color: #2c5a85;
+  background: #eef4fb;
+}
+
+.mapping-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 0.6rem 1rem;
+  align-items: end;
+  margin-bottom: 0.8rem;
+}
+
+.mapping-grid select {
+  width: 100%;
+}
+
+.import-preview td,
+.review-table td {
+  vertical-align: top;
+}
+
+.review-table .review-account {
+  min-width: 15rem;
+}
+
+.review-table input:not([type='checkbox']) {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.review-table .row-actions {
+  white-space: nowrap;
+}
+
+.review-row.has-error {
+  background: #fdf1f0;
+}
+
+.review-accounts {
+  margin: 0.6rem 0;
+}
+
+.ignored-lines {
+  margin-top: 1rem;
+}
+
+button.attention {
+  background: #a3561b;
+  border-color: #a3561b;
+}
+
 .account-link {
   color: inherit;
   text-decoration: none;

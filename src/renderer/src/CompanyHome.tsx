@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import type { CompanyProfile, EntryListItem } from '../../preload/types'
 import { getEntityType, TAX_FORM_LABELS } from '../../shared/entities'
 import { getStateName } from '../../shared/states'
@@ -6,6 +6,8 @@ import { TEMPLATES } from '../../shared/templates'
 import ChartOfAccounts from './ChartOfAccounts'
 import EntityTypeChange from './EntityTypeChange'
 import HomeStateChange from './HomeStateChange'
+import BankReview from './BankReview'
+import ImportWizard from './ImportWizard'
 import JournalEntry from './JournalEntry'
 import OpeningBalances from './OpeningBalances'
 import SimpleEntry, { type SimpleKind } from './SimpleEntry'
@@ -22,14 +24,25 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
   const [changingEntity, setChangingEntity] = useState(false)
   const [changingState, setChangingState] = useState(false)
   /** The entry screen: closed, an expense, income or transfer, a blank journal entry, or a copy of an existing entry. */
-  const [entering, setEntering] = useState<{ kind: 'journal'; copyOf?: EntryListItem } | { kind: SimpleKind | 'transfer' | 'opening' } | null>(null)
+  const [entering, setEntering] = useState<{ kind: 'journal'; copyOf?: EntryListItem } | { kind: SimpleKind | 'transfer' | 'opening' | 'import' } | { kind: 'review'; accountId: number | null } | null>(null)
   const [tab, setTab] = useState<'transactions' | 'chart'>('transactions')
   /** Bumped after anything that changes accounts or balances, so the chart and transaction list reload. */
   const [chartVersion, setChartVersion] = useState(0)
   const [entryKey, setEntryKey] = useState(0)
 
-  function startEntry(kind: 'journal' | 'transfer' | 'opening' | SimpleKind, copyOf?: EntryListItem): void {
+  const [toReview, setToReview] = useState(0)
+
+  useEffect(() => {
+    window.juno.reviewCounts().then((c) => setToReview(c.reduce((s, x) => s + x.count, 0)))
+  }, [chartVersion, company.folder])
+
+  function startEntry(kind: 'journal' | 'transfer' | 'opening' | 'import' | SimpleKind, copyOf?: EntryListItem): void {
     setEntering(kind === 'journal' ? { kind, copyOf } : { kind })
+    setEntryKey((k) => k + 1)
+  }
+
+  function startReview(accountId: number | null): void {
+    setEntering({ kind: 'review', accountId })
     setEntryKey((k) => k + 1)
   }
   const entity = getEntityType(company.entityType)
@@ -83,6 +96,14 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
             <button type="button" onClick={() => startEntry('opening')}>
               Opening balances
             </button>
+            <button type="button" onClick={() => startEntry('import')}>
+              Import bank file
+            </button>
+            {toReview > 0 && (
+              <button type="button" className="primary attention" onClick={() => startReview(null)}>
+                Review imported lines ({toReview})
+              </button>
+            )}
           </div>
         )}
       </section>
@@ -92,6 +113,25 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
           copyOf={entering.copyOf}
           onPosted={() => setChartVersion((v) => v + 1)}
           onClose={() => setEntering(null)}
+        />
+      )}
+      {entering?.kind === 'import' && (
+        <ImportWizard
+          key={entryKey}
+          onImported={() => setChartVersion((v) => v + 1)}
+          onReview={(id) => startReview(id)}
+          onClose={() => setEntering(null)}
+        />
+      )}
+      {entering?.kind === 'review' && (
+        <BankReview
+          key={entryKey}
+          initialAccountId={entering.accountId}
+          onPosted={() => setChartVersion((v) => v + 1)}
+          onClose={() => {
+            setEntering(null)
+            setChartVersion((v) => v + 1)
+          }}
         />
       )}
       {entering?.kind === 'opening' && (

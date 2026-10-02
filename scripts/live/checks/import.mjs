@@ -1,0 +1,91 @@
+// 3a/3b: import a bank file, check the columns, review and post lines, duplicates on re-import, card signs.
+import { join } from 'path'
+import { launch, createCompany, shot, check, done, pickAccount, ROOT } from '../lib.mjs'
+
+const sample = (n) => join(ROOT, 'samples', 'bank', n)
+const { app, page, errors } = await launch({ fresh: true })
+await createCompany(page)
+const pick = (file) =>
+  app.evaluate(({ dialog }, f) => {
+    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [f] })
+  }, file)
+
+await page.getByRole('button', { name: 'Import bank file' }).click()
+await pickAccount(page, 'Import into', 'checking')
+await pick(sample('checking-march-2026.csv'))
+await page.getByRole('button', { name: 'Choose file…' }).click()
+await page.getByRole('heading', { name: 'Check the columns' }).waitFor()
+const preview = await page.locator('.import-preview').innerText()
+check(preview.includes('2026-03-02') && preview.includes('RIO GRANDE') && preview.includes('$245.10'), 'preview shows dates, descriptions, amounts')
+check(preview.includes('CHECK 1043\t') || preview.includes('CHECK 1043\n'), 'check number not repeated in the description')
+check((await page.locator('.import-wizard').innerText()).includes('7 lines read'), '7 lines read')
+await shot(page, 'import-columns')
+await page.getByRole('button', { name: 'Import 7 lines' }).click()
+check((await page.locator('.import-result').innerText()).includes('7 new lines ready to review'), 'staged 7 lines')
+
+// Review: categorize some lines and post.
+await page.getByRole('button', { name: 'Review them now' }).click()
+await page.getByRole('heading', { name: 'Review imported lines' }).waitFor()
+check((await page.locator('.review-row').count()) === 7, '7 lines to review')
+await pickAccount(page, 'Line 1 account', 'materials')
+await pickAccount(page, 'Line 2 account', 'sales')
+await page.getByLabel('Line 2 memo').fill('Etsy payout')
+await page.getByLabel('Select line 1').check()
+await page.getByLabel('Select line 2').check()
+await page.getByLabel('Select line 3').check() // no account chosen: skipped
+await page.getByRole('button', { name: 'Post 3 selected' }).click()
+await page.getByText('2 posted.').waitFor()
+check((await page.locator('.bank-review .success, .bank-review .error').innerText()).includes('1 skipped because no account was chosen'), 'line without an account skipped')
+check((await page.locator('.review-row').count()) === 5, '5 lines left')
+// Card payment from checking: a transfer to the card account.
+const payRow = page.locator('.review-row').filter({ hasText: 'AMEX EPAYMENT' })
+await payRow.getByRole('combobox').click()
+await payRow.getByRole('combobox').fill('credit card')
+await page.getByRole('option').first().click()
+await payRow.getByRole('button', { name: 'Post' }).click()
+await page.getByText('1 posted.').waitFor()
+// Ignore one.
+await page.locator('.review-row').filter({ hasText: 'USPS' }).getByRole('button', { name: 'Ignore' }).click()
+check((await page.locator('.review-row').count()) === 3, '3 left after posting a transfer and ignoring one')
+await page.getByRole('button', { name: 'Show ignored lines' }).click()
+check((await page.locator('.ignored-lines').innerText()).includes('USPS'), 'ignored line listed')
+await shot(page, 'import-review')
+await page.getByRole('button', { name: 'Close' }).click()
+check((await page.getByRole('button', { name: /Review imported lines \(3\)/ }).count()) === 1, 'home shows 3 lines waiting')
+
+// Re-import an overlapping file: duplicates skipped.
+await page.getByRole('button', { name: 'Import bank file' }).click()
+await pickAccount(page, 'Import into', 'checking')
+await pick(sample('checking-march-april-2026.csv'))
+await page.getByRole('button', { name: 'Choose file…' }).click()
+check((await page.locator('.import-wizard').innerText()).includes('Using the column choices from your last import'), 'saved column choices reused')
+await page.getByRole('button', { name: 'Import 4 lines' }).click()
+const res = await page.locator('.import-result').innerText()
+check(res.includes('2 new lines') && res.includes('2 already imported'), `overlap: ${res}`)
+await page.getByRole('button', { name: 'Close' }).click()
+
+// Card with charges shown positive: guessed as backwards.
+await page.getByRole('button', { name: 'Import bank file' }).click()
+await pickAccount(page, 'Import into', 'credit card')
+await pick(sample('card-amex-style-march-2026.csv'))
+await page.getByRole('button', { name: 'Choose file…' }).click()
+check(await page.getByLabel('Amounts are backwards (spending is shown as a plus)').isChecked(), 'card file guessed as backwards')
+const cardPreview = await page.locator('.import-preview').innerText()
+check(cardPreview.includes('Charges') && /STULLER[^\n]*\t\t\$512\.00|STULLER INC LAFAYETTE LA\s+\$512\.00/.test(cardPreview), 'charge in the Charges column')
+await page.getByRole('button', { name: 'Import 4 lines' }).click()
+await page.getByRole('button', { name: 'Review them now' }).click()
+await page.getByRole('heading', { name: '2100 Credit card' }).waitFor()
+await pickAccount(page, 'Line 1 account', 'materials')
+await page.locator('.review-row').first().getByRole('button', { name: 'Post' }).click()
+await page.getByText('1 posted.').waitFor()
+await page.getByRole('button', { name: 'Close' }).click()
+
+await page.getByRole('button', { name: 'Chart of accounts' }).click()
+const chart = await page.locator('.chart-table').innerText()
+// Checking: -245.10 + 1180.55 - 530.40 = 405.05; Card: -530.40 payment + 512.00 charge = -18.40 (overpaid)
+check(chart.includes('$405.05'), 'checking balance 405.05')
+check(chart.includes('-$18.40'), 'card balance -18.40 (paid more than charged so far)')
+check(chart.includes('$757.10'), 'materials 245.10 + 512.00 = 757.10')
+await shot(page, 'import-chart')
+await app.close()
+done(errors)
