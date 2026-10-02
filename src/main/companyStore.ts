@@ -30,6 +30,22 @@ import {
 } from './reconcile'
 import type { ReconcileView } from '../shared/reconcile'
 import { addEtsyAccounts, etsyAccounts, etsyPayouts, importEtsy, previewEtsy } from './etsyImport'
+import {
+  addItem,
+  addPurchase,
+  countDates,
+  countSheet,
+  listItems,
+  listPurchases,
+  removePurchase,
+  saveCount,
+  setFiledMethod,
+  updateItem,
+  updatePurchase
+} from './inventory'
+import { adjustmentAccounts, inventoryYear, postInventoryAdjustment } from './inventoryReport'
+import type { InventoryMethod } from '../shared/inventory'
+import type { CountSheet, InventoryOverview, InventoryYearReport, ItemInput, PurchaseInput } from '../shared/inventoryView'
 import type {
   EtsyAccountStatus,
   EtsyFilesInput,
@@ -412,6 +428,67 @@ export class CompanyBooks {
   deleteRule(id: number): CategorizationRule[] {
     deleteRule(this.db, id)
     return listRules(this.db)
+  }
+
+  inventoryOverview(now: Date = new Date()): InventoryOverview {
+    return {
+      items: listItems(this.db),
+      purchases: listPurchases(this.db),
+      counts: countDates(this.db),
+      firstYear: Number(this.profile(now).booksStartDate.slice(0, 4))
+    }
+  }
+
+  addInventoryItem(input: ItemInput, now: Date = new Date()): InventoryOverview {
+    addItem(this.db, input, now)
+    return this.inventoryOverview(now)
+  }
+
+  updateInventoryItem(id: number, input: ItemInput & { isActive: boolean }, now: Date = new Date()): InventoryOverview {
+    updateItem(this.db, id, input, now)
+    return this.inventoryOverview(now)
+  }
+
+  addInventoryPurchase(input: PurchaseInput, now: Date = new Date()): InventoryOverview {
+    addPurchase(this.db, input, this.profile(now).booksStartDate, now)
+    return this.inventoryOverview(now)
+  }
+
+  updateInventoryPurchase(id: number, input: PurchaseInput, now: Date = new Date()): InventoryOverview {
+    updatePurchase(this.db, id, input, this.profile(now).booksStartDate, now)
+    return this.inventoryOverview(now)
+  }
+
+  removeInventoryPurchase(id: number, now: Date = new Date()): InventoryOverview {
+    removePurchase(this.db, id, now)
+    return this.inventoryOverview(now)
+  }
+
+  countSheet(date: string): CountSheet {
+    return countSheet(this.db, date)
+  }
+
+  saveCount(date: string, rows: { itemId: number; quantityMilli: number | null }[], now: Date = new Date()): CountSheet {
+    saveCount(this.db, date, rows, this.profile(now).booksStartDate, now)
+    return countSheet(this.db, date)
+  }
+
+  inventoryYear(year: number, now: Date = new Date()): InventoryYearReport {
+    return inventoryYear(this.db, year, this.profile(now).booksStartDate)
+  }
+
+  setFiledMethod(year: number, method: InventoryMethod | null, reason: string, now: Date = new Date()): InventoryYearReport {
+    setFiledMethod(this.db, year, method, reason, now)
+    return this.inventoryYear(year, now)
+  }
+
+  inventoryAdjustmentAccounts(): { inventoryAccountId: number | null; cogsAccountId: number | null } {
+    return adjustmentAccounts(this.db)
+  }
+
+  postInventoryAdjustment(year: number, inventoryAccountId: number, cogsAccountId: number, now: Date = new Date()): InventoryYearReport {
+    postInventoryAdjustment(this.db, year, this.profile(now).booksStartDate, inventoryAccountId, cogsAccountId, now)
+    return this.inventoryYear(year, now)
   }
 
   etsyAccounts(): EtsyAccountStatus[] {

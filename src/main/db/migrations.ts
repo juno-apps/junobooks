@@ -574,6 +574,81 @@ export const MIGRATIONS: Migration[] = [
       ${auditTriggersV2('marketplace_rows', ['id', 'channel', 'batch_id', 'row_date', 'kind', 'cents', 'entry_id'], false)}
       ${auditTriggersV2('channel_mappings', ['id', 'channel', 'target', 'account_id', 'updated_at'], false)}
     `
+  },
+  {
+    version: 10,
+    description: 'Inventory: items, material purchases, physical counts, filed method per year, year-end adjustments',
+    sql: `
+      CREATE TABLE inventory_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL COLLATE NOCASE UNIQUE CHECK (length(trim(name)) > 0),
+        unit TEXT NOT NULL CHECK (length(trim(unit)) > 0),
+        notes TEXT NOT NULL DEFAULT '',
+        is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      ) STRICT;
+
+      CREATE TABLE inventory_purchases (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        item_id INTEGER NOT NULL REFERENCES inventory_items(id),
+        purchase_date TEXT NOT NULL,
+        quantity_milli INTEGER NOT NULL CHECK (quantity_milli > 0),
+        cost_cents INTEGER NOT NULL CHECK (cost_cents >= 0),
+        is_opening INTEGER NOT NULL DEFAULT 0 CHECK (is_opening IN (0, 1)),
+        memo TEXT NOT NULL DEFAULT '',
+        removed_at TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      ) STRICT;
+      CREATE TRIGGER inventory_purchases_no_delete BEFORE DELETE ON inventory_purchases BEGIN
+        SELECT RAISE(ABORT, 'Purchases are kept on record. Remove one instead.');
+      END;
+
+      CREATE TABLE inventory_counts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        count_date TEXT NOT NULL,
+        item_id INTEGER NOT NULL REFERENCES inventory_items(id),
+        quantity_milli INTEGER NOT NULL CHECK (quantity_milli >= 0),
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        UNIQUE (count_date, item_id)
+      ) STRICT;
+
+      -- Append-only: the latest row for a year is the filed method in force.
+      CREATE TABLE inventory_methods (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        year INTEGER NOT NULL,
+        method TEXT CHECK (method IS NULL OR method IN ('periodic', 'fifo', 'average', 'expensed')),
+        reason TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL
+      ) STRICT;
+      CREATE TRIGGER inventory_methods_append_only_u BEFORE UPDATE ON inventory_methods BEGIN
+        SELECT RAISE(ABORT, 'The filed-method history can''t be changed.');
+      END;
+      CREATE TRIGGER inventory_methods_append_only_d BEFORE DELETE ON inventory_methods BEGIN
+        SELECT RAISE(ABORT, 'The filed-method history can''t be changed.');
+      END;
+
+      CREATE TABLE inventory_adjustments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        as_of_date TEXT NOT NULL,
+        method TEXT NOT NULL,
+        value_cents INTEGER NOT NULL,
+        entry_id INTEGER REFERENCES journal_entries(id),
+        created_at TEXT NOT NULL
+      ) STRICT;
+
+      ${auditTriggersV2('inventory_items', ['id', 'name', 'unit', 'notes', 'is_active', 'created_at', 'updated_at'], false)}
+      ${auditTriggersV2(
+        'inventory_purchases',
+        ['id', 'item_id', 'purchase_date', 'quantity_milli', 'cost_cents', 'is_opening', 'memo', 'removed_at', 'updated_at'],
+        false
+      )}
+      ${auditTriggersV2('inventory_counts', ['id', 'count_date', 'item_id', 'quantity_milli', 'updated_at'], false)}
+      ${auditTriggersV2('inventory_methods', ['id', 'year', 'method', 'reason', 'created_at'], false)}
+      ${auditTriggersV2('inventory_adjustments', ['id', 'as_of_date', 'method', 'value_cents', 'entry_id', 'created_at'], false)}
+    `
   }
 ]
 

@@ -769,6 +769,48 @@ button.attention {
   color: #a3561b;
 }
 
+.inventory {
+  max-width: 1000px;
+}
+
+.inventory .tabs {
+  margin-top: 0.6rem;
+}
+
+.inventory-form {
+  margin: 0.8rem 0;
+}
+
+.inventory .narrow-date {
+  width: 11rem;
+}
+
+.inventory td input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.count-sheet td.amount input {
+  width: 7rem;
+  text-align: right;
+}
+
+.count-dates {
+  align-self: flex-end;
+  padding-bottom: 0.5rem;
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.methods-table .filed-row td {
+  background: #f3f9f4;
+}
+
+.method-history {
+  font-size: 0.85rem;
+}
+
 .account-link {
   color: inherit;
   text-decoration: none;
@@ -799,4 +841,13 @@ button.attention {
 
 .register-table tfoot th.amount {
   text-align: right;
+}
+
+.inventory-tab {
+  margin-top: 0.8rem;
+}
+
+.inventory-tab .count-dates,
+.inventory-tab .count-dates button {
+  font-weight: normal;
 }

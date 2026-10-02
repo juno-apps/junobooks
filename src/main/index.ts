@@ -16,6 +16,8 @@ import { readImportFile } from './bankImport'
 import type { PostBankLineInput, StageImportInput } from '../shared/bankImport'
 import type { RuleInput } from '../shared/rules'
 import type { EtsyFilesInput, EtsyImportInput } from '../shared/etsyImport'
+import type { InventoryMethod } from '../shared/inventory'
+import type { ItemInput, PurchaseInput } from '../shared/inventoryView'
 import { BACKUPS_TO_KEEP } from './companyStore'
 
 const isDev = !app.isPackaged
@@ -240,6 +242,28 @@ app.whenReady().then(() => {
     wrap(() => requireCompany().updateRule(id, input))
   )
   ipcMain.handle('rules:delete', (_e, id: number) => wrap(() => requireCompany().deleteRule(id)))
+  ipcMain.handle('inventory:overview', () => wrap(() => requireCompany().inventoryOverview()))
+  ipcMain.handle('inventory:addItem', (_e, input: ItemInput) => wrap(() => requireCompany().addInventoryItem(input)))
+  ipcMain.handle('inventory:updateItem', (_e, id: number, input: ItemInput & { isActive: boolean }) =>
+    wrap(() => requireCompany().updateInventoryItem(id, input))
+  )
+  ipcMain.handle('inventory:addPurchase', (_e, input: PurchaseInput) => wrap(() => requireCompany().addInventoryPurchase(input)))
+  ipcMain.handle('inventory:updatePurchase', (_e, id: number, input: PurchaseInput) =>
+    wrap(() => requireCompany().updateInventoryPurchase(id, input))
+  )
+  ipcMain.handle('inventory:removePurchase', (_e, id: number) => wrap(() => requireCompany().removeInventoryPurchase(id)))
+  ipcMain.handle('inventory:countSheet', (_e, date: string) => wrap(() => requireCompany().countSheet(date)))
+  ipcMain.handle('inventory:saveCount', (_e, date: string, rows: { itemId: number; quantityMilli: number | null }[]) =>
+    wrap(() => requireCompany().saveCount(date, rows))
+  )
+  ipcMain.handle('inventory:year', (_e, year: number) => wrap(() => requireCompany().inventoryYear(year)))
+  ipcMain.handle('inventory:setMethod', (_e, year: number, method: InventoryMethod | null, reason: string) =>
+    wrap(() => requireCompany().setFiledMethod(year, method, reason))
+  )
+  ipcMain.handle('inventory:adjustmentAccounts', () => wrap(() => requireCompany().inventoryAdjustmentAccounts()))
+  ipcMain.handle('inventory:postAdjustment', (_e, year: number, inv: number, cogs: number) =>
+    wrap(() => requireCompany().postInventoryAdjustment(year, inv, cogs))
+  )
   ipcMain.handle('etsy:accounts', () => wrap(() => requireCompany().etsyAccounts()))
   ipcMain.handle('etsy:addAccounts', () => wrap(() => requireCompany().addEtsyAccounts()))
   ipcMain.handle('etsy:preview', (_e, input: EtsyFilesInput) => wrap(() => requireCompany().previewEtsy(input)))

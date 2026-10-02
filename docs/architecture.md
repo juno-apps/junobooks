@@ -32,9 +32,11 @@ JunoBooks-code/
       rules.ts         Categorization rules: list, add, edit, delete, matcher
       reconcile.ts     Cleared status and reconciliations (start, tick, finish, cancel, undo)
       etsyImport.ts    Etsy statement imports: accounts setup, preview, posting, payouts tie-out
+      inventory.ts     Inventory facts: items, purchases, counts, filed method per year
+      inventoryReport.ts  Inventory year report (four methods) and the year-end entry
       db/migrations.ts Numbered schema migrations
     preload/           contextBridge API exposed to the renderer as window.juno
-    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange, JournalEntry, TransactionList, SimpleEntry, TransferEntry, AccountCombobox, AccountRegister, OpeningBalances, Receipts, Settings, ImportWizard, BankReview, RulesManager, Reconcile, EtsyImport; useFormError hook)
+    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange, JournalEntry, TransactionList, SimpleEntry, TransferEntry, AccountCombobox, AccountRegister, OpeningBalances, Receipts, Settings, ImportWizard, BankReview, RulesManager, Reconcile, EtsyImport, Inventory; useFormError hook)
     shared/            Code used by both main and renderer: entity types, US states, dates, money, company validation,
                        templates.ts (starting charts), taxLines.ts (tax categories + per-year line tables), chart.ts (view types),
                        accounts.ts (account input rules: kinds, debit/credit side, validation, number-range warning),
@@ -44,7 +46,7 @@ JunoBooks-code/
                        attachments.ts (receipt naming, accepted types), csvImport.ts (CSV reading, column guessing, mapping, fingerprints),
                        bankImport.ts (import types, account groups for import screens), rules.ts (rule matching, suggested text),
                        reconcile.ts (reconciliation view types, totals), etsy.ts (Etsy file reading, row kinds, posting plan, Etsy accounts),
-                       etsyImport.ts (Etsy import types)
+                       etsyImport.ts (Etsy import types), inventory.ts (quantities, the four methods), inventoryView.ts (inventory screen types)
   scripts/run-tests.cjs
   scripts/live/         Playwright live checks (dev-only; see docs/topics/live-checks.md)
   samples/              Made-up example files (bank CSVs, Etsy statement and orders) for trying imports and live checks
@@ -120,6 +122,9 @@ Opening an older file backs it up first (`backups/books-<time>-before-upgrade-vX
 - `import_batches` adds `channel` ('bank' default, 'etsy').
 - `marketplace_rows` (imported statement rows, unique fingerprint per channel, entry link; can't change or be deleted), `channel_mappings` (account per kind per channel), `marketplace_orders` (orders by channel + order id). Rows and mappings audited.
 
+**v10** (inventory; details in `docs/topics/inventory.md`)
+- `inventory_items`, `inventory_purchases` (quantity in thousandths, cost cents, opening flag, soft remove; no delete), `inventory_counts` (unique item + date), `inventory_methods` (append-only filed method per year), `inventory_adjustments` (year-end entries). All audited.
+
 Files open in WAL mode with foreign keys on. Dates are `YYYY-MM-DD` text.
 
 **Backups:** on close (and before any migration) the WAL is checkpointed and the file copied to `backups/books-<ISO time>[-label].sqlite`. Only the newest 30 are kept (sorted by name, since names start with the timestamp).
@@ -135,7 +140,7 @@ Sole proprietor, Single-member LLC → Schedule C · Multi-member LLC, Partnersh
 - **Void** (`voidEntry`): needs a reason, and every account in the entry must be active. The entry stays on record but drops out of balances. Voided entries never change.
 - **Reverse** (`reverseEntry`): posts an equal-and-opposite entry (source `reversal`) linked by `reverses_entry_id`, dated on or after the original. It works even when the original's period is locked. An entry can have only one live reversal, and a reversed entry can't be voided (void the reversal first).
 - **Period lock** (`setLockedThrough`): one "books closed through" date per company. Nothing dated on or before it can be posted or voided. Moving it later needs no reason. Moving it earlier or clearing it (reopening) needs a reason, and every change is kept in `period_lock_history` and the audit log.
-- **Balances** (`accountBalances`): debits minus credits per account, posted entries only, optionally as of a date. Each account stores its normal side, and the chart screen shows balances on that side (see `docs/topics/chart-of-accounts.md`).
+- **Balances** (`accountBalances`): debits minus credits per account, posted entries only, optionally as of a date. The chart screen shows balances as of today, so entries dated later (e.g. a Dec 31 year-end entry made in October) appear only in registers and reports for those dates. Each account stores its normal side, and the chart screen shows balances on that side (see `docs/topics/chart-of-accounts.md`).
 - **Accounts** used by posted entries can't change type or debit/credit side; accounts used in any entry can't be deleted (renaming is fine). Inactive accounts can't receive postings or voids, and only zero-balance accounts can be deactivated. Details in `docs/topics/chart-of-accounts.md`.
 - **Audit log** can't be edited or deleted. It rolls back with any failed change.
 
@@ -157,6 +162,7 @@ See `JunoBooks-PLAN.md` §10 (inventory method, S-corp election timing, which ba
 - `docs/topics/manual-entry.md`: journal entry screen, transaction list (void, reverse, duplicate), opening balances, account register, everyday screens, error messages, entry-screen rules, the books-start-date rule for manual entries.
 - `docs/topics/bank-import.md`: bank/card CSV import wizard, column guessing, duplicates, review and posting of imported lines, sign rule.
 - `docs/topics/etsy-import.md`: Etsy statement + orders import, row kinds, how they post, Etsy accounts, payouts tie-out.
+- `docs/topics/inventory.md`: inventory items, purchases, counts, the four methods, filed method, year-end entry.
 - `docs/topics/chart-of-accounts.md`: templates, numbering, entity-specific accounts, tax-line mapping, accountant notes, chart screen, editing accounts, adding/restoring accounts after creation.
 
 ## Latest handoff
@@ -168,4 +174,5 @@ None yet. Created only when the owner types "create new handoff."
 - **Phase 2 complete (schema v6):** journal entry screen, transaction list, Expense / Income / Transfer, account register, opening balances, receipts, data folder `Documents\JunoBooks` + Settings (see `docs/topics/manual-entry.md`). 2d–2g verified by Claude, owner review pending. Sub-accounts stay parked until Phase 9.
 - **Phase 3 complete (schema v8):** CSV import wizard, review screen, categorization rules, matching to entries already in the books, cleared status and reconciliation (`docs/topics/bank-import.md`). Verified by Claude, owner review pending.
 - **Phase 4 complete (schema v9):** Etsy importer with payouts tie-out (`docs/topics/etsy-import.md`). Verified by Claude with made-up files; real exports untested (backlog).
+- **Phase 5 complete (schema v10):** inventory with four methods side by side, filed method per year, year-end entry (`docs/topics/inventory.md`). Filed method for 2026 is the owner's/accountant's choice (backlog).
 - Build run in progress: see `progress-log.md` → Build run for the resume point.

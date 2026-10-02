@@ -16,6 +16,8 @@ import type {
 import type { ColumnMapping } from '../shared/csvImport'
 import type { CategorizationRule, RuleInput } from '../shared/rules'
 import type { ReconcileView } from '../shared/reconcile'
+import type { InventoryItem, InventoryMethod, InventoryPurchase, MethodSummary } from '../shared/inventory'
+import type { CountSheet, InventoryOverview, InventoryYearReport, ItemInput, PurchaseInput } from '../shared/inventoryView'
 import type {
   EtsyAccountStatus,
   EtsyFilesInput,
@@ -40,6 +42,15 @@ import type {
 
 export type {
   AccountInput,
+  CountSheet,
+  InventoryItem,
+  InventoryMethod,
+  InventoryOverview,
+  InventoryPurchase,
+  InventoryYearReport,
+  ItemInput,
+  MethodSummary,
+  PurchaseInput,
   EtsyAccountStatus,
   EtsyFilesInput,
   EtsyImportInput,
@@ -142,6 +153,18 @@ export interface JunoApi {
   addRule: (input: RuleInput) => Promise<Result<CategorizationRule[]>>
   updateRule: (id: number, input: RuleInput & { isActive: boolean }) => Promise<Result<CategorizationRule[]>>
   deleteRule: (id: number) => Promise<Result<CategorizationRule[]>>
+  inventoryOverview: () => Promise<Result<InventoryOverview>>
+  addInventoryItem: (input: ItemInput) => Promise<Result<InventoryOverview>>
+  updateInventoryItem: (id: number, input: ItemInput & { isActive: boolean }) => Promise<Result<InventoryOverview>>
+  addInventoryPurchase: (input: PurchaseInput) => Promise<Result<InventoryOverview>>
+  updateInventoryPurchase: (id: number, input: PurchaseInput) => Promise<Result<InventoryOverview>>
+  removeInventoryPurchase: (id: number) => Promise<Result<InventoryOverview>>
+  countSheet: (date: string) => Promise<Result<CountSheet>>
+  saveCount: (date: string, rows: { itemId: number; quantityMilli: number | null }[]) => Promise<Result<CountSheet>>
+  inventoryYear: (year: number) => Promise<Result<InventoryYearReport>>
+  setFiledMethod: (year: number, method: InventoryMethod | null, reason: string) => Promise<Result<InventoryYearReport>>
+  inventoryAdjustmentAccounts: () => Promise<Result<{ inventoryAccountId: number | null; cogsAccountId: number | null }>>
+  postInventoryAdjustment: (year: number, inventoryAccountId: number, cogsAccountId: number) => Promise<Result<InventoryYearReport>>
   etsyAccounts: () => Promise<Result<EtsyAccountStatus[]>>
   addEtsyAccounts: () => Promise<Result<EtsyAccountStatus[]>>
   previewEtsy: (input: EtsyFilesInput) => Promise<Result<EtsyPreview>>
