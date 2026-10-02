@@ -21,12 +21,14 @@ export function accountRegister(db: Database.Database, q: RegisterQuery): Regist
   const sign = a.normalBalance === 'debit' ? 1 : -1
 
   const opening = from
-    ? (db
-        .prepare(
-          `SELECT COALESCE(SUM(l.amount_cents), 0) AS c FROM journal_lines l JOIN journal_entries e ON e.id = l.entry_id
+    ? (
+        db
+          .prepare(
+            `SELECT COALESCE(SUM(l.amount_cents), 0) AS c FROM journal_lines l JOIN journal_entries e ON e.id = l.entry_id
            WHERE l.account_id = ? AND e.status = 'posted' AND e.entry_date < ?`
-        )
-        .get(a.id, from) as { c: number }).c * sign
+          )
+          .get(a.id, from) as { c: number }
+      ).c * sign
     : 0
 
   const lines = db
@@ -66,7 +68,8 @@ export function accountRegister(db: Database.Database, q: RegisterQuery): Regist
       date: l.date,
       memo: l.memo,
       lineMemo: l.lineMemo,
-      otherSide: names.length === 0 ? '(same account)' : names.length === 1 ? names[0] : `Split (${names.length} accounts)`,
+      otherSide:
+        names.length === 0 ? '(same account)' : names.length === 1 ? names[0] : `Split (${names.length} accounts)`,
       increaseCents: normal > 0 ? normal : 0,
       decreaseCents: normal < 0 ? -normal : 0,
       balanceCents: balance,

@@ -1,6 +1,6 @@
 # Bank and card imports
 
-Bringing in transactions from bank and card CSV downloads. Imported lines are **staged** first, reviewed, then posted as normal entries (source `import`). Code: `src/shared/csvImport.ts` (reading and mapping, pure), `src/shared/bankImport.ts` (types, account groups), `src/main/bankImport.ts` (staging, review, posting), screens `ImportWizard.tsx` and `BankReview.tsx`. Schema v7 (see `architecture.md`).
+Bringing in transactions from bank and card CSV downloads. Imported lines are **staged** first, reviewed, then posted as normal entries (source `import`). Code: `src/shared/csvImport.ts` (reading and mapping, pure), `src/shared/bankImport.ts` (types, account groups), `src/main/bankImport.ts` (staging, review, posting), `rules.ts` (shared + main), screens `ImportWizard.tsx`, `BankReview.tsx`, `RulesManager.tsx`. Schema v7 (see `architecture.md`).
 
 ## Sign rule
 An imported line's `amountCents` is the change on the **imported account's debit side**: for a bank account money in is positive; for a credit card a payment or refund is positive and a charge is negative. Posting puts that amount on the imported account and the opposite on the chosen account.
@@ -20,8 +20,15 @@ An imported line's `amountCents` is the change on the **imported account's debit
 - **Ignore** sets a line aside (e.g. already typed in by hand). **Show ignored lines** lists them with **Bring back**.
 - If an entry made from an imported line is voided later, the line returns to review (marked "Its entry was voided").
 
+## Categorization rules (`src/shared/rules.ts`, `src/main/rules.ts`, `RulesManager.tsx`)
+- A rule: "when the bank description contains *words*, use *account* (and *memo*)", optionally only for lines imported into one account. Stored in `categorization_rules` (audited; rules are settings, so deleting is allowed).
+- `findRule`: active rules whose words appear in the description (ignoring case and extra spaces), skipping rules for another bank account, rules pointing at an inactive account, or at the imported account itself. The longest words win, then the newest rule.
+- Lines waiting for review carry a `suggestion`; the review screen fills the account and memo of any line with no account chosen yet and notes "From rule "…"". The owner still posts each line.
+- **Make a rule…** on a review row opens a form prefilled with the description minus reference numbers (`suggestMatchText`, at most four words), the row's account and memo, and "Only for lines imported into <account>" (on by default). Saving fills in every matching line still without an account.
+- **Categorization rules** (link at the top of the review screen) lists rules with Edit, Turn off/on and Delete. Words need at least three letters.
+
 ## Rules kept by the database (schema v7)
 - `bank_lines`: what the bank said (account, date, description, amount, fingerprint) can never change and rows can't be deleted; only status and entry link change. `import_batches` can't be changed or deleted. Both audited, as are `categorization_rules`.
 
 ## Not built yet
-Categorization rules (3c), matching lines to entries typed in by hand (3d), cleared status and reconciliation (3e).
+Matching lines to entries typed in by hand (3d), cleared status and reconciliation (3e).

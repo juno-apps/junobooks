@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { accountLabel, filterGroups, type AccountGroup } from '../../shared/everyday'
 
 interface Props {
@@ -19,6 +19,11 @@ function AccountCombobox({ groups, value, onChange, label }: Props): JSX.Element
   const [text, setText] = useState(selected ? accountLabel(selected) : '')
   const [open, setOpen] = useState(false)
   const [highlight, setHighlight] = useState(0)
+
+  // The chosen account can also change from outside (e.g. a rule fills it in): show it.
+  useEffect(() => {
+    if (!open) setText(selected ? accountLabel(selected) : '')
+  }, [value])
 
   // Only narrow once something has been typed; opening an untouched box shows everything.
   const typed = selected && text === accountLabel(selected) ? '' : text

@@ -29,9 +29,10 @@ JunoBooks-code/
       openingBalances.ts  Opening balances: read, and replace (void old + post new)
       attachments.ts   Receipt files: copy into receipts\<year>\, list, remove (kept on record)
       bankImport.ts    Bank/card CSV imports: read file, stage lines, review, post, ignore
+      rules.ts         Categorization rules: list, add, edit, delete, matcher
       db/migrations.ts Numbered schema migrations
     preload/           contextBridge API exposed to the renderer as window.juno
-    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange, JournalEntry, TransactionList, SimpleEntry, TransferEntry, AccountCombobox, AccountRegister, OpeningBalances, Receipts, Settings, ImportWizard, BankReview; useFormError hook)
+    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange, JournalEntry, TransactionList, SimpleEntry, TransferEntry, AccountCombobox, AccountRegister, OpeningBalances, Receipts, Settings, ImportWizard, BankReview, RulesManager; useFormError hook)
     shared/            Code used by both main and renderer: entity types, US states, dates, money, company validation,
                        templates.ts (starting charts), taxLines.ts (tax categories + per-year line tables), chart.ts (view types),
                        accounts.ts (account input rules: kinds, debit/credit side, validation, number-range warning),
@@ -39,7 +40,7 @@ JunoBooks-code/
                        everyday.ts (Expense/Income/Transfer screens: account groups, type-to-narrow filter, entry builders),
                        register.ts (register view types, column wording), opening.ts (opening-balance types, difference), settings.ts (Settings view type),
                        attachments.ts (receipt naming, accepted types), csvImport.ts (CSV reading, column guessing, mapping, fingerprints),
-                       bankImport.ts (import types, account groups for import screens)
+                       bankImport.ts (import types, account groups for import screens), rules.ts (rule matching, suggested text)
   scripts/run-tests.cjs
   scripts/live/         Playwright live checks (dev-only; see docs/topics/live-checks.md)
   samples/              Made-up example files (bank CSVs) for trying imports and live checks
@@ -151,5 +152,5 @@ None yet. Created only when the owner types "create new handoff."
 - **Phase 0 complete:** installs from GitHub, opens, updates itself.
 - **Phase 1 complete (schema v5 at the end of Phase 1):** create/list/switch companies, core schema + audit log, ledger engine + period lock, templates + chart of accounts + tax lines, account editing, entity-type and home-state changes with start dates (correct/remove, chart follows entity changes, restore missing accounts). 
 - **Phase 2 complete (schema v6):** journal entry screen, transaction list, Expense / Income / Transfer, account register, opening balances, receipts, data folder `Documents\JunoBooks` + Settings (see `docs/topics/manual-entry.md`). 2d–2g verified by Claude, owner review pending. Sub-accounts stay parked until Phase 9.
-- **Phase 3 in progress (schema v7):** CSV import wizard and review screen built (`docs/topics/bank-import.md`).
+- **Phase 3 in progress (schema v7):** CSV import wizard, review screen and categorization rules built (`docs/topics/bank-import.md`).
 - Build run in progress: see `progress-log.md` → Build run for the resume point.

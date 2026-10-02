@@ -54,7 +54,9 @@ function ImportWizard({ onReview, onImported, onClose }: Props): JSX.Element {
 
   if (!accounts) return <p>Loading accounts…</p>
 
-  async function load(next: Promise<{ ok: true; value: ImportFile | null } | { ok: false; error: string }>): Promise<void> {
+  async function load(
+    next: Promise<{ ok: true; value: ImportFile | null } | { ok: false; error: string }>
+  ): Promise<void> {
     setError(null)
     setResult(null)
     const r = await next
@@ -75,13 +77,16 @@ function ImportWizard({ onReview, onImported, onClose }: Props): JSX.Element {
   const mapped = mapping ? applyMapping(rows, mapping) : null
   const width = Math.max(0, ...rows.map((r) => r.length))
   const header = mapping?.hasHeader ? rows[0] : null
-  const colName = (i: number): string => (header?.[i] ? `${header[i]} (column ${i + 1})` : `Column ${i + 1}: ${rows[mapping?.hasHeader ? 1 : 0]?.[i] ?? ''}`)
+  const colName = (i: number): string =>
+    header?.[i] ? `${header[i]} (column ${i + 1})` : `Column ${i + 1}: ${rows[mapping?.hasHeader ? 1 : 0]?.[i] ?? ''}`
   const words = inOutWords(account)
   const set = (patch: Partial<ColumnMapping>): void => {
     setResult(null)
     setMapping((m) => (m ? { ...m, ...patch } : m))
   }
-  const ambiguous = mapping ? dateOrderAmbiguous(rows, mapping.dateCol, mapping.hasHeader) && mapping.dateFormat !== 'YMD' : false
+  const ambiguous = mapping
+    ? dateOrderAmbiguous(rows, mapping.dateCol, mapping.hasHeader) && mapping.dateFormat !== 'YMD'
+    : false
 
   const colSelect = (value: number, onChange: (v: number) => void, label: string, allowNone = false): JSX.Element => (
     <label>
@@ -177,11 +182,20 @@ function ImportWizard({ onReview, onImported, onClose }: Props): JSX.Element {
               <input
                 type="checkbox"
                 checked={mapping.hasHeader}
-                onChange={(e) => set({ hasHeader: e.target.checked, dateFormat: detectDateFormat(rows, mapping.dateCol, e.target.checked) })}
+                onChange={(e) =>
+                  set({
+                    hasHeader: e.target.checked,
+                    dateFormat: detectDateFormat(rows, mapping.dateCol, e.target.checked)
+                  })
+                }
               />
               The first row has column names
             </label>
-            {colSelect(mapping.dateCol, (v) => set({ dateCol: v, dateFormat: detectDateFormat(rows, v, mapping.hasHeader) }), 'Date')}
+            {colSelect(
+              mapping.dateCol,
+              (v) => set({ dateCol: v, dateFormat: detectDateFormat(rows, v, mapping.hasHeader) }),
+              'Date'
+            )}
             <label>
               Date style
               <select value={mapping.dateFormat} onChange={(e) => set({ dateFormat: e.target.value as DateFormat })}>
@@ -203,7 +217,11 @@ function ImportWizard({ onReview, onImported, onClose }: Props): JSX.Element {
                   set(
                     mode === 'single'
                       ? { amountMode: mode, amountCol: mapping.amountCol >= 0 ? mapping.amountCol : 0 }
-                      : { amountMode: mode, outCol: mapping.outCol >= 0 ? mapping.outCol : 0, inCol: mapping.inCol >= 0 ? mapping.inCol : 0 }
+                      : {
+                          amountMode: mode,
+                          outCol: mapping.outCol >= 0 ? mapping.outCol : 0,
+                          inCol: mapping.inCol >= 0 ? mapping.inCol : 0
+                        }
                   )
                 }}
               >
@@ -215,7 +233,11 @@ function ImportWizard({ onReview, onImported, onClose }: Props): JSX.Element {
               <>
                 {colSelect(mapping.amountCol, (v) => set({ amountCol: v }), 'Amount')}
                 <label className="toggle">
-                  <input type="checkbox" checked={mapping.flipSign} onChange={(e) => set({ flipSign: e.target.checked })} />
+                  <input
+                    type="checkbox"
+                    checked={mapping.flipSign}
+                    onChange={(e) => set({ flipSign: e.target.checked })}
+                  />
                   Amounts are backwards (spending is shown as a plus)
                 </label>
               </>
@@ -261,7 +283,11 @@ function ImportWizard({ onReview, onImported, onClose }: Props): JSX.Element {
           {mapped.problems.length > 0 && (
             <p className="error">
               {mapped.problems.length} {mapped.problems.length === 1 ? 'row' : 'rows'} can&rsquo;t be read and will be
-              left out: {mapped.problems.slice(0, 3).map((p) => `row ${p.row} (${p.reason})`).join('; ')}
+              left out:{' '}
+              {mapped.problems
+                .slice(0, 3)
+                .map((p) => `row ${p.row} (${p.reason})`)
+                .join('; ')}
               {mapped.problems.length > 3 && '…'}
             </p>
           )}
@@ -281,7 +307,12 @@ function ImportWizard({ onReview, onImported, onClose }: Props): JSX.Element {
             </div>
           ) : (
             <div className="form-actions">
-              <button type="button" className="primary" disabled={busy || mapped.lines.length === 0} onClick={() => void stage()}>
+              <button
+                type="button"
+                className="primary"
+                disabled={busy || mapped.lines.length === 0}
+                onClick={() => void stage()}
+              >
                 Import {mapped.lines.length} {mapped.lines.length === 1 ? 'line' : 'lines'}
               </button>
             </div>

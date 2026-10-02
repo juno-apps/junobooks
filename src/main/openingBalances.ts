@@ -28,7 +28,9 @@ export function getOpeningBalances(db: Database.Database, booksStartDate: string
   const entryId = currentEntryId(db)
   const amounts = new Map<number, number>()
   if (entryId !== null) {
-    for (const l of db.prepare('SELECT account_id, amount_cents FROM journal_lines WHERE entry_id = ?').all(entryId) as {
+    for (const l of db
+      .prepare('SELECT account_id, amount_cents FROM journal_lines WHERE entry_id = ?')
+      .all(entryId) as {
       account_id: number
       amount_cents: number
     }[]) {
@@ -42,7 +44,15 @@ export function getOpeningBalances(db: Database.Database, booksStartDate: string
        FROM accounts WHERE type IN ('asset', 'liability', 'equity') AND subtype <> 'opening_balance'
        ORDER BY number`
     )
-    .all() as { id: number; number: string; name: string; type: 'asset' | 'liability' | 'equity'; subtype: string; normalBalance: 'debit' | 'credit'; isActive: number }[]
+    .all() as {
+    id: number
+    number: string
+    name: string
+    type: 'asset' | 'liability' | 'equity'
+    subtype: string
+    normalBalance: 'debit' | 'credit'
+    isActive: number
+  }[]
 
   const accounts = rows
     .map((a) => {
@@ -74,13 +84,18 @@ export function saveOpeningBalances(
       'Opening balances need the "Opening balance equity" account. Add it back from the chart of accounts (standard accounts not in your chart).'
     )
   }
-  if (!equity.isActive) throw new LedgerError(`Turn "${equity.name}" back on (it is inactive) before saving opening balances.`)
+  if (!equity.isActive)
+    throw new LedgerError(`Turn "${equity.name}" back on (it is inactive) before saving opening balances.`)
 
   const accounts = new Map(
     (
-      db
-        .prepare(`SELECT id, name, type, subtype, normal_balance AS normalBalance FROM accounts`)
-        .all() as { id: number; name: string; type: string; subtype: string; normalBalance: 'debit' | 'credit' }[]
+      db.prepare(`SELECT id, name, type, subtype, normal_balance AS normalBalance FROM accounts`).all() as {
+        id: number
+        name: string
+        type: string
+        subtype: string
+        normalBalance: 'debit' | 'credit'
+      }[]
     ).map((a) => [a.id, a])
   )
 
@@ -99,7 +114,8 @@ export function saveOpeningBalances(
     lines.push({ accountId: a.id, amountCents: a.normalBalance === 'debit' ? i.amountCents : -i.amountCents, memo: '' })
   }
   const total = lines.reduce((s, l) => s + l.amountCents, 0)
-  if (total !== 0) lines.push({ accountId: equity.id, amountCents: -total, memo: 'Difference (for your accountant to review)' })
+  if (total !== 0)
+    lines.push({ accountId: equity.id, amountCents: -total, memo: 'Difference (for your accountant to review)' })
 
   return db.transaction(() => {
     const old = currentEntryId(db)

@@ -21,7 +21,9 @@ function Settings({ onFolderChanged, onClose }: Props): JSX.Element {
     setView(next)
     setMessage({
       text: `JunoBooks now uses ${next.dataRoot}. ${
-        next.companyCount === 0 ? 'There are no companies there yet.' : `It holds ${next.companyCount} ${next.companyCount === 1 ? 'company' : 'companies'}.`
+        next.companyCount === 0
+          ? 'There are no companies there yet.'
+          : `It holds ${next.companyCount} ${next.companyCount === 1 ? 'company' : 'companies'}.`
       }`,
       bad: false
     })
@@ -57,8 +59,8 @@ function Settings({ onFolderChanged, onClose }: Props): JSX.Element {
         {view.companyCount === 0
           ? 'No companies here yet.'
           : `${view.companyCount} ${view.companyCount === 1 ? 'company' : 'companies'} here, each in its own folder under "Companies".`}{' '}
-        Each company folder holds its books file, receipts, automatic backups (the newest {view.backupsKept} are kept) and
-        exports.
+        Each company folder holds its books file, receipts, automatic backups (the newest {view.backupsKept} are kept)
+        and exports.
         {view.isDefault ? ' This is the standard folder.' : ` The standard folder is ${view.defaultRoot}.`}
       </p>
       {view.isDev && (

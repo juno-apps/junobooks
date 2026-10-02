@@ -23,8 +23,7 @@ export function listAttachments(db: Database.Database, entryId: number): Attachm
 
 function getAttachment(db: Database.Database, id: number): Attachment & { removed: boolean } {
   const row = db.prepare(`${SELECT.replace(' FROM', ', removed_at AS removedAt FROM')} WHERE id = ?`).get(id) as
-    | (Attachment & { removedAt: string | null })
-    | undefined
+    (Attachment & { removedAt: string | null }) | undefined
   if (!row) throw new LedgerError('That receipt no longer exists.')
   return { ...row, removed: row.removedAt !== null }
 }
@@ -34,7 +33,8 @@ export function attachmentFile(db: Database.Database, companyDir: string, id: nu
   const a = getAttachment(db, id)
   if (a.removed) throw new LedgerError('That receipt was removed.')
   const full = join(companyDir, a.storedPath)
-  if (!full.startsWith(join(companyDir, 'receipts'))) throw new LedgerError('That receipt is stored somewhere unexpected.')
+  if (!full.startsWith(join(companyDir, 'receipts')))
+    throw new LedgerError('That receipt is stored somewhere unexpected.')
   if (!existsSync(full)) throw new LedgerError(`The file for this receipt is missing from ${a.storedPath}.`)
   return full
 }
@@ -68,9 +68,11 @@ export function addAttachments(
   const dir = join(companyDir, 'receipts', year)
   mkdirSync(dir, { recursive: true })
   const existing = new Set(
-    (db.prepare('SELECT sha256 FROM attachments WHERE entry_id = ? AND removed_at IS NULL').all(entryId) as { sha256: string }[]).map(
-      (r) => r.sha256
-    )
+    (
+      db.prepare('SELECT sha256 FROM attachments WHERE entry_id = ? AND removed_at IS NULL').all(entryId) as {
+        sha256: string
+      }[]
+    ).map((r) => r.sha256)
   )
   const insert = db.prepare(
     `INSERT INTO attachments (entry_id, stored_path, original_name, size_bytes, sha256, added_at)
@@ -130,7 +132,13 @@ export function addAttachments(
 }
 
 /** Takes a receipt off its entry. The record stays (marked removed) and the file moves to receipts\_removed\. */
-export function removeAttachment(db: Database.Database, companyDir: string, id: number, reason = '', now: Date = new Date()): void {
+export function removeAttachment(
+  db: Database.Database,
+  companyDir: string,
+  id: number,
+  reason = '',
+  now: Date = new Date()
+): void {
   const a = getAttachment(db, id)
   if (a.removed) return
   const removedDir = join(companyDir, 'receipts', '_removed')

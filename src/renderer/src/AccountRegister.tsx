@@ -44,8 +44,8 @@ function AccountRegister({ accountId, onBack }: Props): JSX.Element {
         </button>
       </div>
       <p className="muted">
-        Every posted entry that touches this account, oldest first, with the balance after each one. To fix an entry, find
-        it on the Transactions tab (void, reverse or duplicate it there).
+        Every posted entry that touches this account, oldest first, with the balance after each one. To fix an entry,
+        find it on the Transactions tab (void, reverse or duplicate it there).
       </p>
       <div className="form-row register-filters">
         <label className="narrow">

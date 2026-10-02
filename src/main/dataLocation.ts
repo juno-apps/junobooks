@@ -61,8 +61,9 @@ export function countCompanies(dataRoot: string): number {
   const dir = join(dataRoot, 'Companies')
   if (!existsSync(dir)) return 0
   try {
-    return readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory() && existsSync(join(dir, e.name, 'books.sqlite')))
-      .length
+    return readdirSync(dir, { withFileTypes: true }).filter(
+      (e) => e.isDirectory() && existsSync(join(dir, e.name, 'books.sqlite'))
+    ).length
   } catch {
     return 0
   }

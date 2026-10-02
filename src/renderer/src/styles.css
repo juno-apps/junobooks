@@ -661,6 +661,20 @@ button.attention {
   border-color: #a3561b;
 }
 
+.rule-form {
+  margin: 0.4rem 0;
+  padding: 0.6rem;
+  background: #f6f7f9;
+  border-radius: 4px;
+}
+
+.rules-manager {
+  margin: 0.8rem 0;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
 .account-link {
   color: inherit;
   text-decoration: none;

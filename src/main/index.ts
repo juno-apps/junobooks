@@ -14,6 +14,7 @@ import { dataLocationFile, defaultDataRoot, devDataRoot, getCompaniesDir, getDat
 import type { SettingsView } from '../shared/settings'
 import { readImportFile } from './bankImport'
 import type { PostBankLineInput, StageImportInput } from '../shared/bankImport'
+import type { RuleInput } from '../shared/rules'
 import { BACKUPS_TO_KEEP } from './companyStore'
 
 const isDev = !app.isPackaged
@@ -229,6 +230,12 @@ app.whenReady().then(() => {
   ipcMain.handle('imports:ignore', (_e, ids: number[]) => wrap(() => requireCompany().ignoreBankLines(ids)))
   ipcMain.handle('imports:restore', (_e, id: number) => wrap(() => requireCompany().restoreBankLine(id)))
   ipcMain.handle('imports:history', () => wrap(() => requireCompany().importHistory()))
+  ipcMain.handle('rules:list', () => wrap(() => requireCompany().rules()))
+  ipcMain.handle('rules:add', (_e, input: RuleInput) => wrap(() => requireCompany().addRule(input)))
+  ipcMain.handle('rules:update', (_e, id: number, input: RuleInput & { isActive: boolean }) =>
+    wrap(() => requireCompany().updateRule(id, input))
+  )
+  ipcMain.handle('rules:delete', (_e, id: number) => wrap(() => requireCompany().deleteRule(id)))
   ipcMain.handle('accounts:register', (_e, q: RegisterQuery) => wrap(() => requireCompany().register(q)))
   ipcMain.handle('entries:void', (_e, id: number, reason: string) => wrap(() => requireCompany().voidEntry(id, reason)))
   ipcMain.handle('entries:reverse', (_e, id: number, date: string, memo?: string) =>

@@ -9,9 +9,21 @@ interface Props {
 }
 
 const GROUPS: { title: string; type: OpeningAccount['type']; hint: string }[] = [
-  { title: 'What the business had', type: 'asset', hint: 'Bank and cash balances, money customers owed you, inventory, equipment.' },
-  { title: 'What the business owed', type: 'liability', hint: 'Credit card balances, unpaid bills, sales tax owed, loans.' },
-  { title: 'Owner and equity accounts', type: 'equity', hint: 'Usually left blank: your accountant sets these up from the difference below.' }
+  {
+    title: 'What the business had',
+    type: 'asset',
+    hint: 'Bank and cash balances, money customers owed you, inventory, equipment.'
+  },
+  {
+    title: 'What the business owed',
+    type: 'liability',
+    hint: 'Credit card balances, unpaid bills, sales tax owed, loans.'
+  },
+  {
+    title: 'Owner and equity accounts',
+    type: 'equity',
+    hint: 'Usually left blank: your accountant sets these up from the difference below.'
+  }
 ]
 
 const plain = (cents: number): string => (cents ? formatCents(cents).replace('$', '').replace(/,/g, '') : '')
@@ -50,7 +62,9 @@ function OpeningBalances({ onSaved, onClose }: Props): JSX.Element {
     }
     setError(null)
     setBusy(true)
-    const result = await window.juno.saveOpeningBalances(parsed.map((a) => ({ accountId: a.id, amountCents: a.amountCents! })))
+    const result = await window.juno.saveOpeningBalances(
+      parsed.map((a) => ({ accountId: a.id, amountCents: a.amountCents! }))
+    )
     if (!result.ok) {
       setBusy(false)
       setError(result.error)
@@ -72,9 +86,9 @@ function OpeningBalances({ onSaved, onClose }: Props): JSX.Element {
         </button>
       </div>
       <p className="hint">
-        Enter what each account held when these books start, on <strong>{view.date}</strong>. Use the balance on your bank
-        and card statements at the end of the day before. Leave an account blank if it was zero. Amounts are what you
-        had or owed, so a card balance of $1,200 is entered as 1200. An overdrawn bank account is a minus amount.
+        Enter what each account held when these books start, on <strong>{view.date}</strong>. Use the balance on your
+        bank and card statements at the end of the day before. Leave an account blank if it was zero. Amounts are what
+        you had or owed, so a card balance of $1,200 is entered as 1200. An overdrawn bank account is a minus amount.
       </p>
       {view.entryId !== null && (
         <p className="hint">

@@ -19,6 +19,8 @@ import type { AccountInput } from '../shared/accounts'
 import type { EntryListItem, ManualEntryInput } from '../shared/journal'
 import { listEntries } from './entries'
 import { accountRegister } from './register'
+import { addRule, deleteRule, listRules, updateRule } from './rules'
+import type { CategorizationRule, RuleInput } from '../shared/rules'
 import {
   ignoreBankLines,
   ignoredLines,
@@ -368,6 +370,25 @@ export class CompanyBooks {
 
   importHistory(): ImportBatchSummary[] {
     return importHistory(this.db)
+  }
+
+  rules(): CategorizationRule[] {
+    return listRules(this.db)
+  }
+
+  addRule(input: RuleInput, now: Date = new Date()): CategorizationRule[] {
+    addRule(this.db, input, now)
+    return listRules(this.db)
+  }
+
+  updateRule(id: number, input: RuleInput & { isActive: boolean }, now: Date = new Date()): CategorizationRule[] {
+    updateRule(this.db, id, input, now)
+    return listRules(this.db)
+  }
+
+  deleteRule(id: number): CategorizationRule[] {
+    deleteRule(this.db, id)
+    return listRules(this.db)
   }
 
   register(q: RegisterQuery): RegisterView {

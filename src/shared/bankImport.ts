@@ -42,7 +42,7 @@ export interface BankLine {
   /** The entry it was posted to or matched with was later voided, so it needs another look. */
   entryVoided: boolean
   /** Suggested from a categorization rule (3c). */
-  suggestion: { accountId: number; payee: string; ruleId: number } | null
+  suggestion: { accountId: number; payee: string; ruleId: number; matchText: string } | null
 }
 
 export interface PostBankLineInput {
@@ -92,13 +92,20 @@ export function importAccountGroups(accounts: ChartAccount[]): AccountGroup[] {
 
 /** The "other side" choices for an imported line: money out lists expenses first, money in lists income first.
  * Bank, card and loan accounts are offered as transfers (e.g. paying the card from checking). */
-export function lineCategoryGroups(accounts: ChartAccount[], importAccountId: number, amountCents: number): AccountGroup[] {
+export function lineCategoryGroups(
+  accounts: ChartAccount[],
+  importAccountId: number,
+  amountCents: number
+): AccountGroup[] {
   const active = accounts.filter((a) => a.isActive && a.id !== importAccountId && a.subtype !== 'opening_balance')
   const expenses = active.filter((a) => a.type === 'expense' && a.subtype !== 'cogs')
   const cogs = active.filter((a) => a.type === 'expense' && a.subtype === 'cogs')
   const income = active.filter((a) => a.type === 'income')
   const transfer = active.filter(
-    (a) => (a.type === 'asset' && a.taxCategory === 'cash') || a.subtype === 'credit_card' || a.taxCategory === 'long_term_loans'
+    (a) =>
+      (a.type === 'asset' && a.taxCategory === 'cash') ||
+      a.subtype === 'credit_card' ||
+      a.taxCategory === 'long_term_loans'
   )
   const used = new Set([...expenses, ...cogs, ...income, ...transfer].map((a) => a.id))
   const other = active.filter((a) => !used.has(a.id))

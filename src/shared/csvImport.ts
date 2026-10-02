@@ -89,7 +89,10 @@ export function parseDateCell(text: string, format: DateFormat): string | null {
 
 /** "$1,234.56", "-12.00", "(45.10)", "45.10-", "USD 3.00", "+5" → cents (or null). Blank → null. */
 export function parseAmountCell(text: string): number | null {
-  let t = text.trim().replace(/^(USD|US\$)\s*/i, '').replace(/\s*(USD)$/i, '')
+  let t = text
+    .trim()
+    .replace(/^(USD|US\$)\s*/i, '')
+    .replace(/\s*(USD)$/i, '')
   if (!t) return null
   let negative = false
   if (/^\(.*\)$/.test(t)) {
@@ -169,7 +172,7 @@ export function applyMapping(rows: string[][], m: ColumnMapping): MappedFile {
       cents = o === null || n === null ? null : Math.abs(n) - Math.abs(o)
     }
     if (cents === null) {
-      out.problems.push({ row: rowNo, reason: 'the amount can\'t be read' })
+      out.problems.push({ row: rowNo, reason: "the amount can't be read" })
       continue
     }
     if (cents === 0) {
@@ -185,11 +188,15 @@ export function applyMapping(rows: string[][], m: ColumnMapping): MappedFile {
 }
 
 const looksLikeAmount = (s: string): boolean => s.trim() !== '' && parseAmountCell(s) !== null
-const looksLikeDate = (s: string): boolean => (['MDY', 'YMD', 'DMY'] as DateFormat[]).some((f) => parseDateCell(s, f) !== null)
+const looksLikeDate = (s: string): boolean =>
+  (['MDY', 'YMD', 'DMY'] as DateFormat[]).some((f) => parseDateCell(s, f) !== null)
 
 /** Picks the date format that reads every date in the column; prefers US month/day when both work. */
 export function detectDateFormat(rows: string[][], col: number, hasHeader: boolean): DateFormat {
-  const cells = rows.slice(hasHeader ? 1 : 0).map((r) => r[col] ?? '').filter((c) => c.trim())
+  const cells = rows
+    .slice(hasHeader ? 1 : 0)
+    .map((r) => r[col] ?? '')
+    .filter((c) => c.trim())
   const order: DateFormat[] = ['YMD', 'MDY', 'DMY']
   for (const f of order) if (cells.length > 0 && cells.every((c) => parseDateCell(c, f) !== null)) return f
   return 'MDY'
@@ -197,20 +204,32 @@ export function detectDateFormat(rows: string[][], col: number, hasHeader: boole
 
 /** Whether both month/day orders read every date (the screen asks the owner to confirm). */
 export function dateOrderAmbiguous(rows: string[][], col: number, hasHeader: boolean): boolean {
-  const cells = rows.slice(hasHeader ? 1 : 0).map((r) => r[col] ?? '').filter((c) => c.trim())
-  return cells.length > 0 && cells.every((c) => parseDateCell(c, 'MDY') !== null && parseDateCell(c, 'DMY') !== null) &&
+  const cells = rows
+    .slice(hasHeader ? 1 : 0)
+    .map((r) => r[col] ?? '')
+    .filter((c) => c.trim())
+  return (
+    cells.length > 0 &&
+    cells.every((c) => parseDateCell(c, 'MDY') !== null && parseDateCell(c, 'DMY') !== null) &&
     cells.some((c) => parseDateCell(c, 'MDY') !== parseDateCell(c, 'DMY'))
+  )
 }
 
 /** Best guess at the mapping from the header names and the data. `isCard` sets the usual sign for card files. */
 export function guessMapping(rows: string[][], isCard = false): ColumnMapping {
   const first = rows[0] ?? []
-  const hasHeader = first.length > 0 && !first.some(looksLikeDate) && !first.some((c) => /^-?\$?[\d,]+\.\d\d$/.test(c.trim()))
+  const hasHeader =
+    first.length > 0 && !first.some(looksLikeDate) && !first.some((c) => /^-?\$?[\d,]+\.\d\d$/.test(c.trim()))
   const head = hasHeader ? first.map((h) => h.toLowerCase()) : []
   const width = Math.max(...rows.map((r) => r.length), 0)
   const sample = rows.slice(hasHeader ? 1 : 0, (hasHeader ? 1 : 0) + 20)
   const colAll = (test: (s: string) => boolean): number[] =>
-    [...Array(width).keys()].filter((c) => sample.length > 0 && sample.every((r) => (r[c] ?? '') === '' || test(r[c] ?? '')) && sample.some((r) => (r[c] ?? '') !== ''))
+    [...Array(width).keys()].filter(
+      (c) =>
+        sample.length > 0 &&
+        sample.every((r) => (r[c] ?? '') === '' || test(r[c] ?? '')) &&
+        sample.some((r) => (r[c] ?? '') !== '')
+    )
   const find = (...words: RegExp[]): number => {
     for (const w of words) {
       const i = head.findIndex((h) => w.test(h))
@@ -250,7 +269,8 @@ export function guessMapping(rows: string[][], isCard = false): ColumnMapping {
       .filter((x): x is { v: number; d: string } => x.v !== null && x.v !== 0)
     const payment = rowsWithValues.find((x) => /payment|thank you|autopay/.test(x.d))
     if (payment) flipSign = payment.v < 0
-    else flipSign = rowsWithValues.length > 0 && rowsWithValues.filter((x) => x.v > 0).length > rowsWithValues.length / 2
+    else
+      flipSign = rowsWithValues.length > 0 && rowsWithValues.filter((x) => x.v > 0).length > rowsWithValues.length / 2
   }
 
   return {

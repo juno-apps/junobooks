@@ -113,7 +113,10 @@ function Receipts({ entryId, onChanged, compact = false }: Props): JSX.Element {
                       return
                     }
                     setRemoving(null)
-                    setMessage({ text: 'Receipt removed. The file was moved to receipts\\_removed in the company folder.', bad: false })
+                    setMessage({
+                      text: 'Receipt removed. The file was moved to receipts\\_removed in the company folder.',
+                      bad: false
+                    })
                     await reload()
                     onChanged?.()
                   }}

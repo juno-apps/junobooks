@@ -14,6 +14,7 @@ import type {
   StageImportResult
 } from '../shared/bankImport'
 import type { ColumnMapping } from '../shared/csvImport'
+import type { CategorizationRule, RuleInput } from '../shared/rules'
 import type { OpeningBalanceInput, OpeningBalancesView } from '../shared/opening'
 import type {
   CompanyHistory,
@@ -29,6 +30,8 @@ import type {
 
 export type {
   AccountInput,
+  CategorizationRule,
+  RuleInput,
   BankLine,
   ColumnMapping,
   ImportBatchSummary,
@@ -116,6 +119,10 @@ export interface JunoApi {
   ignoreBankLines: (ids: number[]) => Promise<Result<void>>
   restoreBankLine: (id: number) => Promise<Result<void>>
   importHistory: () => Promise<Result<ImportBatchSummary[]>>
+  listRules: () => Promise<Result<CategorizationRule[]>>
+  addRule: (input: RuleInput) => Promise<Result<CategorizationRule[]>>
+  updateRule: (id: number, input: RuleInput & { isActive: boolean }) => Promise<Result<CategorizationRule[]>>
+  deleteRule: (id: number) => Promise<Result<CategorizationRule[]>>
   getRegister: (q: RegisterQuery) => Promise<Result<RegisterView>>
   voidEntry: (id: number, reason: string) => Promise<Result<EntryListItem[]>>
   reverseEntry: (id: number, date: string, memo?: string) => Promise<Result<EntryListItem[]>>
