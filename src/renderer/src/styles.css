@@ -516,6 +516,30 @@ button.danger {
   color: #666;
 }
 
+.opening-group h3 {
+  margin: 0.8rem 0 0.1rem;
+  font-size: 1rem;
+}
+
+.opening-group .hint {
+  margin: 0 0 0.3rem;
+}
+
+.opening .entry-table td:first-child {
+  width: auto;
+}
+
+.opening .entry-table .amount {
+  width: 9rem;
+}
+
+.opening-difference {
+  margin-top: 1rem;
+  padding: 0.6rem 0.8rem;
+  background: #f6f7f9;
+  border-radius: 4px;
+}
+
 .account-link {
   color: inherit;
   text-decoration: none;

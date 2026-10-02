@@ -63,4 +63,5 @@ Pointer log only — a few lines per round. Details live in git history.
 - B1: Playwright live checks set up (`scripts/live/`, data in `test-data\live` via `JUNOBOOKS_DATA_ROOT`); `live-checks.md` rewritten.
 - B2: round-22 polish: red error clears once fixed (`useFormError.ts`, all four entry screens), wider account lists, empty Transactions text names all four buttons. Live check `polish.mjs`. 205 tests.
 - B3 (2d): account register: click an account on the chart; running balance, date range with balance forward, voided on request, column names fit the account. Files: `main/register.ts` (+test), `shared/register.ts`, `AccountRegister.tsx`, `ChartOfAccounts.tsx`, IPC/preload. Live check `register.mjs`. 209 tests.
-- **Resume point:** 2e (opening balances) next.
+- B4 (2e): opening balances screen: one entry on the books start date, difference to Opening balance equity with an accountant note; re-saving voids and replaces. Files: `main/openingBalances.ts` (+test), `shared/opening.ts`, `OpeningBalances.tsx`, `CompanyHome.tsx`, IPC/preload. Live check `opening.mjs`. 214 tests.
+- **Resume point:** 2f (receipts, schema v6) next.

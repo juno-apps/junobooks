@@ -7,6 +7,7 @@ import ChartOfAccounts from './ChartOfAccounts'
 import EntityTypeChange from './EntityTypeChange'
 import HomeStateChange from './HomeStateChange'
 import JournalEntry from './JournalEntry'
+import OpeningBalances from './OpeningBalances'
 import SimpleEntry, { type SimpleKind } from './SimpleEntry'
 import TemplatePicker from './TemplatePicker'
 import TransactionList from './TransactionList'
@@ -21,13 +22,13 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
   const [changingEntity, setChangingEntity] = useState(false)
   const [changingState, setChangingState] = useState(false)
   /** The entry screen: closed, an expense, income or transfer, a blank journal entry, or a copy of an existing entry. */
-  const [entering, setEntering] = useState<{ kind: 'journal'; copyOf?: EntryListItem } | { kind: SimpleKind | 'transfer' } | null>(null)
+  const [entering, setEntering] = useState<{ kind: 'journal'; copyOf?: EntryListItem } | { kind: SimpleKind | 'transfer' | 'opening' } | null>(null)
   const [tab, setTab] = useState<'transactions' | 'chart'>('transactions')
   /** Bumped after anything that changes accounts or balances, so the chart and transaction list reload. */
   const [chartVersion, setChartVersion] = useState(0)
   const [entryKey, setEntryKey] = useState(0)
 
-  function startEntry(kind: 'journal' | 'transfer' | SimpleKind, copyOf?: EntryListItem): void {
+  function startEntry(kind: 'journal' | 'transfer' | 'opening' | SimpleKind, copyOf?: EntryListItem): void {
     setEntering(kind === 'journal' ? { kind, copyOf } : { kind })
     setEntryKey((k) => k + 1)
   }
@@ -79,6 +80,9 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
             <button type="button" onClick={() => startEntry('journal')}>
               New journal entry
             </button>
+            <button type="button" onClick={() => startEntry('opening')}>
+              Opening balances
+            </button>
           </div>
         )}
       </section>
@@ -89,6 +93,9 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
           onPosted={() => setChartVersion((v) => v + 1)}
           onClose={() => setEntering(null)}
         />
+      )}
+      {entering?.kind === 'opening' && (
+        <OpeningBalances key={entryKey} onSaved={() => setChartVersion((v) => v + 1)} onClose={() => setEntering(null)} />
       )}
       {entering?.kind === 'transfer' && (
         <TransferEntry key={entryKey} onPosted={() => setChartVersion((v) => v + 1)} onClose={() => setEntering(null)} />

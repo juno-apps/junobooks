@@ -4,6 +4,7 @@ import { join } from 'path'
 import type { AccountInput } from '../shared/accounts'
 import type { ManualEntryInput } from '../shared/journal'
 import type { RegisterQuery } from '../shared/register'
+import type { OpeningBalanceInput } from '../shared/opening'
 import type { CompanyProfile, EntityChangeInput, HomeStateChangeInput, NewCompanyInput, Result } from '../shared/company'
 import { readAppSettings, writeAppSettings } from './appSettings'
 import { createCompany, listCompanies, openCompany, type CompanyBooks } from './companyStore'
@@ -120,6 +121,8 @@ app.whenReady().then(() => {
     wrap(() => requireCompany().postManualEntry(input))
   )
   ipcMain.handle('entries:list', () => current?.entries() ?? [])
+  ipcMain.handle('opening:get', () => wrap(() => requireCompany().openingBalances()))
+  ipcMain.handle('opening:save', (_e, input: OpeningBalanceInput[]) => wrap(() => requireCompany().saveOpeningBalances(input)))
   ipcMain.handle('accounts:register', (_e, q: RegisterQuery) => wrap(() => requireCompany().register(q)))
   ipcMain.handle('entries:void', (_e, id: number, reason: string) => wrap(() => requireCompany().voidEntry(id, reason)))
   ipcMain.handle('entries:reverse', (_e, id: number, date: string, memo?: string) =>

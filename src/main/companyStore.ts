@@ -19,6 +19,8 @@ import type { AccountInput } from '../shared/accounts'
 import type { EntryListItem, ManualEntryInput } from '../shared/journal'
 import { listEntries } from './entries'
 import { accountRegister } from './register'
+import { getOpeningBalances, saveOpeningBalances } from './openingBalances'
+import type { OpeningBalanceInput, OpeningBalancesView } from '../shared/opening'
 import type { RegisterQuery, RegisterView } from '../shared/register'
 import { LedgerError, postEntry, reverseEntry, voidEntry } from './ledger'
 import { addAccount, deleteAccount, setAccountActive, updateAccount, type ChartContext } from './accounts'
@@ -284,6 +286,14 @@ export class CompanyBooks {
 
   entries(): EntryListItem[] {
     return listEntries(this.db)
+  }
+
+  openingBalances(now: Date = new Date()): OpeningBalancesView {
+    return getOpeningBalances(this.db, this.profile(now).booksStartDate)
+  }
+
+  saveOpeningBalances(input: OpeningBalanceInput[], now: Date = new Date()): number | null {
+    return saveOpeningBalances(this.db, this.profile(now).booksStartDate, input)
   }
 
   register(q: RegisterQuery): RegisterView {

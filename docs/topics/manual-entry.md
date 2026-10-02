@@ -19,6 +19,12 @@ Screens for typing transactions in by hand. All of them post through `postManual
 - Columns: date, #, memo, accounts (up to three names, then "+N more"), amount, status ("Voided", "Reversed by #N", "Reversal of #N"). Voided rows are greyed.
 - Clicking a row opens its lines and actions: **Duplicate** (always) opens the entry screen in copy mode; **Void…** (needs a reason) and **Reverse…** (date default today, optional memo) only on posted entries that aren't reversed. Each shows a one-line plain-English explanation. Errors come from the ledger.
 
+## Opening balances (`src/renderer/src/OpeningBalances.tsx`, `src/main/openingBalances.ts`)
+- Opened by **Opening balances** on company home. Lists every balance-sheet account (assets, liabilities, equity; inactive ones only if they already hold an amount) grouped as "What the business had / owed / Owner and equity accounts". Opening balance equity itself is not listed.
+- Amounts are typed on each account's normal side (what you had or owed; a card balance of $1,200 is 1200; an overdrawn bank is a minus amount). Blank = zero. Unreadable amounts get a red border and block saving.
+- Saving posts **one entry** (source `opening`, memo "Opening balances") dated the **books start date**: each amount on its normal side, the difference to the `opening_balance` account (3999 Opening balance equity, line memo "Difference (for your accountant to review)"). A live total shows that difference with a "Check with your accountant" note.
+- Saving again voids the current opening entry ("Replaced by updated opening balances") and posts a new one, in one transaction. All blank → the old entry is voided, nothing posted. Refused if Opening balance equity is inactive or missing, an account isn't balance-sheet, or the books are closed through the start date (ledger rule).
+
 ## Account register (`src/renderer/src/AccountRegister.tsx`, `src/main/register.ts`)
 - Opened by clicking an account name on the Chart of accounts tab; "Back to chart of accounts" returns (and reloads balances).
 - Read-only. Lists every posted line on the account, oldest first (date, entry id, line order): date, #, description (entry memo, line memo below), other side (the other account's name, or "Split (N accounts)"), increase / decrease, running balance.
