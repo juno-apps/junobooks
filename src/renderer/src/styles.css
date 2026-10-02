@@ -915,6 +915,43 @@ button.attention {
   flex: 1;
 }
 
+.sales-tax {
+  max-width: 1000px;
+}
+
+.sales-tax-tab {
+  margin-top: 0.8rem;
+}
+
+.sales-tax .narrow-date {
+  width: 11rem;
+}
+
+.period-row {
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.quarter-buttons {
+  display: flex;
+  gap: 0.2rem;
+  padding-bottom: 0.2rem;
+}
+
+.tax-report td:last-child,
+.tax-report th:last-child {
+  width: 10rem;
+}
+
+.tax-report .total-row th {
+  border-top: 2px solid #ccc;
+  text-align: left;
+}
+
+.tax-report .total-row th.amount {
+  text-align: right;
+}
+
 .account-link {
   color: inherit;
   text-decoration: none;

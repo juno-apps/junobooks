@@ -18,6 +18,7 @@ import type { CategorizationRule, RuleInput } from '../shared/rules'
 import type { ReconcileView } from '../shared/reconcile'
 import type { AmazonImportInput, AmazonImportResult, AmazonMapping, AmazonPreview } from '../shared/amazonImport'
 import type { TieOutRow } from '../shared/form1099k'
+import type { RateInput, SalesTaxPaymentInput, SalesTaxRate, SalesTaxReport } from '../shared/salesTax'
 import type {
   AgingRow,
   BusinessDetails,
@@ -56,6 +57,10 @@ import type {
 
 export type {
   AccountInput,
+  RateInput,
+  SalesTaxPaymentInput,
+  SalesTaxRate,
+  SalesTaxReport,
   AmazonImportInput,
   AmazonImportResult,
   AmazonMapping,
@@ -224,6 +229,12 @@ export interface JunoApi {
   previewAmazon: (text: string) => Promise<Result<AmazonPreview>>
   importAmazon: (input: AmazonImportInput) => Promise<Result<AmazonImportResult>>
   amazonPayouts: () => Promise<Result<EtsyPayout[]>>
+  salesTaxRates: () => Promise<Result<SalesTaxRate[]>>
+  addSalesTaxRate: (input: RateInput) => Promise<Result<SalesTaxRate[]>>
+  removeSalesTaxRate: (id: number) => Promise<Result<SalesTaxRate[]>>
+  homeRateOn: (date: string) => Promise<Result<SalesTaxRate | null>>
+  salesTaxReport: (from: string, to: string) => Promise<Result<SalesTaxReport>>
+  recordSalesTaxPayment: (input: SalesTaxPaymentInput) => Promise<Result<number>>
   tieOut1099k: (year: number) => Promise<Result<TieOutRow[]>>
   /** null clears the amount. */
   set1099k: (year: number, platform: string, grossCents: number | null, notes: string) => Promise<Result<TieOutRow[]>>

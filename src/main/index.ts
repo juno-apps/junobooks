@@ -31,6 +31,7 @@ import type { PostBankLineInput, StageImportInput } from '../shared/bankImport'
 import type { RuleInput } from '../shared/rules'
 import type { EtsyFilesInput, EtsyImportInput } from '../shared/etsyImport'
 import type { AmazonImportInput } from '../shared/amazonImport'
+import type { RateInput, SalesTaxPaymentInput } from '../shared/salesTax'
 import type { InventoryMethod } from '../shared/inventory'
 import type { ItemInput, PurchaseInput } from '../shared/inventoryView'
 import type { BusinessDetails, CertificateInput, CustomerInput, InvoiceInput, PaymentInput } from '../shared/sales'
@@ -389,6 +390,12 @@ app.whenReady().then(() => {
   ipcMain.handle('amazon:preview', (_e, text: string) => wrap(() => requireCompany().previewAmazon(text)))
   ipcMain.handle('amazon:import', (_e, input: AmazonImportInput) => wrap(() => requireCompany().importAmazon(input)))
   ipcMain.handle('amazon:payouts', () => wrap(() => requireCompany().amazonPayouts()))
+  ipcMain.handle('salesTax:rates', () => wrap(() => requireCompany().salesTaxRates()))
+  ipcMain.handle('salesTax:addRate', (_e, input: RateInput) => wrap(() => requireCompany().addSalesTaxRate(input)))
+  ipcMain.handle('salesTax:removeRate', (_e, id: number) => wrap(() => requireCompany().removeSalesTaxRate(id)))
+  ipcMain.handle('salesTax:homeRate', (_e, date: string) => wrap(() => requireCompany().homeRateOn(date)))
+  ipcMain.handle('salesTax:report', (_e, from: string, to: string) => wrap(() => requireCompany().salesTaxReport(from, to)))
+  ipcMain.handle('salesTax:pay', (_e, input: SalesTaxPaymentInput) => wrap(() => requireCompany().recordSalesTaxPayment(input)))
   ipcMain.handle('1099k:get', (_e, year: number) => wrap(() => requireCompany().tieOut1099k(year)))
   ipcMain.handle('1099k:set', (_e, year: number, platform: string, cents: number | null, notes: string) =>
     wrap(() => requireCompany().set1099k(year, platform, cents, notes))

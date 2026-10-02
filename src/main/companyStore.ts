@@ -34,6 +34,8 @@ import { addChannelAccounts, AMAZON, channelAccounts, importAmazon, previewAmazo
 import { AMAZON_ACCOUNTS } from '../shared/amazon'
 import type { AmazonImportInput, AmazonImportResult, AmazonPreview } from '../shared/amazonImport'
 import { set1099k, tieOut } from './form1099k'
+import { addRate, homeRateOn, listRates, recordSalesTaxPayment, removeRate, salesTaxReport } from './salesTax'
+import type { RateInput, SalesTaxPaymentInput, SalesTaxRate, SalesTaxReport } from '../shared/salesTax'
 import type { TieOutRow } from '../shared/form1099k'
 import {
   addItem,
@@ -621,6 +623,32 @@ export class CompanyBooks {
 
   amazonPayouts(): EtsyPayout[] {
     return etsyPayouts(this.db, AMAZON)
+  }
+
+  salesTaxRates(): SalesTaxRate[] {
+    return listRates(this.db)
+  }
+
+  addSalesTaxRate(input: RateInput, now: Date = new Date()): SalesTaxRate[] {
+    addRate(this.db, input, now)
+    return listRates(this.db)
+  }
+
+  removeSalesTaxRate(id: number): SalesTaxRate[] {
+    removeRate(this.db, id)
+    return listRates(this.db)
+  }
+
+  homeRateOn(date: string): SalesTaxRate | null {
+    return homeRateOn(this.db, date)
+  }
+
+  salesTaxReport(from: string, to: string): SalesTaxReport {
+    return salesTaxReport(this.db, from, to)
+  }
+
+  recordSalesTaxPayment(input: SalesTaxPaymentInput, now: Date = new Date()): number {
+    return recordSalesTaxPayment(this.db, input, this.profile(now).booksStartDate)
   }
 
   tieOut1099k(year: number): TieOutRow[] {

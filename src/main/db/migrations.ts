@@ -825,6 +825,23 @@ export const MIGRATIONS: Migration[] = [
       ) STRICT;
       ${auditTriggersV2('form_1099k', ['id', 'year', 'platform', 'gross_cents', 'notes', 'updated_at'], false)}
     `
+  },
+  {
+    version: 13,
+    description: 'Sales tax rates as dated data',
+    sql: `
+      CREATE TABLE sales_tax_rates (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        state_code TEXT NOT NULL CHECK (length(state_code) = 2),
+        place TEXT NOT NULL DEFAULT '',
+        rate_milli INTEGER NOT NULL CHECK (rate_milli >= 0 AND rate_milli <= 100000),
+        effective_date TEXT NOT NULL,
+        notes TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL,
+        UNIQUE (state_code, place, effective_date)
+      ) STRICT;
+      ${auditTriggersV2('sales_tax_rates', ['id', 'state_code', 'place', 'rate_milli', 'effective_date', 'notes', 'created_at'], false)}
+    `
   }
 ]
 

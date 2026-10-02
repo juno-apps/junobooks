@@ -781,6 +781,7 @@ function InvoiceEditor({
   const [dueDate, setDueDate] = useState(existing?.dueDate ?? addDays(today, 30))
   const [memo, setMemo] = useState(existing?.memo ?? '')
   const [rate, setRate] = useState(existing ? formatRate(existing.taxRateMilli).replace('%', '') : '')
+  const [rateTouched, setRateTouched] = useState(!!existing)
   const [exempt, setExempt] = useState(existing?.taxExempt ?? false)
   const [exemptReason, setExemptReason] = useState(existing?.exemptReason ?? '')
   const [lines, setLines] = useState<LineDraft[]>(
@@ -803,6 +804,14 @@ function InvoiceEditor({
   useEffect(() => {
     if (!existing) window.juno.nextInvoiceNumber().then((r) => r.ok && setNumber(r.value))
   }, [])
+
+  // New invoices start with the home state's rate in force on the invoice date (until the rate is typed over).
+  useEffect(() => {
+    if (rateTouched) return
+    window.juno.homeRateOn(issueDate).then((r) => {
+      if (r.ok && r.value) setRate(formatRate(r.value.rateMilli).replace('%', ''))
+    })
+  }, [issueDate])
 
   // A valid resale certificate on the invoice date: skip sales tax (the owner can still change it).
   useEffect(() => {
@@ -978,7 +987,10 @@ function InvoiceEditor({
             inputMode="decimal"
             value={rate}
             disabled={exempt}
-            onChange={(e) => setRate(e.target.value)}
+            onChange={(e) => {
+              setRateTouched(true)
+              setRate(e.target.value)
+            }}
             placeholder="e.g. 7.25"
             aria-label="Sales tax rate"
           />
