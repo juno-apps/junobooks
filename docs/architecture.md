@@ -38,9 +38,10 @@ JunoBooks-code/
       amazonImport.ts  Amazon settlement imports (and the shared add-channel-accounts helper)
       form1099k.ts     1099-K tie-out per year and platform
       salesTax.ts      Sales tax rates (dated), period report, recording a payment
+      reports.ts       Profit & loss, balance sheet, trial balance, general ledger
       db/migrations.ts Numbered schema migrations
     preload/           contextBridge API exposed to the renderer as window.juno
-    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange, JournalEntry, TransactionList, SimpleEntry, TransferEntry, AccountCombobox, AccountRegister, OpeningBalances, Receipts, Settings, ImportWizard, BankReview, RulesManager, Reconcile, EtsyImport, AmazonImport, Form1099K, Inventory, Sales, SalesTax; useFormError hook)
+    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange, JournalEntry, TransactionList, SimpleEntry, TransferEntry, AccountCombobox, AccountRegister, OpeningBalances, Receipts, Settings, ImportWizard, BankReview, RulesManager, Reconcile, EtsyImport, AmazonImport, Form1099K, Inventory, Sales, SalesTax, Reports, ReportsExtra; useFormError hook)
     shared/            Code used by both main and renderer: entity types, US states, dates, money, company validation,
                        templates.ts (starting charts), taxLines.ts (tax categories + per-year line tables), chart.ts (view types),
                        accounts.ts (account input rules: kinds, debit/credit side, validation, number-range warning),
@@ -52,7 +53,8 @@ JunoBooks-code/
                        reconcile.ts (reconciliation view types, totals), etsy.ts (Etsy file reading, row kinds, posting plan, Etsy accounts),
                        etsyImport.ts (Etsy import types), inventory.ts (quantities, the four methods), inventoryView.ts (inventory screen types),
                        sales.ts (direct-sales types, tax rates, invoice totals, aging), invoiceHtml.ts (printable invoice),
-                       amazon.ts / amazonImport.ts (Amazon settlement reading, kinds, plan, types), form1099k.ts (tie-out types), salesTax.ts (rates in force, quarters, report types)
+                       amazon.ts / amazonImport.ts (Amazon settlement reading, kinds, plan, types), form1099k.ts (tie-out types), salesTax.ts (rates in force, quarters, report types),
+                       reports.ts (report shapes, CSV helpers)
   scripts/run-tests.cjs
   scripts/live/         Playwright live checks (dev-only; see docs/topics/live-checks.md)
   samples/              Made-up example files (bank CSVs, Etsy statement and orders, Amazon settlement) for trying imports and live checks
@@ -183,6 +185,7 @@ See `JunoBooks-PLAN.md` §10 (inventory method, S-corp election timing, which ba
 - `docs/topics/direct-sales.md`: customers, resale certificates, invoices (draft, finalize, void, PDF), payments received, aging.
 - `docs/topics/amazon-1099k.md`: Amazon settlement import (kinds, reserves, payout), 1099-K tie-out.
 - `docs/topics/sales-tax.md`: dated sales tax rates, invoice rate prefill, period report for the CDTFA return, paying sales tax.
+- `docs/topics/reports.md`: reports screen, financial reports, CSV export, year-end detail reports.
 - `docs/topics/chart-of-accounts.md`: templates, numbering, entity-specific accounts, tax-line mapping, accountant notes, chart screen, editing accounts, adding/restoring accounts after creation.
 
 ## Latest handoff
@@ -198,4 +201,5 @@ None yet. Created only when the owner types "create new handoff."
 - **Phase 6 complete (schema v11):** customers, resale certificates, invoices with PDF, payments, aging (`docs/topics/direct-sales.md`).
 - **Phase 7 complete (schema v12):** Amazon settlement importer and 1099-K tie-out (`docs/topics/amazon-1099k.md`). Real Amazon reports untested (backlog).
 - **Phase 8 complete (schema v13):** sales tax rates by date and the period report (`docs/topics/sales-tax.md`).
+- **Phase 9 in progress:** Reports screen with profit & loss, balance sheet, trial balance, general ledger and CSV export (`docs/topics/reports.md`).
 - Build run in progress: see `progress-log.md` → Build run for the resume point.

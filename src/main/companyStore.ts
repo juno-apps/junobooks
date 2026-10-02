@@ -34,6 +34,8 @@ import { addChannelAccounts, AMAZON, channelAccounts, importAmazon, previewAmazo
 import { AMAZON_ACCOUNTS } from '../shared/amazon'
 import type { AmazonImportInput, AmazonImportResult, AmazonPreview } from '../shared/amazonImport'
 import { set1099k, tieOut } from './form1099k'
+import { balanceSheet, generalLedger, profitAndLoss, trialBalance } from './reports'
+import type { BalanceSheet, GeneralLedger, ProfitAndLoss, TrialBalance } from '../shared/reports'
 import { addRate, homeRateOn, listRates, recordSalesTaxPayment, removeRate, salesTaxReport } from './salesTax'
 import type { RateInput, SalesTaxPaymentInput, SalesTaxRate, SalesTaxReport } from '../shared/salesTax'
 import type { TieOutRow } from '../shared/form1099k'
@@ -623,6 +625,22 @@ export class CompanyBooks {
 
   amazonPayouts(): EtsyPayout[] {
     return etsyPayouts(this.db, AMAZON)
+  }
+
+  profitAndLoss(from: string, to: string, byMonth = false): ProfitAndLoss {
+    return profitAndLoss(this.db, from, to, byMonth)
+  }
+
+  balanceSheet(asOf: string): BalanceSheet {
+    return balanceSheet(this.db, asOf)
+  }
+
+  trialBalance(asOf: string): TrialBalance {
+    return trialBalance(this.db, asOf)
+  }
+
+  generalLedger(from: string, to: string): GeneralLedger {
+    return generalLedger(this.db, from, to)
   }
 
   salesTaxRates(): SalesTaxRate[] {

@@ -390,6 +390,28 @@ app.whenReady().then(() => {
   ipcMain.handle('amazon:preview', (_e, text: string) => wrap(() => requireCompany().previewAmazon(text)))
   ipcMain.handle('amazon:import', (_e, input: AmazonImportInput) => wrap(() => requireCompany().importAmazon(input)))
   ipcMain.handle('amazon:payouts', () => wrap(() => requireCompany().amazonPayouts()))
+  ipcMain.handle('reports:pl', (_e, from: string, to: string, byMonth: boolean) =>
+    wrap(() => requireCompany().profitAndLoss(from, to, byMonth))
+  )
+  ipcMain.handle('reports:bs', (_e, asOf: string) => wrap(() => requireCompany().balanceSheet(asOf)))
+  ipcMain.handle('reports:tb', (_e, asOf: string) => wrap(() => requireCompany().trialBalance(asOf)))
+  ipcMain.handle('reports:gl', (_e, from: string, to: string) => wrap(() => requireCompany().generalLedger(from, to)))
+  ipcMain.handle('reports:saveCsv', async (_e, name: string, csv: string, open: boolean) => {
+    try {
+      const books = requireCompany()
+      const dir = join(books.dir, 'exports', 'reports')
+      mkdirSync(dir, { recursive: true })
+      const file = join(dir, `${safeNamePart(name) || 'report'}.csv`)
+      writeFileSync(file, '\uFEFF' + csv)
+      if (open) {
+        const problem = await shell.openPath(file)
+        if (problem) return { ok: false, error: problem }
+      }
+      return { ok: true, value: file }
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) }
+    }
+  })
   ipcMain.handle('salesTax:rates', () => wrap(() => requireCompany().salesTaxRates()))
   ipcMain.handle('salesTax:addRate', (_e, input: RateInput) => wrap(() => requireCompany().addSalesTaxRate(input)))
   ipcMain.handle('salesTax:removeRate', (_e, id: number) => wrap(() => requireCompany().removeSalesTaxRate(id)))

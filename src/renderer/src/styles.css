@@ -245,6 +245,14 @@ button:disabled {
   font-size: 0.9rem;
 }
 
+.form label.toggle {
+  flex-direction: row;
+  align-items: center;
+  align-self: flex-start;
+  font-weight: normal;
+  margin-bottom: 0;
+}
+
 .chart-table .actions {
   width: 3rem;
   text-align: right;
@@ -950,6 +958,62 @@ button.attention {
 
 .tax-report .total-row th.amount {
   text-align: right;
+}
+
+.reports {
+  max-width: 1200px;
+}
+
+.report-tabs {
+  flex-wrap: wrap;
+}
+
+.report-body {
+  margin-top: 0.8rem;
+}
+
+.reports .narrow-date {
+  width: 11rem;
+}
+
+.quick-periods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.8rem;
+  padding-bottom: 0.5rem;
+  font-weight: normal;
+}
+
+.report-actions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.csv-buttons {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.report-scroll {
+  overflow-x: auto;
+}
+
+.report-table .subtotal-row td {
+  border-top: 1px solid #ccc;
+  font-weight: 600;
+}
+
+.report-table .total-row td {
+  border-top: 2px solid #999;
+  font-weight: 700;
+}
+
+.report-table .sub-account td {
+  color: #444;
+}
+
+.gl-account h4 {
+  margin: 1rem 0 0.2rem;
 }
 
 .account-link {

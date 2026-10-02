@@ -18,6 +18,7 @@ import type { CategorizationRule, RuleInput } from '../shared/rules'
 import type { ReconcileView } from '../shared/reconcile'
 import type { AmazonImportInput, AmazonImportResult, AmazonMapping, AmazonPreview } from '../shared/amazonImport'
 import type { TieOutRow } from '../shared/form1099k'
+import type { BalanceSheet, GeneralLedger, ProfitAndLoss, TrialBalance } from '../shared/reports'
 import type { RateInput, SalesTaxPaymentInput, SalesTaxRate, SalesTaxReport } from '../shared/salesTax'
 import type {
   AgingRow,
@@ -57,6 +58,10 @@ import type {
 
 export type {
   AccountInput,
+  BalanceSheet,
+  GeneralLedger,
+  ProfitAndLoss,
+  TrialBalance,
   RateInput,
   SalesTaxPaymentInput,
   SalesTaxRate,
@@ -229,6 +234,12 @@ export interface JunoApi {
   previewAmazon: (text: string) => Promise<Result<AmazonPreview>>
   importAmazon: (input: AmazonImportInput) => Promise<Result<AmazonImportResult>>
   amazonPayouts: () => Promise<Result<EtsyPayout[]>>
+  profitAndLoss: (from: string, to: string, byMonth: boolean) => Promise<Result<ProfitAndLoss>>
+  balanceSheet: (asOf: string) => Promise<Result<BalanceSheet>>
+  trialBalance: (asOf: string) => Promise<Result<TrialBalance>>
+  generalLedger: (from: string, to: string) => Promise<Result<GeneralLedger>>
+  /** Saves CSV text in exports\reports (name without extension) and returns the path; open = also open it. */
+  saveCsv: (name: string, csv: string, open: boolean) => Promise<Result<string>>
   salesTaxRates: () => Promise<Result<SalesTaxRate[]>>
   addSalesTaxRate: (input: RateInput) => Promise<Result<SalesTaxRate[]>>
   removeSalesTaxRate: (id: number) => Promise<Result<SalesTaxRate[]>>
