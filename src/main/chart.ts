@@ -150,7 +150,7 @@ export function getChart(db: Database.Database, entity: EntityTypeId, today: str
       taxLine: r.tax_category ? getTaxLine(r.tax_category, form, taxYear) : null,
       accountantNote: r.accountant_note,
       description: r.description,
-      balanceCents: r.normal_balance === 'credit' ? -raw : raw,
+      balanceCents: r.normal_balance === 'credit' ? 0 - raw : raw,
       usedInEntries: r.used === 1,
       hasPostings: r.posted === 1
     }

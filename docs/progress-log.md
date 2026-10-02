@@ -45,3 +45,10 @@ Pointer log only — a few lines per round. Details live in git history.
 ## Round 21 — Unit 2c step 2: Income screen
 - New income screen (deposit-to, kind of income incl. sales tax collected, splits, unpaid invoice via accounts receivable). Expense and Income share `SimpleEntry.tsx` and one builder.
 - Files: `shared/everyday.ts` (+test), `SimpleEntry.tsx` (was `ExpenseEntry.tsx`), `CompanyHome.tsx`. No schema change. 201 tests pass. Status: **confirmed** by owner.
+
+## Round 22 — Unit 2c step 3: Transfer screen + live-check permission
+- Transfer screen built; end-to-end test of Income/Expense/Transfer through the real books; zero credit balances no longer stored as "-0" (`chart.ts`). Claude live-checked Transfer in the running app (income, transfer, refusal, Swap, balances all right). 205 tests pass.
+- Owner decision: standing full access for live checks in every session until they say to revert (`CLAUDE.md` §9, `docs/topics/live-checks.md`).
+- Files: `shared/everyday.ts` (+test), `TransferEntry.tsx`, `CompanyHome.tsx`, `main/chart.ts`, `companyStore.test.ts`, docs. No schema change.
+- Status: Transfer awaiting the owner's own confirmation (committed as a savepoint).
+- **Resume point:** start **2d, the account register** when the owner says so. Open polish ideas awaiting the owner's yes/no: (1) clear a red error message once the cause is fixed, (2) widen the category list boxes so group headings don't wrap, (3) empty-company Transactions text should mention New expense/income/transfer too.

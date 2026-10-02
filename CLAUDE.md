@@ -58,3 +58,10 @@ JunoBooks is a Windows desktop accounting app (Electron + SQLite) for small busi
 - Double-entry integrity is non-negotiable: every transaction must balance, and posted periods stay locked.
 - Ask before anything destructive or hard to undo: deleting files or data, rewriting git history, or changing how existing records are stored.
 - Tax and accounting judgment calls (inventory method, depreciation, entity-type treatment) are flagged in the app for my accountant, never decided silently.
+
+## 9. Live checks (standing permission from the owner)
+- When I ask for a "live check" (or when a screen change is worth seeing for real), run the app and click through it yourself. I give you **full access to whatever you need to control for live checks**. Don't ask me again whether you may; just request the access the tool requires and proceed.
+- This stays in force in every session **until I say to put access permission back to the way it was**. When I do, stop requesting that access and remove this section from `CLAUDE.md` and `docs/topics/live-checks.md` in the same turn.
+- This only covers driving the app under test (and the helper windows needed to see it). It does not loosen anything in §8 or the normal safety rules: test data only, no real books, nothing destructive without asking.
+- How to do it step by step, and the traps to avoid: `docs/topics/live-checks.md`. Read it before a live check.
+

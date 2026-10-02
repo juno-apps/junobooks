@@ -3,12 +3,14 @@ import type { ChartAccount } from './chart'
 import {
   buildExpense,
   buildIncome,
+  buildTransfer,
   depositToGroups,
   expenseCategoryGroups,
   filterGroups,
   incomeCategoryGroups,
   paidFromGroups,
-  splitTotal
+  splitTotal,
+  transferGroups
 } from './everyday'
 
 function acct(id: number, name: string, type: ChartAccount['type'], extra: Partial<ChartAccount> = {}): ChartAccount {
@@ -180,5 +182,45 @@ describe('buildIncome', () => {
     expect(buildIncome({ ...f, lines: [line(1, '5')] })).toEqual({
       error: "The account it was deposited to can't also be the kind of income."
     })
+  })
+})
+
+describe('transfers', () => {
+  it('lists bank/cash, cards and other loans/balances/owner draws, not bills, receivables, sales tax, inventory or income', () => {
+    const c = [
+      ...chart,
+      acct(20, 'Loans payable', 'liability'),
+      acct(21, 'Owner draws', 'equity', { subtype: 'owner_draw' }),
+      acct(22, 'Payroll liabilities', 'liability', { subtype: 'payroll' })
+    ]
+    expect(transferGroups(c).map((x) => [x.title.split(' (')[0], x.accounts.map((a) => a.name)])).toEqual([
+      ['Bank and cash', ['Checking', 'Petty cash']],
+      ['Credit cards', ['Credit card']],
+      ['Other accounts', ['Etsy balance', 'Loans payable', 'Owner draws']]
+    ])
+  })
+
+  const f = { date: '2026-03-05', memo: ' Pay card ', fromId: 1, toId: 6, amount: '500' }
+  it('debits the account money goes to and credits the account it comes from', () => {
+    expect(buildTransfer(f)).toEqual({
+      entry: {
+        date: '2026-03-05',
+        memo: 'Pay card',
+        lines: [
+          { accountId: 6, amountCents: 50_000, memo: '' },
+          { accountId: 1, amountCents: -50_000, memo: '' }
+        ]
+      }
+    })
+  })
+  it('explains each problem in plain English', () => {
+    expect(buildTransfer({ ...f, date: 'x' })).toEqual({ error: 'Enter a valid date.' })
+    expect(buildTransfer({ ...f, fromId: null })).toEqual({ error: 'Choose the account the money comes from.' })
+    expect(buildTransfer({ ...f, toId: null })).toEqual({ error: 'Choose the account the money goes to.' })
+    expect(buildTransfer({ ...f, toId: 1 })).toEqual({ error: 'Choose two different accounts.' })
+    expect(buildTransfer({ ...f, amount: '' })).toEqual({ error: 'Enter an amount.' })
+    expect(buildTransfer({ ...f, amount: 'abc' })).toEqual({ error: `"abc" isn't an amount.` })
+    expect(buildTransfer({ ...f, amount: '-5' })).toEqual({ error: "The amount can't be negative. Swap the two accounts instead." })
+    expect(buildTransfer({ ...f, amount: '0' })).toEqual({ error: "The amount can't be zero." })
   })
 })

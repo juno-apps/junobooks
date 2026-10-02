@@ -13,6 +13,7 @@ import {
   openCompany,
   pruneBackups
 } from './companyStore'
+import { buildExpense, buildIncome, buildTransfer } from '../shared/everyday'
 import { getSchemaVersion, LATEST_SCHEMA_VERSION } from './db/migrations'
 
 let root: string
@@ -263,6 +264,50 @@ describe('entries, voidEntry, reverseEntry', () => {
       expect(list.find((e) => e.id === id)!.reversedById).toBe(reversal.id)
       expect(balance()).toBe(0)
       expect(() => books.voidEntry(id, 'oops')).toThrow(/already reversed/)
+    } finally {
+      books.close()
+    }
+  })
+})
+
+describe('everyday screens end to end', () => {
+  it('income, expense and transfer entries post and move the right balances', () => {
+    const books = openCompany(root, createCompany(root, juno))
+    try {
+      const accts = books.chart().accounts
+      const id = (name: string) => accts.find((a) => a.name === name)!.id
+      const bal = (name: string) => books.chart().accounts.find((a) => a.name === name)!.balanceCents
+      const post = (r: ReturnType<typeof buildExpense>) => {
+        if ('error' in r) throw new Error(r.error)
+        return books.postManualEntry(r.entry)
+      }
+      const line = (accountId: number, amount: string) => ({ accountId, amount, memo: '' })
+
+      // Income: $100 sale + $8.25 sales tax deposited to Checking
+      post(buildIncome({ date: '2026-03-01', receivedFrom: 'Customer', depositToId: id('Checking account'),
+        lines: [line(id('Sales'), '100'), line(id('Sales tax payable'), '8.25')] }))
+      expect(bal('Checking account')).toBe(10_825)
+      expect(bal('Sales')).toBe(10_000)
+      expect(bal('Sales tax payable')).toBe(825)
+
+      // Expense on the credit card, split across two categories
+      post(buildExpense({ date: '2026-03-02', paidTo: 'Supplier', paidFromId: id('Credit card'),
+        lines: [line(id('Office expense'), '10'), line(id('Materials'), '5.50')] }))
+      expect(bal('Credit card')).toBe(1_550)
+      expect(bal('Office expense')).toBe(1_000)
+      expect(bal('Materials')).toBe(550)
+
+      // Transfers: pay the card from Checking, move money to Savings
+      post(buildTransfer({ date: '2026-03-03', memo: '', fromId: id('Checking account'), toId: id('Credit card'), amount: '15.50' }))
+      post(buildTransfer({ date: '2026-03-03', memo: '', fromId: id('Checking account'), toId: id('Savings account'), amount: '50' }))
+      expect(bal('Credit card')).toBe(0)
+      expect(bal('Savings account')).toBe(5_000)
+      expect(bal('Checking account')).toBe(10_825 - 1_550 - 5_000)
+
+      // Whole ledger still balances and every entry is balanced
+      const total = books.db.prepare('SELECT SUM(amount_cents) AS t FROM journal_lines').get() as { t: number }
+      expect(total.t).toBe(0)
+      expect(books.entries()).toHaveLength(4)
     } finally {
       books.close()
     }

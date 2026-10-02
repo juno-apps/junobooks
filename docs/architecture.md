@@ -108,6 +108,7 @@ Sole proprietor, Single-member LLC → Schedule C · Multi-member LLC, Partnersh
 ## Verification practice
 - Small/low-risk changes: `npm run typecheck`.
 - Ledger math, schema, imports/exports: real automated tests (`npm test`).
+- Screens and anything the owner will click: a live check (run the app and click through it) under the owner's standing permission. See `docs/topics/live-checks.md`.
 
 ## Agreed design rules
 - **Home state has effective dates** (built; see Companies). Sales tax rates by state and date come in Phase 8.
@@ -118,6 +119,7 @@ Sole proprietor, Single-member LLC → Schedule C · Multi-member LLC, Partnersh
 See `JunoBooks-PLAN.md` §10 (inventory method, S-corp election timing, which bank CSVs, which Etsy exports). Home state resolved: California, switchable per company.
 
 ## Topic docs index
+- `docs/topics/live-checks.md`: how to run and click through the app for a live check, the standing access permission, traps.
 - `docs/topics/manual-entry.md`: journal entry screen, transaction list (void, reverse, duplicate), everyday screens, entry-screen rules, the books-start-date rule for manual entries.
 - `docs/topics/chart-of-accounts.md`: templates, numbering, entity-specific accounts, tax-line mapping, accountant notes, chart screen, editing accounts, adding/restoring accounts after creation.
 
@@ -127,4 +129,4 @@ None yet. Created only when the owner types "create new handoff."
 ## Status
 - **Phase 0 complete:** installs from GitHub, opens, updates itself.
 - **Phase 1 complete (schema v5):** create/list/switch companies, core schema + audit log, ledger engine + period lock, templates + chart of accounts + tax lines, account editing, entity-type and home-state changes with start dates (correct/remove, chart follows entity changes, restore missing accounts). 
-- **Phase 2 in progress** (manual entry). 2a–2b done: journal entry screen, transaction list (see `docs/topics/manual-entry.md`). Units: 2a journal entry screen · 2b transaction list (void, reverse, duplicate) · 2c Expense/Income/Transfer screens · 2d account register · 2e opening balances · 2f receipts (schema v6) · 2g move packaged data to `Documents\JunoBooks` + Settings. Sub-accounts stay parked until Phase 9.
+- **Phase 2 in progress** (manual entry). 2a–2c built: journal entry screen, transaction list, Expense / Income / Transfer screens (see `docs/topics/manual-entry.md`); Transfer is live-checked by Claude and awaiting the owner's own confirmation. **Resume point: 2d (account register) is next, not started.** Units: 2a journal entry screen · 2b transaction list (void, reverse, duplicate) · 2c Expense/Income/Transfer screens · 2d account register · 2e opening balances · 2f receipts (schema v6) · 2g move packaged data to `Documents\JunoBooks` + Settings. Sub-accounts stay parked until Phase 9.

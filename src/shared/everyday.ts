@@ -170,6 +170,59 @@ export function incomeCategoryGroups(accounts: ChartAccount[]): AccountGroup[] {
   ])
 }
 
+export interface TransferForm {
+  date: string
+  memo: string
+  fromId: number | null
+  toId: number | null
+  amount: string
+}
+
+/** Moves money between two of your own accounts: the "to" account is debited, the "from" account credited. */
+export function buildTransfer(form: TransferForm): Built {
+  if (!isValidDate(form.date)) return { error: 'Enter a valid date.' }
+  if (form.fromId === null) return { error: 'Choose the account the money comes from.' }
+  if (form.toId === null) return { error: 'Choose the account the money goes to.' }
+  if (form.fromId === form.toId) return { error: 'Choose two different accounts.' }
+  if (!form.amount.trim()) return { error: 'Enter an amount.' }
+  const cents = parseMoney(form.amount)
+  if (cents === null) return { error: `"${form.amount}" isn't an amount.` }
+  if (cents < 0) return { error: "The amount can't be negative. Swap the two accounts instead." }
+  if (cents === 0) return { error: "The amount can't be zero." }
+  return {
+    entry: {
+      date: form.date,
+      memo: form.memo.trim(),
+      lines: [
+        { accountId: form.toId, amountCents: cents, memo: '' },
+        { accountId: form.fromId, amountCents: -cents, memo: '' }
+      ]
+    }
+  }
+}
+
+/** Accounts money can move between: bank/cash, credit cards, then other loans, balances and owner draws. */
+export function transferGroups(accounts: ChartAccount[]): AccountGroup[] {
+  const active = accounts.filter((a) => a.isActive)
+  const cash = active.filter((a) => a.type === 'asset' && a.taxCategory === 'cash')
+  const cards = active.filter((a) => a.subtype === 'credit_card')
+  const shown = new Set([...cash, ...cards].map((a) => a.id))
+  const skipAsset = ['inventory', 'fixed_asset', 'contra']
+  const skipLiability = ['sales_tax', 'payroll']
+  const other = active.filter(
+    (a) =>
+      !shown.has(a.id) &&
+      ((a.type === 'asset' && !skipAsset.includes(a.subtype) && a.taxCategory !== 'accounts_receivable') ||
+        (a.type === 'liability' && !skipLiability.includes(a.subtype) && a.taxCategory !== 'accounts_payable') ||
+        a.subtype === 'owner_draw')
+  )
+  return nonEmpty([
+    { title: 'Bank and cash', accounts: cash },
+    { title: 'Credit cards', accounts: cards },
+    { title: 'Other accounts (loans, payment processor balances, owner draws)', accounts: other }
+  ])
+}
+
 export function accountLabel(a: ChartAccount): string {
   return `${a.number} ${a.name}`
 }
