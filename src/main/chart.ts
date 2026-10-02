@@ -115,7 +115,7 @@ export function getChart(db: Database.Database, entity: EntityTypeId, today: str
   const rows = db
     .prepare(
       `SELECT a.id, a.number, a.name, a.type, a.subtype, a.normal_balance, a.is_active, a.tax_category,
-         a.accountant_note, a.description,
+         a.accountant_note, a.description, a.parent_id,
          EXISTS (SELECT 1 FROM journal_lines l WHERE l.account_id = a.id) AS used,
          EXISTS (SELECT 1 FROM journal_lines l JOIN journal_entries e ON e.id = l.entry_id
                  WHERE l.account_id = a.id AND e.status <> 'draft') AS posted
@@ -132,6 +132,7 @@ export function getChart(db: Database.Database, entity: EntityTypeId, today: str
     tax_category: TaxCategoryKey | null
     accountant_note: string
     description: string
+    parent_id: number | null
     used: number
     posted: number
   }[]
@@ -150,6 +151,7 @@ export function getChart(db: Database.Database, entity: EntityTypeId, today: str
       taxLine: r.tax_category ? getTaxLine(r.tax_category, form, taxYear) : null,
       accountantNote: r.accountant_note,
       description: r.description,
+      parentId: r.parent_id,
       balanceCents: r.normal_balance === 'credit' ? 0 - raw : raw,
       usedInEntries: r.used === 1,
       hasPostings: r.posted === 1

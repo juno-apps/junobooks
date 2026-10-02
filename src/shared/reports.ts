@@ -12,6 +12,8 @@ export interface ReportRow {
   /** Sub-accounts nest under their parent (filled in when sub-accounts are used). */
   depth: number
   parentId: number | null
+  /** A "Total <parent>" line (parent plus its sub-accounts); not part of the section total. */
+  subtotal?: boolean
 }
 
 export interface ReportSection {

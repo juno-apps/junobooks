@@ -13,6 +13,5 @@ Ideas parked for later. Items are added when the owner starts a message with "ba
 - Test the Amazon importer with a real settlement report (flat file V2). Phase 7 was built from Amazon's documented layout and the made-up file in `samples/amazon/`.
 
 ## Feature ideas
-- Sub-accounts: nest accounts under a parent (e.g. "Etsy fees" under "Commissions and fees") on the chart screen and in reports. `accounts.parent_id` already exists. Parked from unit 1e.
 
 ## UI tweaks

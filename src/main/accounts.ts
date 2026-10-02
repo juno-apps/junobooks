@@ -35,12 +35,13 @@ interface AccountRow {
   is_active: number
   tax_category: string | null
   accountant_note: string
+  parent_id: number | null
 }
 
 function getRow(db: Database.Database, id: number): AccountRow {
   const row = db
     .prepare(
-      `SELECT id, number, name, type, subtype, normal_balance, is_active, tax_category, accountant_note
+      `SELECT id, number, name, type, subtype, normal_balance, is_active, tax_category, accountant_note, parent_id
        FROM accounts WHERE id = ?`
     )
     .get(id) as AccountRow | undefined
@@ -63,8 +64,7 @@ export function accountUsage(db: Database.Database, id: number): { used: boolean
 
 function assertUnique(db: Database.Database, number: string, name: string, exceptId: number): void {
   const byNumber = db.prepare('SELECT name FROM accounts WHERE number = ? AND id <> ?').get(number, exceptId) as
-    | { name: string }
-    | undefined
+    { name: string } | undefined
   if (byNumber) throw new AccountError(`Account number ${number} is already used by "${byNumber.name}".`)
   const byName = db
     .prepare('SELECT number FROM accounts WHERE lower(name) = lower(?) AND id <> ?')
@@ -85,6 +85,36 @@ function noteForCategory(ctx: ChartContext, number: string, category: string, ol
   return `The tax category was changed from "${categoryLabel(oldCategory)}" to "${categoryLabel(category)}". Confirm this is right.`
 }
 
+/** The id of a top-level account with this number and type, to place a new account under (or null). */
+export function parentFor(db: Database.Database, number: string | undefined, type: AccountType): number | null {
+  if (!number) return null
+  const r = db
+    .prepare('SELECT id FROM accounts WHERE number = ? AND type = ? AND parent_id IS NULL')
+    .get(number, type) as { id: number } | undefined
+  return r?.id ?? null
+}
+
+/** A parent must exist, have the same type, be top level itself, and not be the account; an account that has
+ * sub-accounts can't become one. */
+function checkParent(
+  db: Database.Database,
+  id: number | null,
+  parentId: number | null | undefined,
+  type: AccountType
+): void {
+  if (parentId === null || parentId === undefined) return
+  if (parentId === id) throw new AccountError("An account can't be a sub-account of itself.")
+  const p = db.prepare('SELECT type, parent_id FROM accounts WHERE id = ?').get(parentId) as
+    { type: AccountType; parent_id: number | null } | undefined
+  if (!p) throw new AccountError("That parent account doesn't exist.")
+  if (p.type !== type) throw new AccountError('A sub-account must be the same type as the account it sits under.')
+  if (p.parent_id !== null)
+    throw new AccountError('Sub-accounts go one level deep: choose a top-level account as the parent.')
+  if (id !== null && db.prepare('SELECT 1 FROM accounts WHERE parent_id = ? LIMIT 1').get(id)) {
+    throw new AccountError("This account has sub-accounts of its own, so it can't sit under another account.")
+  }
+}
+
 function checkInput(input: AccountInput): { number: string; name: string; description: string } {
   const problem = validateAccountInput(input)
   if (problem) throw new AccountError(problem)
@@ -96,14 +126,15 @@ export function addAccount(db: Database.Database, input: AccountInput, ctx: Char
   const { number, name, description } = checkInput(input)
   if (SYSTEM_SUBTYPES.includes(input.subtype)) throw new AccountError('Choose what kind of account this is.')
   assertUnique(db, number, name, -1)
+  checkParent(db, null, input.parentId, input.type)
   const subtype = effectiveSubtype(input.type, input.subtype, input.taxCategory)
   const stamp = now.toISOString()
   return Number(
     db
       .prepare(
         `INSERT INTO accounts (number, name, type, subtype, normal_balance, tax_category, accountant_note, description,
-           created_at, updated_at)
-         VALUES (@number, @name, @type, @subtype, @normal, @category, @note, @description, @stamp, @stamp)`
+           parent_id, created_at, updated_at)
+         VALUES (@number, @name, @type, @subtype, @normal, @category, @note, @description, @parent, @stamp, @stamp)`
       )
       .run({
         number,
@@ -114,6 +145,7 @@ export function addAccount(db: Database.Database, input: AccountInput, ctx: Char
         category: input.taxCategory,
         note: noteForCategory(ctx, number, input.taxCategory, null),
         description,
+        parent: input.parentId ?? null,
         stamp
       }).lastInsertRowid
   )
@@ -134,8 +166,16 @@ export function updateAccount(
   if (isSystem && input.type !== old.type) {
     throw new AccountError("JunoBooks uses this account for a special purpose, so its type can't be changed.")
   }
-  if (!isSystem && SYSTEM_SUBTYPES.includes(input.subtype)) throw new AccountError('Choose what kind of account this is.')
+  if (!isSystem && SYSTEM_SUBTYPES.includes(input.subtype))
+    throw new AccountError('Choose what kind of account this is.')
   assertUnique(db, number, name, id)
+  checkParent(db, id, input.parentId, input.type)
+  if (input.type !== old.type && input.parentId === undefined && old.parent_id !== null) {
+    throw new AccountError('Take this account out from under its parent before changing its type.')
+  }
+  if (input.type !== old.type && db.prepare('SELECT 1 FROM accounts WHERE parent_id = ? LIMIT 1').get(id)) {
+    throw new AccountError("This account has sub-accounts, so its type can't change.")
+  }
 
   const subtype = isSystem ? old.subtype : effectiveSubtype(input.type, input.subtype, input.taxCategory)
   const normal = normalBalanceFor(input.type, subtype)
@@ -151,7 +191,8 @@ export function updateAccount(
 
   db.prepare(
     `UPDATE accounts SET number = @number, name = @name, type = @type, subtype = @subtype, normal_balance = @normal,
-       tax_category = @category, accountant_note = @note, description = @description, updated_at = @stamp
+       tax_category = @category, accountant_note = @note, description = @description,
+       parent_id = CASE WHEN @keepParent = 1 THEN parent_id ELSE @parent END, updated_at = @stamp
      WHERE id = @id`
   ).run({
     id,
@@ -163,6 +204,8 @@ export function updateAccount(
     category: input.taxCategory,
     note,
     description,
+    keepParent: input.parentId === undefined ? 1 : 0,
+    parent: input.parentId ?? null,
     stamp: now.toISOString()
   })
 }
@@ -189,7 +232,11 @@ export function setAccountActive(db: Database.Database, id: number, active: bool
       )
     }
   }
-  db.prepare('UPDATE accounts SET is_active = ?, updated_at = ? WHERE id = ?').run(active ? 1 : 0, now.toISOString(), id)
+  db.prepare('UPDATE accounts SET is_active = ?, updated_at = ? WHERE id = ?').run(
+    active ? 1 : 0,
+    now.toISOString(),
+    id
+  )
 }
 
 /** Deletes an account that has never been used. Used accounts must be deactivated instead. */
@@ -204,7 +251,7 @@ export function deleteAccount(db: Database.Database, id: number): void {
     throw new AccountError("JunoBooks uses this account for a special purpose, so it can't be deleted.")
   }
   if (db.prepare('SELECT 1 FROM accounts WHERE parent_id = ? LIMIT 1').get(id)) {
-    throw new AccountError('Other accounts sit under this one, so it can\'t be deleted.')
+    throw new AccountError("Other accounts sit under this one, so it can't be deleted.")
   }
   db.prepare('DELETE FROM accounts WHERE id = ?').run(id)
 }

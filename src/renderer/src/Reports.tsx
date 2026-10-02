@@ -41,10 +41,11 @@ function SectionRows({ s, cols }: { s: ReportSection; cols: number }): JSX.Eleme
         </tr>
       )}
       {s.rows.map((r) => (
-        <tr key={r.accountId} className={r.depth ? 'sub-account' : ''}>
-          <td style={{ paddingLeft: `${0.4 + r.depth * 1.4}rem` }}>
-            {r.number} {r.name}
-          </td>
+        <tr
+          key={`${r.accountId}${r.subtotal ? '-total' : ''}`}
+          className={r.subtotal ? 'parent-total' : r.depth ? 'sub-account' : ''}
+        >
+          <td style={{ paddingLeft: `${0.4 + r.depth * 1.4}rem` }}>{r.subtotal ? r.name : `${r.number} ${r.name}`}</td>
           {r.values.map((v, i) => (
             <Money key={i} c={v} />
           ))}
@@ -62,7 +63,10 @@ function SectionRows({ s, cols }: { s: ReportSection; cols: number }): JSX.Eleme
 
 const sectionCsv = (s: ReportSection): (string | number)[][] => [
   [s.title],
-  ...s.rows.map((r) => [`${'  '.repeat(r.depth)}${r.number} ${r.name}`, ...r.values.map(plainCents)]),
+  ...s.rows.map((r) => [
+    r.subtotal ? r.name : `${'  '.repeat(r.depth)}${r.number} ${r.name}`,
+    ...r.values.map(plainCents)
+  ]),
   [`Total ${s.title.toLowerCase()}`, ...s.total.map(plainCents)]
 ]
 

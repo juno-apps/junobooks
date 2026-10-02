@@ -199,12 +199,12 @@ None yet. Created only when the owner types "create new handoff."
 ## Status
 - **Phase 0 complete:** installs from GitHub, opens, updates itself.
 - **Phase 1 complete (schema v5 at the end of Phase 1):** create/list/switch companies, core schema + audit log, ledger engine + period lock, templates + chart of accounts + tax lines, account editing, entity-type and home-state changes with start dates (correct/remove, chart follows entity changes, restore missing accounts). 
-- **Phase 2 complete (schema v6):** journal entry screen, transaction list, Expense / Income / Transfer, account register, opening balances, receipts, data folder `Documents\JunoBooks` + Settings (see `docs/topics/manual-entry.md`). 2d–2g verified by Claude, owner review pending. Sub-accounts stay parked until Phase 9.
+- **Phase 2 complete (schema v6):** journal entry screen, transaction list, Expense / Income / Transfer, account register, opening balances, receipts, data folder `Documents\JunoBooks` + Settings (see `docs/topics/manual-entry.md`). 2d–2g verified by Claude, owner review pending.
 - **Phase 3 complete (schema v8):** CSV import wizard, review screen, categorization rules, matching to entries already in the books, cleared status and reconciliation (`docs/topics/bank-import.md`). Verified by Claude, owner review pending.
 - **Phase 4 complete (schema v9):** Etsy importer with payouts tie-out (`docs/topics/etsy-import.md`). Verified by Claude with made-up files; real exports untested (backlog).
 - **Phase 5 complete (schema v10):** inventory with four methods side by side, filed method per year, year-end entry (`docs/topics/inventory.md`). Filed method for 2026 is the owner's/accountant's choice (backlog).
 - **Phase 6 complete (schema v11):** customers, resale certificates, invoices with PDF, payments, aging (`docs/topics/direct-sales.md`).
 - **Phase 7 complete (schema v12):** Amazon settlement importer and 1099-K tie-out (`docs/topics/amazon-1099k.md`). Real Amazon reports untested (backlog).
 - **Phase 8 complete (schema v13):** sales tax rates by date and the period report (`docs/topics/sales-tax.md`).
-- **Phase 9 in progress:** Reports screen with profit & loss, balance sheet, trial balance, general ledger, sales by channel, tax-line summary, cost of goods sold, inventory methods, CSV export, and Year-end records (contractors/1099-NEC, fixed assets, mileage, home office; schema v14) (`docs/topics/reports.md`).
+- **Phase 9 complete (schema v14):** sub-accounts (chart and reports), Reports screen with profit & loss, balance sheet, trial balance, general ledger, sales by channel, tax-line summary, cost of goods sold, inventory methods, CSV export, and Year-end records (contractors/1099-NEC, fixed assets, mileage, home office; schema v14) (`docs/topics/reports.md`).
 - Build run in progress: see `progress-log.md` → Build run for the resume point.

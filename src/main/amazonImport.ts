@@ -15,7 +15,7 @@ import {
 import type { AmazonImportInput, AmazonImportResult, AmazonMapping, AmazonPreview } from '../shared/amazonImport'
 import type { ChannelAccountSpec } from '../shared/etsy'
 import type { EtsyAccountStatus } from '../shared/etsyImport'
-import { addAccount, type ChartContext } from './accounts'
+import { addAccount, parentFor, type ChartContext } from './accounts'
 import { LedgerError, postEntry } from './ledger'
 
 /** Amazon settlement imports: same approach as Etsy (marketplace_rows for re-imports, one entry per day through a
@@ -60,7 +60,8 @@ export function addChannelAccounts(
           type: s.type,
           subtype: '',
           taxCategory: s.taxCategory as never,
-          description
+          description,
+          parentId: parentFor(db, s.parentNumber, s.type)
         },
         ctx,
         now

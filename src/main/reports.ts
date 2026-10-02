@@ -78,7 +78,18 @@ export function nest(rows: ReportRow[]): ReportRow[] {
   const out: ReportRow[] = []
   for (const t of top) {
     out.push({ ...t, depth: 0 })
-    for (const c of rows.filter((r) => r.parentId === t.accountId)) out.push({ ...c, depth: 1 })
+    const children = rows.filter((r) => r.parentId === t.accountId)
+    for (const c of children) out.push({ ...c, depth: 1 })
+    if (children.length > 0) {
+      // "Total <parent>": the parent's own amount plus its sub-accounts. Not counted again in the section total.
+      out.push({
+        ...t,
+        name: `Total ${t.name}`,
+        values: t.values.map((v, i) => v + children.reduce((s, c) => s + c.values[i], 0)),
+        depth: 0,
+        subtotal: true
+      })
+    }
   }
   return out
 }
@@ -89,18 +100,21 @@ function section(
   columns: Map<number, number>[],
   sign: (a: Acct) => number
 ): ReportSection {
-  const rows: ReportRow[] = list
-    .map((a) => ({
-      accountId: a.id,
-      number: a.number,
-      name: a.name,
-      values: columns.map((col) => (col.get(a.id) ?? 0) * sign(a)),
-      depth: 0,
-      parentId: a.parentId
-    }))
-    .filter((r) => r.values.some((v) => v !== 0))
-  const total = columns.map((_, i) => rows.reduce((s, r) => s + r.values[i], 0))
-  return { title, rows: nest(rows), total }
+  const rows: ReportRow[] = list.map((a) => ({
+    accountId: a.id,
+    number: a.number,
+    name: a.name,
+    values: columns.map((col) => (col.get(a.id) ?? 0) * sign(a)),
+    depth: 0,
+    parentId: a.parentId
+  }))
+  const nonZero = new Set(rows.filter((r) => r.values.some((v) => v !== 0)).map((r) => r.accountId))
+  // Keep a parent when any of its sub-accounts has something, so they stay grouped.
+  const shown = rows.filter(
+    (r) => nonZero.has(r.accountId) || rows.some((c) => c.parentId === r.accountId && nonZero.has(c.accountId))
+  )
+  const total = columns.map((_, i) => shown.reduce((s, r) => s + r.values[i], 0))
+  return { title, rows: nest(shown), total }
 }
 
 export function profitAndLoss(db: Database.Database, from: string, to: string, byMonth = false): ProfitAndLoss {

@@ -75,8 +75,7 @@ function ChartOfAccounts(): JSX.Element {
       <p className="muted">
         Click an account to see its register (every entry and the running balance).
         <br />
-        {active.length} accounts · Tax lines for {TAX_FORM_LABELS[chart.form]}, from the {chart.tableYear} IRS
-        forms
+        {active.length} accounts · Tax lines for {TAX_FORM_LABELS[chart.form]}, from the {chart.tableYear} IRS forms
         {chart.tableYear < chart.taxYear && ` (the ${chart.taxYear} forms aren't out yet)`}
         {notes > 0 && ` · ⚑ ${notes} notes for your accountant`}
       </p>
@@ -96,8 +95,8 @@ function ChartOfAccounts(): JSX.Element {
           {showMissing && (
             <>
               <p className="hint">
-                Standard accounts for your business type that you don&rsquo;t have (deleted, or never added). Add back any
-                you want.
+                Standard accounts for your business type that you don&rsquo;t have (deleted, or never added). Add back
+                any you want.
               </p>
               <ul>
                 {chart.missing.map((m) => (
@@ -142,17 +141,25 @@ function ChartOfAccounts(): JSX.Element {
           </tr>
         </thead>
         {GROUPS.map((g) => {
-          const rows = shown.filter(g.test)
-          if (rows.length === 0) return null
+          const inGroup = shown.filter(g.test)
+          if (inGroup.length === 0) return null
+          // Sub-accounts sit right under their parent, indented.
+          const ids = new Set(inGroup.map((a) => a.id))
+          const rows = inGroup
+            .filter((a) => a.parentId === null || !ids.has(a.parentId))
+            .flatMap((p) => [
+              { a: p, depth: 0 },
+              ...inGroup.filter((c) => c.parentId === p.id).map((c) => ({ a: c, depth: 1 }))
+            ])
           return (
             <tbody key={g.title}>
               <tr className="group-row">
                 <th colSpan={5}>{g.title}</th>
               </tr>
-              {rows.map((a) => (
-                <tr key={a.id} className={a.isActive ? '' : 'inactive'}>
+              {rows.map(({ a, depth }) => (
+                <tr key={a.id} className={`${a.isActive ? '' : 'inactive'}${depth ? ' sub-account' : ''}`}>
                   <td className="num">{a.number}</td>
-                  <td>
+                  <td style={depth ? { paddingLeft: '1.6rem' } : undefined}>
                     <button type="button" className="link-button account-link" onClick={() => setViewing(a.id)}>
                       {a.name}
                     </button>
@@ -168,11 +175,7 @@ function ChartOfAccounts(): JSX.Element {
                   <td className="tax-line">{taxLineText(a)}</td>
                   <td className={a.balanceCents < 0 ? 'amount unusual' : 'amount'}>{formatCents(a.balanceCents)}</td>
                   <td className="actions">
-                    <button
-                      type="button"
-                      className="link-button"
-                      onClick={() => setEditing({ account: a })}
-                    >
+                    <button type="button" className="link-button" onClick={() => setEditing({ account: a })}>
                       Edit
                     </button>
                   </td>

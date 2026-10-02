@@ -395,6 +395,8 @@ export interface ChannelAccountSpec {
   taxCategory: string
   note: string
   targets: EtsyTarget[]
+  /** Placed as a sub-account of the account with this number, when the chart has it. */
+  parentNumber?: string
 }
 
 export const ETSY_ACCOUNTS: ChannelAccountSpec[] = [
@@ -420,7 +422,8 @@ export const ETSY_ACCOUNTS: ChannelAccountSpec[] = [
     type: 'expense',
     taxCategory: 'commissions_fees',
     note: '',
-    targets: ['transaction_fee']
+    targets: ['transaction_fee'],
+    parentNumber: '6100'
   },
   {
     number: '6102',
@@ -428,7 +431,8 @@ export const ETSY_ACCOUNTS: ChannelAccountSpec[] = [
     type: 'expense',
     taxCategory: 'commissions_fees',
     note: '',
-    targets: ['processing_fee']
+    targets: ['processing_fee'],
+    parentNumber: '6100'
   },
   {
     number: '6103',
@@ -436,7 +440,8 @@ export const ETSY_ACCOUNTS: ChannelAccountSpec[] = [
     type: 'expense',
     taxCategory: 'commissions_fees',
     note: '',
-    targets: ['listing_fee']
+    targets: ['listing_fee'],
+    parentNumber: '6100'
   },
   {
     number: '6104',
@@ -444,16 +449,26 @@ export const ETSY_ACCOUNTS: ChannelAccountSpec[] = [
     type: 'expense',
     taxCategory: 'commissions_fees',
     note: 'Regulatory fees, Etsy Plus, taxes Etsy charges on its fees, and other Etsy charges.',
-    targets: ['subscription', 'fee_tax', 'other_fee', 'unknown']
+    targets: ['subscription', 'fee_tax', 'other_fee', 'unknown'],
+    parentNumber: '6100'
   },
-  { number: '6001', name: 'Etsy Ads', type: 'expense', taxCategory: 'advertising', note: '', targets: ['etsy_ads'] },
+  {
+    number: '6001',
+    name: 'Etsy Ads',
+    type: 'expense',
+    taxCategory: 'advertising',
+    note: '',
+    targets: ['etsy_ads'],
+    parentNumber: '6000'
+  },
   {
     number: '6002',
     name: 'Etsy Offsite Ads fees',
     type: 'expense',
     taxCategory: 'advertising',
     note: 'Offsite Ads are charged as a percentage of the sale. Ask your accountant whether to report them as advertising or as commissions and fees.',
-    targets: ['offsite_ads']
+    targets: ['offsite_ads'],
+    parentNumber: '6000'
   }
 ]
 

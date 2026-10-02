@@ -280,7 +280,8 @@ export const AMAZON_ACCOUNTS: ChannelAccountSpec[] = [
     type: 'expense',
     taxCategory: 'commissions_fees',
     note: '',
-    targets: ['referral_fee'] as never[]
+    targets: ['referral_fee'] as never[],
+    parentNumber: '6100'
   },
   {
     number: '6112',
@@ -288,7 +289,8 @@ export const AMAZON_ACCOUNTS: ChannelAccountSpec[] = [
     type: 'expense',
     taxCategory: 'commissions_fees',
     note: 'Fulfillment, storage, removal and disposal fees.',
-    targets: ['fba_fee'] as never[]
+    targets: ['fba_fee'] as never[],
+    parentNumber: '6100'
   },
   {
     number: '6113',
@@ -296,7 +298,8 @@ export const AMAZON_ACCOUNTS: ChannelAccountSpec[] = [
     type: 'expense',
     taxCategory: 'commissions_fees',
     note: 'Seller subscription, closing fees and other Amazon charges.',
-    targets: ['subscription', 'other_fee', 'unknown'] as never[]
+    targets: ['subscription', 'other_fee', 'unknown'] as never[],
+    parentNumber: '6100'
   },
   {
     number: '6003',
@@ -304,7 +307,8 @@ export const AMAZON_ACCOUNTS: ChannelAccountSpec[] = [
     type: 'expense',
     taxCategory: 'advertising',
     note: '',
-    targets: ['advertising'] as never[]
+    targets: ['advertising'] as never[],
+    parentNumber: '6000'
   }
 ]
 

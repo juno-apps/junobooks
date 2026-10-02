@@ -1104,3 +1104,12 @@ button.attention {
 .office-summary p {
   margin: 0.2rem 0;
 }
+
+.report-table .parent-total td {
+  font-style: italic;
+  border-top: 1px dashed #ccc;
+}
+
+.chart-table .sub-account td {
+  color: #444;
+}

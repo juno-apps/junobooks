@@ -10,6 +10,8 @@ export interface AccountInput {
   subtype: AccountSubtype
   taxCategory: TaxCategoryKey | ''
   description: string
+  /** Sub-account of this account (same type, one level deep). Omitted on edit = unchanged; null = top level. */
+  parentId?: number | null
 }
 
 export const ACCOUNT_TYPES: { value: AccountType; label: string }[] = [

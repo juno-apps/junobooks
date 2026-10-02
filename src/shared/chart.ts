@@ -15,6 +15,8 @@ export interface ChartAccount {
   taxLine: TaxLine | null
   accountantNote: string
   description: string
+  /** The account this one sits under (sub-accounts), if any. */
+  parentId: number | null
   /** Balance on the account's normal side: positive = normal, negative = unusual. */
   balanceCents: number
   /** Appears in any entry, even a draft: can't be deleted. */

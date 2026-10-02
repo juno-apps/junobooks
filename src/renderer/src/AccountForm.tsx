@@ -19,14 +19,16 @@ interface Props {
 }
 
 function initialInput(a: ChartAccount | null): AccountInput {
-  if (!a) return { number: '', name: '', type: 'expense', subtype: '', taxCategory: '', description: '' }
+  if (!a)
+    return { number: '', name: '', type: 'expense', subtype: '', taxCategory: '', description: '', parentId: null }
   return {
     number: a.number,
     name: a.name,
     type: a.type,
     subtype: a.subtype as AccountSubtype,
     taxCategory: a.taxCategory ?? '',
-    description: a.description
+    description: a.description,
+    parentId: a.parentId
   }
 }
 
@@ -52,8 +54,14 @@ function AccountForm({ account, chart, onDone, onCancel }: Props): JSX.Element {
   }
 
   function changeType(type: AccountType): void {
-    setInput((prev) => ({ ...prev, type, subtype: '', taxCategory: '' }))
+    setInput((prev) => ({ ...prev, type, subtype: '', taxCategory: '', parentId: null }))
   }
+
+  // Possible parents: top-level accounts of the same type (not this one). An account with sub-accounts stays top level.
+  const hasChildren = account !== null && chart.accounts.some((a) => a.parentId === account.id)
+  const parents = chart.accounts.filter(
+    (a) => a.type === input.type && a.parentId === null && a.id !== account?.id && a.isActive
+  )
 
   async function run(action: () => Promise<Result<ChartView>>): Promise<void> {
     setBusy(true)
@@ -139,13 +147,16 @@ function AccountForm({ account, chart, onDone, onCancel }: Props): JSX.Element {
           <p className="hint">
             {isSystem
               ? "This account's type can't be changed."
-              : "Type and kind are locked because this account has posted entries. You can still rename it or change its tax category."}
+              : 'Type and kind are locked because this account has posted entries. You can still rename it or change its tax category.'}
           </p>
         )}
 
         <label>
           Tax category
-          <select value={input.taxCategory} onChange={(e) => set('taxCategory', e.target.value as AccountInput['taxCategory'])}>
+          <select
+            value={input.taxCategory}
+            onChange={(e) => set('taxCategory', e.target.value as AccountInput['taxCategory'])}
+          >
             <option value="">Choose…</option>
             {categories.map((c) => {
               const line = getTaxLine(c.key, chart.form, chart.taxYear)
@@ -157,11 +168,32 @@ function AccountForm({ account, chart, onDone, onCancel }: Props): JSX.Element {
             })}
           </select>
           <span className="hint">
-            {input.type === 'expense' &&
-              'Cost of goods sold categories put the account under "Cost of goods sold". '}
+            {input.type === 'expense' && 'Cost of goods sold categories put the account under "Cost of goods sold". '}
             {categoryChanged && 'Changing the tax category may add a note for your accountant to check.'}
           </span>
         </label>
+
+        {!hasChildren && (
+          <label>
+            Sub-account of (optional)
+            <select
+              value={input.parentId ?? ''}
+              onChange={(e) => set('parentId', e.target.value ? Number(e.target.value) : null)}
+              aria-label="Sub-account of"
+            >
+              <option value="">None (a main account)</option>
+              {parents.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.number} {p.name}
+                </option>
+              ))}
+            </select>
+            <span className="hint">
+              Groups this account under another on the chart and in reports, with a subtotal (e.g. &ldquo;Etsy
+              fees&rdquo; under &ldquo;Commissions and fees&rdquo;). It keeps its own tax category.
+            </span>
+          </label>
+        )}
 
         <label>
           Description (optional)

@@ -23,7 +23,7 @@ import type {
   EtsyPreview
 } from '../shared/etsyImport'
 import { MATCH_DAYS } from '../shared/bankImport'
-import { addAccount, type ChartContext } from './accounts'
+import { addAccount, parentFor, type ChartContext } from './accounts'
 import { LedgerError, postEntry } from './ledger'
 
 /** Etsy statement imports: rows are recorded in marketplace_rows (so re-imports skip them) and posted as one entry
@@ -61,7 +61,8 @@ export function addEtsyAccounts(db: Database.Database, ctx: ChartContext, now: D
           type: s.type,
           subtype: '',
           taxCategory: s.taxCategory as never,
-          description: 'Added for Etsy imports.'
+          description: 'Added for Etsy imports.',
+          parentId: parentFor(db, s.parentNumber, s.type)
         },
         ctx,
         now
