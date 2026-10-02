@@ -95,6 +95,9 @@ function AccountRegister({ accountId, onBack }: Props): JSX.Element {
             <th className="amount">{cols.increase}</th>
             <th className="amount">{cols.decrease}</th>
             <th className="amount">Balance</th>
+            <th className="cleared-col" title="✓ seen on a bank statement · R reconciled">
+              ✓
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -104,11 +107,12 @@ function AccountRegister({ accountId, onBack }: Props): JSX.Element {
               <td />
               <td colSpan={4}>Balance forward</td>
               <td className="amount">{formatCents(view.openingCents)}</td>
+              <td />
             </tr>
           )}
           {view.rows.length === 0 && (
             <tr>
-              <td colSpan={7} className="muted">
+              <td colSpan={8} className="muted">
                 Nothing posted to this account {view.from || view.to ? 'in these dates' : 'yet'}.
               </td>
             </tr>
@@ -128,6 +132,18 @@ function AccountRegister({ accountId, onBack }: Props): JSX.Element {
               <td className={r.balanceCents < 0 ? 'amount unusual' : 'amount'}>
                 {r.status === 'void' ? '' : formatCents(r.balanceCents)}
               </td>
+              <td
+                className="cleared-col"
+                title={
+                  r.clearing === 'reconciled'
+                    ? 'Reconciled'
+                    : r.clearing === 'cleared'
+                      ? 'Seen on a bank statement'
+                      : ''
+                }
+              >
+                {r.clearing === 'reconciled' ? 'R' : r.clearing === 'cleared' ? '✓' : ''}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -135,6 +151,7 @@ function AccountRegister({ accountId, onBack }: Props): JSX.Element {
           <tr>
             <th colSpan={6}>Ending balance{view.to ? ` on ${view.to}` : ''}</th>
             <th className={view.closingCents < 0 ? 'amount unusual' : 'amount'}>{formatCents(view.closingCents)}</th>
+            <th />
           </tr>
         </tfoot>
       </table>

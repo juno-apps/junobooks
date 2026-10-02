@@ -239,6 +239,18 @@ app.whenReady().then(() => {
     wrap(() => requireCompany().updateRule(id, input))
   )
   ipcMain.handle('rules:delete', (_e, id: number) => wrap(() => requireCompany().deleteRule(id)))
+  ipcMain.handle('reconcile:get', (_e, accountId: number) => wrap(() => requireCompany().reconcileView(accountId)))
+  ipcMain.handle('reconcile:statement', (_e, accountId: number, date: string, cents: number) =>
+    wrap(() => requireCompany().setStatement(accountId, date, cents))
+  )
+  ipcMain.handle('reconcile:clear', (_e, accountId: number, lineIds: number[], cleared: boolean) =>
+    wrap(() => requireCompany().setCleared(accountId, lineIds, cleared))
+  )
+  ipcMain.handle('reconcile:finish', (_e, accountId: number) => wrap(() => requireCompany().finishReconciliation(accountId)))
+  ipcMain.handle('reconcile:cancel', (_e, accountId: number) => wrap(() => requireCompany().cancelReconciliation(accountId)))
+  ipcMain.handle('reconcile:undo', (_e, accountId: number, reason: string) =>
+    wrap(() => requireCompany().undoLastReconciliation(accountId, reason))
+  )
   ipcMain.handle('accounts:register', (_e, q: RegisterQuery) => wrap(() => requireCompany().register(q)))
   ipcMain.handle('entries:void', (_e, id: number, reason: string) => wrap(() => requireCompany().voidEntry(id, reason)))
   ipcMain.handle('entries:reverse', (_e, id: number, date: string, memo?: string) =>

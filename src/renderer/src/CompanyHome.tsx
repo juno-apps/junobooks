@@ -10,6 +10,7 @@ import BankReview from './BankReview'
 import ImportWizard from './ImportWizard'
 import JournalEntry from './JournalEntry'
 import OpeningBalances from './OpeningBalances'
+import Reconcile from './Reconcile'
 import SimpleEntry, { type SimpleKind } from './SimpleEntry'
 import TemplatePicker from './TemplatePicker'
 import TransactionList from './TransactionList'
@@ -24,7 +25,12 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
   const [changingEntity, setChangingEntity] = useState(false)
   const [changingState, setChangingState] = useState(false)
   /** The entry screen: closed, an expense, income or transfer, a blank journal entry, or a copy of an existing entry. */
-  const [entering, setEntering] = useState<{ kind: 'journal'; copyOf?: EntryListItem } | { kind: SimpleKind | 'transfer' | 'opening' | 'import' } | { kind: 'review'; accountId: number | null } | null>(null)
+  const [entering, setEntering] = useState<
+    | { kind: 'journal'; copyOf?: EntryListItem }
+    | { kind: SimpleKind | 'transfer' | 'opening' | 'import' | 'reconcile' }
+    | { kind: 'review'; accountId: number | null }
+    | null
+  >(null)
   const [tab, setTab] = useState<'transactions' | 'chart'>('transactions')
   /** Bumped after anything that changes accounts or balances, so the chart and transaction list reload. */
   const [chartVersion, setChartVersion] = useState(0)
@@ -36,7 +42,10 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
     window.juno.reviewCounts().then((c) => setToReview(c.reduce((s, x) => s + x.count, 0)))
   }, [chartVersion, company.folder])
 
-  function startEntry(kind: 'journal' | 'transfer' | 'opening' | 'import' | SimpleKind, copyOf?: EntryListItem): void {
+  function startEntry(
+    kind: 'journal' | 'transfer' | 'opening' | 'import' | 'reconcile' | SimpleKind,
+    copyOf?: EntryListItem
+  ): void {
     setEntering(kind === 'journal' ? { kind, copyOf } : { kind })
     setEntryKey((k) => k + 1)
   }
@@ -99,6 +108,9 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
             <button type="button" onClick={() => startEntry('import')}>
               Import bank file
             </button>
+            <button type="button" onClick={() => startEntry('reconcile')}>
+              Reconcile
+            </button>
             {toReview > 0 && (
               <button type="button" className="primary attention" onClick={() => startReview(null)}>
                 Review imported lines ({toReview})
@@ -112,6 +124,14 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
           key={entryKey}
           copyOf={entering.copyOf}
           onPosted={() => setChartVersion((v) => v + 1)}
+          onClose={() => setEntering(null)}
+        />
+      )}
+      {entering?.kind === 'reconcile' && (
+        <Reconcile
+          key={entryKey}
+          initialAccountId={null}
+          onChanged={() => setChartVersion((v) => v + 1)}
           onClose={() => setEntering(null)}
         />
       )}
@@ -135,10 +155,18 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
         />
       )}
       {entering?.kind === 'opening' && (
-        <OpeningBalances key={entryKey} onSaved={() => setChartVersion((v) => v + 1)} onClose={() => setEntering(null)} />
+        <OpeningBalances
+          key={entryKey}
+          onSaved={() => setChartVersion((v) => v + 1)}
+          onClose={() => setEntering(null)}
+        />
       )}
       {entering?.kind === 'transfer' && (
-        <TransferEntry key={entryKey} onPosted={() => setChartVersion((v) => v + 1)} onClose={() => setEntering(null)} />
+        <TransferEntry
+          key={entryKey}
+          onPosted={() => setChartVersion((v) => v + 1)}
+          onClose={() => setEntering(null)}
+        />
       )}
       {(entering?.kind === 'expense' || entering?.kind === 'income') && (
         <SimpleEntry
@@ -168,7 +196,11 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
       {company.template ? (
         <>
           <div className="tabs">
-            <button type="button" className={tab === 'transactions' ? 'tab active' : 'tab'} onClick={() => setTab('transactions')}>
+            <button
+              type="button"
+              className={tab === 'transactions' ? 'tab active' : 'tab'}
+              onClick={() => setTab('transactions')}
+            >
               Transactions
             </button>
             <button type="button" className={tab === 'chart' ? 'tab active' : 'tab'} onClick={() => setTab('chart')}>

@@ -17,6 +17,8 @@ export interface RegisterRow {
   balanceCents: number
   status: 'posted' | 'void'
   source: string
+  /** Seen on a bank statement ('cleared') or part of a finished reconciliation ('reconciled'). */
+  clearing: 'cleared' | 'reconciled' | null
 }
 
 export interface RegisterView {

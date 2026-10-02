@@ -2,6 +2,7 @@ import type Database from 'better-sqlite3'
 import { isValidDate } from '../shared/dates'
 import type { RegisterQuery, RegisterRow, RegisterView } from '../shared/register'
 import { LedgerError } from './ledger'
+import { clearingFor } from './reconcile'
 
 /** An account's register: its lines in date order with a running balance on the account's normal side.
  * Read-only. Only posted entries count toward balances; voided ones can be listed for reference. */
@@ -33,7 +34,7 @@ export function accountRegister(db: Database.Database, q: RegisterQuery): Regist
 
   const lines = db
     .prepare(
-      `SELECT l.entry_id AS entryId, l.line_no AS lineNo, l.amount_cents AS amount, l.memo AS lineMemo,
+      `SELECT l.id AS lineId, l.entry_id AS entryId, l.line_no AS lineNo, l.amount_cents AS amount, l.memo AS lineMemo,
               e.entry_date AS date, e.memo, e.status, e.source
        FROM journal_lines l JOIN journal_entries e ON e.id = l.entry_id
        WHERE l.account_id = @id AND e.status IN ('posted', 'void')
@@ -42,6 +43,7 @@ export function accountRegister(db: Database.Database, q: RegisterQuery): Regist
        ORDER BY e.entry_date, e.id, l.line_no`
     )
     .all({ id: a.id, from, to, voided: q.includeVoided ? 1 : 0 }) as {
+    lineId: number
     entryId: number
     lineNo: number
     amount: number
@@ -58,6 +60,10 @@ export function accountRegister(db: Database.Database, q: RegisterQuery): Regist
      WHERE l.entry_id = ? AND l.account_id <> ? ORDER BY l.line_no`
   )
 
+  const clearing = clearingFor(
+    db,
+    lines.map((l) => l.lineId)
+  )
   let balance = opening
   const rows: RegisterRow[] = lines.map((l) => {
     const names = (others.all(l.entryId, a.id) as { name: string }[]).map((r) => r.name)
@@ -74,7 +80,8 @@ export function accountRegister(db: Database.Database, q: RegisterQuery): Regist
       decreaseCents: normal < 0 ? -normal : 0,
       balanceCents: balance,
       status: l.status,
-      source: l.source
+      source: l.source,
+      clearing: l.status === 'posted' ? (clearing.get(l.lineId) ?? null) : null
     }
   })
 

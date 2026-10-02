@@ -30,9 +30,10 @@ JunoBooks-code/
       attachments.ts   Receipt files: copy into receipts\<year>\, list, remove (kept on record)
       bankImport.ts    Bank/card CSV imports: read file, stage lines, review, post, ignore
       rules.ts         Categorization rules: list, add, edit, delete, matcher
+      reconcile.ts     Cleared status and reconciliations (start, tick, finish, cancel, undo)
       db/migrations.ts Numbered schema migrations
     preload/           contextBridge API exposed to the renderer as window.juno
-    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange, JournalEntry, TransactionList, SimpleEntry, TransferEntry, AccountCombobox, AccountRegister, OpeningBalances, Receipts, Settings, ImportWizard, BankReview, RulesManager; useFormError hook)
+    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange, JournalEntry, TransactionList, SimpleEntry, TransferEntry, AccountCombobox, AccountRegister, OpeningBalances, Receipts, Settings, ImportWizard, BankReview, RulesManager, Reconcile; useFormError hook)
     shared/            Code used by both main and renderer: entity types, US states, dates, money, company validation,
                        templates.ts (starting charts), taxLines.ts (tax categories + per-year line tables), chart.ts (view types),
                        accounts.ts (account input rules: kinds, debit/credit side, validation, number-range warning),
@@ -40,7 +41,8 @@ JunoBooks-code/
                        everyday.ts (Expense/Income/Transfer screens: account groups, type-to-narrow filter, entry builders),
                        register.ts (register view types, column wording), opening.ts (opening-balance types, difference), settings.ts (Settings view type),
                        attachments.ts (receipt naming, accepted types), csvImport.ts (CSV reading, column guessing, mapping, fingerprints),
-                       bankImport.ts (import types, account groups for import screens), rules.ts (rule matching, suggested text)
+                       bankImport.ts (import types, account groups for import screens), rules.ts (rule matching, suggested text),
+                       reconcile.ts (reconciliation view types, totals)
   scripts/run-tests.cjs
   scripts/live/         Playwright live checks (dev-only; see docs/topics/live-checks.md)
   samples/              Made-up example files (bank CSVs) for trying imports and live checks
@@ -107,6 +109,11 @@ Opening an older file backs it up first (`backups/books-<time>-before-upgrade-vX
 - `categorization_rules`: match_text, account_id, payee, bank_account_id (optional), is_active.
 - Audited: import_batches, bank_lines, categorization_rules.
 
+**v8** (cleared status and reconciliation)
+- `reconciliations`: account_id, statement_date, statement_balance_cents (debit side), status (in_progress/finished/undone), started_at, finished_at, undone_at, undo_reason. At most one in progress per account. Finished ones can only be undone; they can't be deleted.
+- `line_clearing`: journal_line_id (unique), status (cleared/reconciled), reconciliation_id (set exactly when reconciled). Reconciled rows can't change or be deleted unless their reconciliation is undone.
+- Trigger: an entry with a reconciled line can't be voided. Both tables audited.
+
 Files open in WAL mode with foreign keys on. Dates are `YYYY-MM-DD` text.
 
 **Backups:** on close (and before any migration) the WAL is checkpointed and the file copied to `backups/books-<ISO time>[-label].sqlite`. Only the newest 30 are kept (sorted by name, since names start with the timestamp).
@@ -152,5 +159,5 @@ None yet. Created only when the owner types "create new handoff."
 - **Phase 0 complete:** installs from GitHub, opens, updates itself.
 - **Phase 1 complete (schema v5 at the end of Phase 1):** create/list/switch companies, core schema + audit log, ledger engine + period lock, templates + chart of accounts + tax lines, account editing, entity-type and home-state changes with start dates (correct/remove, chart follows entity changes, restore missing accounts). 
 - **Phase 2 complete (schema v6):** journal entry screen, transaction list, Expense / Income / Transfer, account register, opening balances, receipts, data folder `Documents\JunoBooks` + Settings (see `docs/topics/manual-entry.md`). 2d–2g verified by Claude, owner review pending. Sub-accounts stay parked until Phase 9.
-- **Phase 3 in progress (schema v7):** CSV import wizard, review screen and categorization rules built (`docs/topics/bank-import.md`).
+- **Phase 3 complete (schema v8):** CSV import wizard, review screen, categorization rules, matching to entries already in the books, cleared status and reconciliation (`docs/topics/bank-import.md`). Verified by Claude, owner review pending.
 - Build run in progress: see `progress-log.md` → Build run for the resume point.

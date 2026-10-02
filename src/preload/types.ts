@@ -15,6 +15,7 @@ import type {
 } from '../shared/bankImport'
 import type { ColumnMapping } from '../shared/csvImport'
 import type { CategorizationRule, RuleInput } from '../shared/rules'
+import type { ReconcileView } from '../shared/reconcile'
 import type { OpeningBalanceInput, OpeningBalancesView } from '../shared/opening'
 import type {
   CompanyHistory,
@@ -30,6 +31,7 @@ import type {
 
 export type {
   AccountInput,
+  ReconcileView,
   CategorizationRule,
   RuleInput,
   BankLine,
@@ -124,6 +126,13 @@ export interface JunoApi {
   addRule: (input: RuleInput) => Promise<Result<CategorizationRule[]>>
   updateRule: (id: number, input: RuleInput & { isActive: boolean }) => Promise<Result<CategorizationRule[]>>
   deleteRule: (id: number) => Promise<Result<CategorizationRule[]>>
+  getReconcile: (accountId: number) => Promise<Result<ReconcileView>>
+  /** Statement end date and ending balance (normal side, in cents). */
+  setStatement: (accountId: number, date: string, cents: number) => Promise<Result<ReconcileView>>
+  setCleared: (accountId: number, lineIds: number[], cleared: boolean) => Promise<Result<ReconcileView>>
+  finishReconciliation: (accountId: number) => Promise<Result<ReconcileView>>
+  cancelReconciliation: (accountId: number) => Promise<Result<ReconcileView>>
+  undoReconciliation: (accountId: number, reason: string) => Promise<Result<ReconcileView>>
   getRegister: (q: RegisterQuery) => Promise<Result<RegisterView>>
   voidEntry: (id: number, reason: string) => Promise<Result<EntryListItem[]>>
   reverseEntry: (id: number, date: string, memo?: string) => Promise<Result<EntryListItem[]>>

@@ -1,0 +1,58 @@
+// 3e: reconcile checking against a statement; imported lines start ticked; register shows ✓ / R; undo.
+import { launch, createCompany, shot, check, done, pickAccount, post } from '../lib.mjs'
+
+const { app, page, errors } = await launch({ fresh: true })
+await createCompany(page)
+await post(page, '2026-01-02', 'Opening deposit', [['1000', 500000], ['3100', -500000]])
+await post(page, '2026-01-10', 'Rio Grande', [['5000', 24510], ['1000', -24510]])
+await post(page, '2026-01-29', 'Check 1044 (not cashed yet)', [['6650', 3000], ['1000', -3000]])
+await post(page, '2026-02-02', 'February sale', [['1000', 10000], ['4000', -10000]])
+await page.reload()
+await page.waitForSelector('.app-main h1')
+
+await page.getByRole('button', { name: 'Reconcile', exact: true }).click()
+await pickAccount(page, 'Account to reconcile', 'checking')
+await page.getByText('Not reconciled yet.').waitFor()
+await page.getByLabel('Statement end date').fill('2026-01-31')
+await page.getByLabel('Ending balance on the statement').fill('4,754.90')
+await page.getByRole('button', { name: 'Start reconciling' }).click()
+await page.locator('.reconcile-summary').waitFor()
+check((await page.locator('.reconcile-table tbody tr').count()) === 3, 'three January entries listed')
+check((await page.locator('.reconcile .hint').filter({ hasText: 'left for the next statement' }).count()) === 1, 'February entry left for next time')
+check(await page.getByRole('button', { name: 'Finish reconciliation' }).isDisabled(), 'Finish disabled while off')
+await page.getByLabel('Cleared 2026-01-02 Opening deposit').check()
+await page.getByLabel('Cleared 2026-01-10 Rio Grande').check()
+const summary = await page.locator('.reconcile-summary').innerText()
+check(summary.includes('$4,754.90') && /Difference\s*\$0\.00/.test(summary), `difference $0.00: ${summary.replace(/\n/g, ' ')}`)
+await shot(page, 'reconcile-ready')
+await page.getByRole('button', { name: 'Finish reconciliation' }).click()
+await page.getByText('Reconciliation finished.').waitFor()
+check((await page.locator('.reconcile').innerText()).includes('Last reconciled through 2026-01-31 at $4,754.90'), 'last reconciled shown')
+
+// Voiding a reconciled entry is refused in plain English.
+await page.getByRole('button', { name: 'Close' }).click()
+await page.locator('.entry-row').filter({ hasText: 'Rio Grande' }).click()
+await page.getByRole('button', { name: 'Void…' }).click()
+await page.getByLabel('Reason').fill('test')
+await page.getByRole('button', { name: /Void entry/ }).click()
+check(((await page.locator('.error').first().innerText()) ?? '').includes('finished bank reconciliation'), 'void of reconciled entry refused')
+await page.getByRole('button', { name: 'Cancel' }).click()
+
+// Register shows R and blank for the uncashed check.
+await page.getByRole('button', { name: 'Chart of accounts' }).click()
+await page.getByRole('button', { name: 'Checking account' }).click()
+const reg = await page.locator('.register-table tbody').innerText()
+check((reg.match(/\tR/g) ?? []).length === 2 || (reg.match(/R\n/g) ?? []).length >= 1, 'register marks reconciled lines R')
+await shot(page, 'reconcile-register')
+
+// Undo with a reason.
+await page.getByRole('button', { name: 'Back to chart of accounts' }).click()
+await page.getByRole('button', { name: 'Reconcile', exact: true }).click()
+await pickAccount(page, 'Account to reconcile', 'checking')
+await page.getByRole('button', { name: 'Undo the last reconciliation…' }).click()
+await page.getByLabel('Reason for undoing').fill('practice run')
+await page.getByRole('button', { name: 'Undo', exact: true }).click()
+await page.getByText('Reconciliation undone.').waitFor()
+check((await page.locator('.reconcile-history').innerText()).includes('undone: practice run'), 'undone reconciliation kept in history')
+await app.close()
+done(errors)

@@ -20,6 +20,15 @@ import type { EntryListItem, ManualEntryInput } from '../shared/journal'
 import { listEntries } from './entries'
 import { accountRegister } from './register'
 import { addRule, deleteRule, listRules, updateRule } from './rules'
+import {
+  cancelReconciliation,
+  finishReconciliation,
+  reconcileView,
+  setCleared,
+  setStatement,
+  undoLastReconciliation
+} from './reconcile'
+import type { ReconcileView } from '../shared/reconcile'
 import type { CategorizationRule, RuleInput } from '../shared/rules'
 import {
   ignoreBankLines,
@@ -394,6 +403,35 @@ export class CompanyBooks {
   deleteRule(id: number): CategorizationRule[] {
     deleteRule(this.db, id)
     return listRules(this.db)
+  }
+
+  reconcileView(accountId: number): ReconcileView {
+    return reconcileView(this.db, accountId)
+  }
+
+  setStatement(accountId: number, statementDate: string, balanceCents: number, now: Date = new Date()): ReconcileView {
+    setStatement(this.db, accountId, statementDate, balanceCents, now)
+    return reconcileView(this.db, accountId)
+  }
+
+  setCleared(accountId: number, lineIds: number[], cleared: boolean, now: Date = new Date()): ReconcileView {
+    setCleared(this.db, lineIds, cleared, now)
+    return reconcileView(this.db, accountId)
+  }
+
+  finishReconciliation(accountId: number, now: Date = new Date()): ReconcileView {
+    finishReconciliation(this.db, accountId, now)
+    return reconcileView(this.db, accountId)
+  }
+
+  cancelReconciliation(accountId: number): ReconcileView {
+    cancelReconciliation(this.db, accountId)
+    return reconcileView(this.db, accountId)
+  }
+
+  undoLastReconciliation(accountId: number, reason: string, now: Date = new Date()): ReconcileView {
+    undoLastReconciliation(this.db, accountId, reason, now)
+    return reconcileView(this.db, accountId)
   }
 
   register(q: RegisterQuery): RegisterView {

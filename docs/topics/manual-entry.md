@@ -38,6 +38,7 @@ Screens for typing transactions in by hand. All of them post through `postManual
 - Amounts are on the account's normal side (`registerColumns` in `shared/register.ts`): bank accounts say Money in / Money out, credit cards Charges / Payments, everything else Increase / Decrease. A negative balance shows in the "unusual" style.
 - From / To dates (plus "This year" and "All dates"). With a From date the first row is "Balance forward" (posted balance before that date). Ending balance at the bottom. From after To is refused.
 - "Show voided entries" lists voided lines greyed, marked "Voided, not counted", without moving the balance.
+- Last column: ✓ = seen on a bank statement (cleared), R = reconciled (see `bank-import.md`).
 
 ## Everyday screens (`src/shared/everyday.ts`)
 Plain questions on screen, one balanced entry underneath, posted through `postManualEntry`. Company home has **New expense**, **New income**, **New transfer** and **New journal entry** buttons.

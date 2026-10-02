@@ -594,7 +594,7 @@ button.danger {
   max-width: 1100px;
 }
 
-.import-wizard .import-account,
+.import-account,
 .import-wizard .drop-zone {
   max-width: 560px;
 }
@@ -694,6 +694,54 @@ button.attention {
   margin-top: 0.25rem;
   font-size: 0.85rem;
   text-align: left;
+}
+
+.reconcile {
+  max-width: 1000px;
+}
+
+.reconcile .narrow-date {
+  width: 11rem;
+}
+
+.reconcile-summary {
+  display: flex;
+  gap: 2rem;
+  margin: 0.8rem 0;
+  padding: 0.6rem 0.9rem;
+  background: #f6f7f9;
+  border-radius: 6px;
+}
+
+.reconcile-summary > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.reconcile-summary strong {
+  font-size: 1.15rem;
+}
+
+.reconcile-summary .balanced strong {
+  color: #1e6b34;
+}
+
+.reconcile-summary .off strong {
+  color: #a12622;
+}
+
+.cleared-row td {
+  background: #f3f9f4;
+}
+
+.cleared-col {
+  text-align: center;
+  width: 2rem;
+}
+
+.reconcile-history {
+  margin-top: 1rem;
 }
 
 .account-link {

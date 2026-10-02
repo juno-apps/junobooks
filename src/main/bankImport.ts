@@ -15,6 +15,7 @@ import { MATCH_DAYS } from '../shared/bankImport'
 import { applyMapping, layoutKey, numberedFingerprints, parseCsv, type ColumnMapping } from '../shared/csvImport'
 import { LedgerError, postEntry } from './ledger'
 import { ruleMatcher } from './rules'
+import { clearEntryLines } from './reconcile'
 
 /** Bank and card CSV imports: lines are staged in bank_lines, reviewed, then posted as entries (source 'import'). */
 
@@ -183,6 +184,7 @@ export function matchBankLine(db: Database.Database, lineId: number, entryId: nu
       now.toISOString(),
       lineId
     )
+    clearEntryLines(db, entryId, l.accountId, now)
   })()
 }
 
@@ -266,6 +268,7 @@ export function postBankLines(
           ]
         })
         setPosted.run(id, now.toISOString(), l.id)
+        clearEntryLines(db, id, l.accountId, now)
         return id
       })()
       result.posted.push({ lineId: item.lineId, entryId })

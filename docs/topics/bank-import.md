@@ -33,8 +33,15 @@ An imported line's `amountCents` is the change on the **imported account's debit
 - Matching sets the line to `matched` with that entry; nothing new is posted. Typical cases: a payment typed in by hand that cleared the bank days later; a card payment posted from the checking import, then seen again in the card import.
 - If the matched entry is voided later, the line returns to review.
 
+## Cleared status and reconciliation (`src/main/reconcile.ts`, `src/shared/reconcile.ts`, `Reconcile.tsx`, schema v8)
+- A posted line on a bank, card or loan account can be **cleared** (seen on a statement) or **reconciled** (part of a finished reconciliation), kept in `line_clearing`. Posting or matching an imported line marks that entry's line on the imported account cleared (`clearEntryLines`).
+- Company home → **Reconcile**: choose the account; enter the **statement end date** and **ending balance** (for a card, the balance owed; amounts on the account's normal side). The screen lists posted, not-yet-reconciled lines dated on or before the statement date (later ones are counted as "left for the next statement"), each with a tick box, plus Tick all.
+- Summary: statement balance, **cleared balance** (all reconciled lines + ticked lines), **difference**. **Finish reconciliation** only works at $0.00: ticked lines become reconciled and the reconciliation is finished. **Cancel this reconciliation** drops it but keeps the ticks. The statement can be changed while in progress.
+- A new statement can't end before the last finished one. **Undo the last reconciliation…** (needs a reason) turns its lines back to cleared; the undone one stays in "Past reconciliations" with its reason.
+- Database rules: reconciled lines can't be unticked or deleted unless their reconciliation is undone first; a finished reconciliation can only be undone (not edited or deleted); **an entry with a reconciled line can't be voided** (reverse it instead, or undo the reconciliation). All audited.
+- The account register shows ✓ (cleared) or R (reconciled) per line.
+- The screen carries a "Check with your accountant" note: entries count on the date recorded, not the date they cleared (late-December payments).
+
 ## Rules kept by the database (schema v7)
 - `bank_lines`: what the bank said (account, date, description, amount, fingerprint) can never change and rows can't be deleted; only status and entry link change. `import_batches` can't be changed or deleted. Both audited, as are `categorization_rules`.
 
-## Not built yet
-Cleared status and reconciliation (3e).

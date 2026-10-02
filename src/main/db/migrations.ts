@@ -454,6 +454,72 @@ export const MIGRATIONS: Migration[] = [
         false
       )}
     `
+  },
+  {
+    version: 8,
+    description: 'Cleared status on bank and card lines, and reconciliations',
+    sql: `
+      CREATE TABLE reconciliations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        account_id INTEGER NOT NULL REFERENCES accounts(id),
+        statement_date TEXT NOT NULL,
+        statement_balance_cents INTEGER NOT NULL,
+        status TEXT NOT NULL CHECK (status IN ('in_progress', 'finished', 'undone')),
+        started_at TEXT NOT NULL,
+        finished_at TEXT,
+        undone_at TEXT,
+        undo_reason TEXT
+      ) STRICT;
+      CREATE UNIQUE INDEX reconciliations_one_open ON reconciliations(account_id) WHERE status = 'in_progress';
+
+      CREATE TABLE line_clearing (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        journal_line_id INTEGER NOT NULL UNIQUE REFERENCES journal_lines(id),
+        status TEXT NOT NULL CHECK (status IN ('cleared', 'reconciled')),
+        reconciliation_id INTEGER REFERENCES reconciliations(id),
+        updated_at TEXT NOT NULL,
+        CHECK ((status = 'reconciled') = (reconciliation_id IS NOT NULL))
+      ) STRICT;
+
+      -- A finished reconciliation can't lose or change its lines unless it is undone first.
+      CREATE TRIGGER line_clearing_keep_reconciled BEFORE UPDATE ON line_clearing
+      WHEN OLD.status = 'reconciled'
+        AND (SELECT status FROM reconciliations WHERE id = OLD.reconciliation_id) <> 'undone'
+      BEGIN
+        SELECT RAISE(ABORT, 'This line is part of a finished reconciliation. Undo that reconciliation first.');
+      END;
+      CREATE TRIGGER line_clearing_no_delete_reconciled BEFORE DELETE ON line_clearing
+      WHEN OLD.status = 'reconciled'
+      BEGIN
+        SELECT RAISE(ABORT, 'This line is part of a finished reconciliation. Undo that reconciliation first.');
+      END;
+      CREATE TRIGGER reconciliations_finished_stay BEFORE UPDATE ON reconciliations
+      WHEN OLD.status <> 'in_progress' AND NOT (OLD.status = 'finished' AND NEW.status = 'undone')
+      BEGIN
+        SELECT RAISE(ABORT, 'A finished reconciliation can only be undone.');
+      END;
+      CREATE TRIGGER reconciliations_no_delete_finished BEFORE DELETE ON reconciliations
+      WHEN OLD.status <> 'in_progress'
+      BEGIN
+        SELECT RAISE(ABORT, 'Finished reconciliations are kept on record.');
+      END;
+
+      -- Voiding would change a balance the bank statement already agreed with.
+      CREATE TRIGGER je_void_not_reconciled BEFORE UPDATE OF status ON journal_entries
+      WHEN NEW.status = 'void' AND OLD.status <> 'void' AND EXISTS (
+        SELECT 1 FROM line_clearing c JOIN journal_lines l ON l.id = c.journal_line_id
+        WHERE l.entry_id = NEW.id AND c.status = 'reconciled')
+      BEGIN
+        SELECT RAISE(ABORT, 'This entry is part of a finished bank reconciliation. Reverse it instead, or undo that reconciliation first.');
+      END;
+
+      ${auditTriggersV2(
+        'reconciliations',
+        ['id', 'account_id', 'statement_date', 'statement_balance_cents', 'status', 'started_at', 'finished_at', 'undone_at', 'undo_reason'],
+        false
+      )}
+      ${auditTriggersV2('line_clearing', ['id', 'journal_line_id', 'status', 'reconciliation_id', 'updated_at'], false)}
+    `
   }
 ]
 
