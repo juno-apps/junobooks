@@ -18,6 +18,8 @@ import { isTemplateId, type TemplateId } from '../shared/templates'
 import type { AccountInput } from '../shared/accounts'
 import type { EntryListItem, ManualEntryInput } from '../shared/journal'
 import { listEntries } from './entries'
+import { accountRegister } from './register'
+import type { RegisterQuery, RegisterView } from '../shared/register'
 import { LedgerError, postEntry, reverseEntry, voidEntry } from './ledger'
 import { addAccount, deleteAccount, setAccountActive, updateAccount, type ChartContext } from './accounts'
 import { accountCount, applyChart, getChart, restoreAccounts } from './chart'
@@ -282,6 +284,10 @@ export class CompanyBooks {
 
   entries(): EntryListItem[] {
     return listEntries(this.db)
+  }
+
+  register(q: RegisterQuery): RegisterView {
+    return accountRegister(this.db, q)
   }
 
   voidEntry(id: number, reason: string): EntryListItem[] {

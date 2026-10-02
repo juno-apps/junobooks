@@ -1,6 +1,7 @@
 import type { AccountInput } from '../shared/accounts'
 import type { EntryListItem, ManualEntryInput } from '../shared/journal'
 import type { ChartAccount, ChartView } from '../shared/chart'
+import type { RegisterQuery, RegisterRow, RegisterView } from '../shared/register'
 import type {
   CompanyHistory,
   CompanyProfile,
@@ -27,6 +28,9 @@ export type {
   HomeStateChangeInput,
   ManualEntryInput,
   NewCompanyInput,
+  RegisterQuery,
+  RegisterRow,
+  RegisterView,
   Result
 }
 
@@ -57,6 +61,7 @@ export interface JunoApi {
   deleteAccount: (id: number) => Promise<Result<ChartView>>
   postManualEntry: (input: ManualEntryInput) => Promise<Result<number>>
   listEntries: () => Promise<EntryListItem[]>
+  getRegister: (q: RegisterQuery) => Promise<Result<RegisterView>>
   voidEntry: (id: number, reason: string) => Promise<Result<EntryListItem[]>>
   reverseEntry: (id: number, date: string, memo?: string) => Promise<Result<EntryListItem[]>>
 }

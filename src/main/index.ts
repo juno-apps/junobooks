@@ -3,6 +3,7 @@ import { autoUpdater } from 'electron-updater'
 import { join } from 'path'
 import type { AccountInput } from '../shared/accounts'
 import type { ManualEntryInput } from '../shared/journal'
+import type { RegisterQuery } from '../shared/register'
 import type { CompanyProfile, EntityChangeInput, HomeStateChangeInput, NewCompanyInput, Result } from '../shared/company'
 import { readAppSettings, writeAppSettings } from './appSettings'
 import { createCompany, listCompanies, openCompany, type CompanyBooks } from './companyStore'
@@ -119,6 +120,7 @@ app.whenReady().then(() => {
     wrap(() => requireCompany().postManualEntry(input))
   )
   ipcMain.handle('entries:list', () => current?.entries() ?? [])
+  ipcMain.handle('accounts:register', (_e, q: RegisterQuery) => wrap(() => requireCompany().register(q)))
   ipcMain.handle('entries:void', (_e, id: number, reason: string) => wrap(() => requireCompany().voidEntry(id, reason)))
   ipcMain.handle('entries:reverse', (_e, id: number, date: string, memo?: string) =>
     wrap(() => requireCompany().reverseEntry(id, date, memo))

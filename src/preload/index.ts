@@ -23,6 +23,7 @@ const api: JunoApi = {
   deleteAccount: (id) => ipcRenderer.invoke('accounts:delete', id),
   postManualEntry: (input) => ipcRenderer.invoke('entries:postManual', input),
   listEntries: () => ipcRenderer.invoke('entries:list'),
+  getRegister: (q) => ipcRenderer.invoke('accounts:register', q),
   voidEntry: (id, reason) => ipcRenderer.invoke('entries:void', id, reason),
   reverseEntry: (id, date, memo) => ipcRenderer.invoke('entries:reverse', id, date, memo)
 }

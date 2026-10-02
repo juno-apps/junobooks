@@ -19,6 +19,13 @@ Screens for typing transactions in by hand. All of them post through `postManual
 - Columns: date, #, memo, accounts (up to three names, then "+N more"), amount, status ("Voided", "Reversed by #N", "Reversal of #N"). Voided rows are greyed.
 - Clicking a row opens its lines and actions: **Duplicate** (always) opens the entry screen in copy mode; **Void…** (needs a reason) and **Reverse…** (date default today, optional memo) only on posted entries that aren't reversed. Each shows a one-line plain-English explanation. Errors come from the ledger.
 
+## Account register (`src/renderer/src/AccountRegister.tsx`, `src/main/register.ts`)
+- Opened by clicking an account name on the Chart of accounts tab; "Back to chart of accounts" returns (and reloads balances).
+- Read-only. Lists every posted line on the account, oldest first (date, entry id, line order): date, #, description (entry memo, line memo below), other side (the other account's name, or "Split (N accounts)"), increase / decrease, running balance.
+- Amounts are on the account's normal side (`registerColumns` in `shared/register.ts`): bank accounts say Money in / Money out, credit cards Charges / Payments, everything else Increase / Decrease. A negative balance shows in the "unusual" style.
+- From / To dates (plus "This year" and "All dates"). With a From date the first row is "Balance forward" (posted balance before that date). Ending balance at the bottom. From after To is refused.
+- "Show voided entries" lists voided lines greyed, marked "Voided, not counted", without moving the balance.
+
 ## Everyday screens (`src/shared/everyday.ts`)
 Plain questions on screen, one balanced entry underneath, posted through `postManualEntry`. Company home has **New expense**, **New income**, **New transfer** and **New journal entry** buttons.
 - **Expense and Income** share one screen, `SimpleEntry.tsx` (a `kind` prop sets the wording, account lists and direction). **Expense**: date, "Paid to" (becomes the entry memo), "How did you pay?", then lines of "What was it for?" / amount / note (filling the last line adds another, for splits). Debits each category, credits the paid-from account once for the total. The paid-from account can't also be a category.

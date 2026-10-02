@@ -24,14 +24,16 @@ JunoBooks-code/
       accounts.ts      Add / edit / deactivate / delete accounts
       companyHistory.ts  Entity-type and home-state history: add / remove a change, correct the starting value
       entries.ts       Read-only entry list for the screens (writing stays in ledger.ts)
+      register.ts      Read-only account register (lines + running balance)
       db/migrations.ts Numbered schema migrations
     preload/           contextBridge API exposed to the renderer as window.juno
-    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange, JournalEntry, TransactionList, SimpleEntry, AccountCombobox)
+    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange, JournalEntry, TransactionList, SimpleEntry, TransferEntry, AccountCombobox, AccountRegister; useFormError hook)
     shared/            Code used by both main and renderer: entity types, US states, dates, money, company validation,
                        templates.ts (starting charts), taxLines.ts (tax categories + per-year line tables), chart.ts (view types),
                        accounts.ts (account input rules: kinds, debit/credit side, validation, number-range warning),
                        journal.ts (entry-screen rows → ledger lines, live totals, two-line balancing, entry list type),
-                       everyday.ts (Expense/Income/Transfer screens: account groups, type-to-narrow filter, entry builders)
+                       everyday.ts (Expense/Income/Transfer screens: account groups, type-to-narrow filter, entry builders),
+                       register.ts (register view types, column wording)
   scripts/run-tests.cjs
   test-data/           Dev data root (git-ignored, never real books)
     app-settings.json
@@ -120,7 +122,7 @@ See `JunoBooks-PLAN.md` §10 (inventory method, S-corp election timing, which ba
 
 ## Topic docs index
 - `docs/topics/live-checks.md`: how to run and click through the app for a live check, the standing access permission, traps.
-- `docs/topics/manual-entry.md`: journal entry screen, transaction list (void, reverse, duplicate), everyday screens, entry-screen rules, the books-start-date rule for manual entries.
+- `docs/topics/manual-entry.md`: journal entry screen, transaction list (void, reverse, duplicate), account register, everyday screens, error messages, entry-screen rules, the books-start-date rule for manual entries.
 - `docs/topics/chart-of-accounts.md`: templates, numbering, entity-specific accounts, tax-line mapping, accountant notes, chart screen, editing accounts, adding/restoring accounts after creation.
 
 ## Latest handoff
@@ -129,4 +131,4 @@ None yet. Created only when the owner types "create new handoff."
 ## Status
 - **Phase 0 complete:** installs from GitHub, opens, updates itself.
 - **Phase 1 complete (schema v5):** create/list/switch companies, core schema + audit log, ledger engine + period lock, templates + chart of accounts + tax lines, account editing, entity-type and home-state changes with start dates (correct/remove, chart follows entity changes, restore missing accounts). 
-- **Phase 2 in progress** (manual entry). 2a–2c built: journal entry screen, transaction list, Expense / Income / Transfer screens (see `docs/topics/manual-entry.md`); Transfer is live-checked by Claude and awaiting the owner's own confirmation. **Resume point: 2d (account register) is next, not started.** Units: 2a journal entry screen · 2b transaction list (void, reverse, duplicate) · 2c Expense/Income/Transfer screens · 2d account register · 2e opening balances · 2f receipts (schema v6) · 2g move packaged data to `Documents\JunoBooks` + Settings. Sub-accounts stay parked until Phase 9.
+- **Phase 2 in progress** (manual entry). 2a–2d built: journal entry screen, transaction list, Expense / Income / Transfer screens, account register (see `docs/topics/manual-entry.md`). Build-run units are verified by Claude, owner review pending. Resume point: see `progress-log.md` → Build run. Units: 2a journal entry screen · 2b transaction list (void, reverse, duplicate) · 2c Expense/Income/Transfer screens · 2d account register · 2e opening balances · 2f receipts (schema v6) · 2g move packaged data to `Documents\JunoBooks` + Settings. Sub-accounts stay parked until Phase 9.

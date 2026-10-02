@@ -80,3 +80,17 @@ export async function errorText(page) {
   const e = page.locator('.error')
   return (await e.count()) ? (await e.first().innerText()).trim() : null
 }
+
+/** Posts a manual entry through the app's own API (for setting up data). Lines are [accountNumber, cents]. */
+export async function post(page, date, memo, lines) {
+  return page.evaluate(
+    async ({ date, memo, lines }) => {
+      const chart = await window.juno.getChart()
+      const id = (n) => chart.accounts.find((a) => a.number === n).id
+      const r = await window.juno.postManualEntry({ date, memo, lines: lines.map(([n, c]) => ({ accountId: id(n), amountCents: c, memo: '' })) })
+      if (!r.ok) throw new Error(r.error)
+      return r.value
+    },
+    { date, memo, lines }
+  )
+}

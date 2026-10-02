@@ -515,3 +515,35 @@ button.danger {
   padding: 0.4rem 0.6rem;
   color: #666;
 }
+
+.account-link {
+  color: inherit;
+  text-decoration: none;
+  text-align: left;
+}
+
+.account-link:hover {
+  text-decoration: underline;
+  color: #2c5a85;
+}
+
+.register-filters {
+  gap: 1rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.register-quick {
+  display: flex;
+  gap: 0.8rem;
+  padding-bottom: 0.5rem;
+}
+
+.register-table tfoot th {
+  border-top: 2px solid #ccc;
+  padding-top: 0.4rem;
+}
+
+.register-table tfoot th.amount {
+  text-align: right;
+}

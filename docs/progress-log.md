@@ -51,7 +51,7 @@ Pointer log only — a few lines per round. Details live in git history.
 - Owner decision: standing full access for live checks in every session until they say to revert (`CLAUDE.md` §9, `docs/topics/live-checks.md`).
 - Files: `shared/everyday.ts` (+test), `TransferEntry.tsx`, `CompanyHome.tsx`, `main/chart.ts`, `companyStore.test.ts`, docs. No schema change.
 - Status: Transfer awaiting the owner's own confirmation (committed as a savepoint).
-- **Resume point:** start **2d, the account register** when the owner says so. Open polish ideas awaiting the owner's yes/no: (1) clear a red error message once the cause is fixed, (2) widen the category list boxes so group headings don't wrap, (3) empty-company Transactions text should mention New expense/income/transfer too.
+- (Round 22 polish ideas were approved and built in the build run.)
 
 ## Round 23 — Build run agreed (not started)
 - Owner approved an autonomous build run through Phase 11 (rules in `CLAUDE.md` §10): no checkpoint stops, Opus throughout, live checks via Playwright, commits/pushes without asking, no releases, owner-only choices parked in backlog under "Needs owner decision", final list in `docs/build-run-changes.md`.
@@ -62,4 +62,5 @@ Pointer log only — a few lines per round. Details live in git history.
 - Remaining Phase 2 plan: 2d register · 2e opening balances · 2f receipts (schema v6) · 2g data to `Documents\JunoBooks` + Settings. Then Phases 3–11 per `JunoBooks-PLAN.md` §8.
 - B1: Playwright live checks set up (`scripts/live/`, data in `test-data\live` via `JUNOBOOKS_DATA_ROOT`); `live-checks.md` rewritten.
 - B2: round-22 polish: red error clears once fixed (`useFormError.ts`, all four entry screens), wider account lists, empty Transactions text names all four buttons. Live check `polish.mjs`. 205 tests.
-- **Resume point:** 2d (account register) next.
+- B3 (2d): account register: click an account on the chart; running balance, date range with balance forward, voided on request, column names fit the account. Files: `main/register.ts` (+test), `shared/register.ts`, `AccountRegister.tsx`, `ChartOfAccounts.tsx`, IPC/preload. Live check `register.mjs`. 209 tests.
+- **Resume point:** 2e (opening balances) next.

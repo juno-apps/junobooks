@@ -3,6 +3,7 @@ import type { ChartAccount, ChartView } from '../../preload/types'
 import { TAX_FORM_LABELS } from '../../shared/entities'
 import { formatCents } from '../../shared/money'
 import AccountForm from './AccountForm'
+import AccountRegister from './AccountRegister'
 
 const GROUPS: { title: string; test: (a: ChartAccount) => boolean }[] = [
   { title: 'Assets', test: (a) => a.type === 'asset' },
@@ -26,12 +27,25 @@ function ChartOfAccounts(): JSX.Element {
   const [showInactive, setShowInactive] = useState(false)
   const [showMissing, setShowMissing] = useState(false)
   const [restoreError, setRestoreError] = useState<string | null>(null)
+  /** The account whose register is open, if any. */
+  const [viewing, setViewing] = useState<number | null>(null)
 
   useEffect(() => {
     window.juno.getChart().then(setChart)
   }, [])
 
   if (!chart) return <p>Loading chart of accounts…</p>
+  if (viewing !== null) {
+    return (
+      <AccountRegister
+        accountId={viewing}
+        onBack={() => {
+          setViewing(null)
+          window.juno.getChart().then(setChart)
+        }}
+      />
+    )
+  }
 
   const active = chart.accounts.filter((a) => a.isActive)
   const inactiveCount = chart.accounts.length - active.length
@@ -59,6 +73,8 @@ function ChartOfAccounts(): JSX.Element {
         </button>
       </div>
       <p className="muted">
+        Click an account to see its register (every entry and the running balance).
+        <br />
         {active.length} accounts · Tax lines for {TAX_FORM_LABELS[chart.form]}, from the {chart.tableYear} IRS
         forms
         {chart.tableYear < chart.taxYear && ` (the ${chart.taxYear} forms aren't out yet)`}
@@ -137,7 +153,9 @@ function ChartOfAccounts(): JSX.Element {
                 <tr key={a.id} className={a.isActive ? '' : 'inactive'}>
                   <td className="num">{a.number}</td>
                   <td>
-                    {a.name}
+                    <button type="button" className="link-button account-link" onClick={() => setViewing(a.id)}>
+                      {a.name}
+                    </button>
                     {!a.isActive && ' (inactive)'}
                     {a.description && <div className="account-description">{a.description}</div>}
                     {a.accountantNote && (
