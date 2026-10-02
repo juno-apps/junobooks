@@ -37,8 +37,9 @@ describe('Etsy accounts', () => {
     expect(after.every((a) => a.accountId !== null)).toBe(true)
     expect(acct('Etsy payment account')).toMatchObject({ number: '1210', type: 'asset' })
     expect(acct('Sales tax collected by Etsy').accountantNote).toMatch(/marketplace facilitator/)
+    expect(acct('State fees collected by Etsy')).toMatchObject({ number: '2220', type: 'liability' })
     books.addEtsyAccounts()
-    expect(books.chart().accounts.filter((a) => a.name.includes('Etsy')).length).toBe(8)
+    expect(books.chart().accounts.filter((a) => a.name.includes('Etsy')).length).toBe(9)
   })
 })
 

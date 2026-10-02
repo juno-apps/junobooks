@@ -14,6 +14,7 @@ export type EtsyKind =
   | 'sale'
   | 'refund'
   | 'sales_tax'
+  | 'state_fee'
   | 'transaction_fee'
   | 'processing_fee'
   | 'listing_fee'
@@ -36,6 +37,7 @@ export const ETSY_TARGET_LABELS: Record<EtsyTarget, string> = {
   shipping: 'Shipping charged to buyers',
   refund: 'Refunds to buyers',
   sales_tax: 'Sales tax Etsy collected and paid for you',
+  state_fee: 'State fees Etsy collected and paid for you',
   transaction_fee: 'Transaction fees',
   processing_fee: 'Payment processing fees',
   listing_fee: 'Listing fees',
@@ -116,9 +118,9 @@ export function classifyEtsyRow(type: string, title: string): EtsyKind {
   if (t === 'tax' || t === 'vat' || t === 'sales tax') {
     return /sales tax|paid by buyer|buyer/.test(ti) ? 'sales_tax' : 'fee_tax'
   }
-  // State fees the buyer paid and Etsy passed on (e.g. Colorado Retail Delivery Fee) work like sales tax.
+  // State fees the buyer paid and Etsy passed on (e.g. Colorado Retail Delivery Fee): not tax, but also pass-through.
   if (t === 'buyer fee' || (/paid by buyer|retail delivery fee/.test(ti) && !/^transaction fee/.test(base)))
-    return 'sales_tax'
+    return 'state_fee'
   if (t === 'refund' || /^refund/.test(ti)) return 'refund'
   if (t === 'transaction' || /^transaction fee/.test(base)) return 'transaction_fee'
   if (/^processing fee/.test(base)) return 'processing_fee'
@@ -304,68 +306,90 @@ export interface EtsyPosting {
   cents: number
 }
 
+/** Money the buyer paid that Etsy passes on to the state; it is never your income or expense. */
+export const PASS_THROUGH = ['sales_tax', 'state_fee'] as const
+export type PassThrough = (typeof PASS_THROUGH)[number]
+export type InsideAmounts = Map<string, Partial<Record<PassThrough, { paid: number; refunded: number }>>>
+
 /**
- * Sales tax (and buyer-paid state fees) that Etsy's sale and refund amounts already include, per order.
- * Etsy's "Payment for Order" amount is what the buyer paid, tax included; a separate "Sales tax paid by buyer"
- * row (Fees & Taxes only) takes the tax back out. Likewise a refund includes the tax given back, and
- * "Refund to buyer for sales tax" returns it. Counted only for orders whose sale (or refund) is in `rows`,
- * so that part can be moved out of Sales (or Refunds) and into the sales tax account.
+ * Sales tax and buyer-paid state fees that Etsy's sale and refund amounts already include, per order.
+ * Etsy's "Payment for Order" amount is what the buyer paid, tax and fees included; separate rows ("Sales tax paid by
+ * buyer", "Colorado Retail Delivery Fee (paid by buyer)"; Fees & Taxes only) take them back out. Likewise a refund
+ * includes the tax given back and "Refund to buyer for sales tax" returns it. Counted only for orders whose sale (or
+ * refund) is in `rows`, so that part can be moved out of Sales (or Refunds) into its pass-through account.
  */
-export function taxInsideAmounts(rows: EtsyRow[]): Map<string, { paid: number; refunded: number }> {
+export function taxInsideAmounts(rows: EtsyRow[]): InsideAmounts {
   const sold = new Set(rows.filter((r) => r.kind === 'sale' && r.orderId).map((r) => r.orderId!))
   const refunded = new Set(rows.filter((r) => r.kind === 'refund' && r.orderId).map((r) => r.orderId!))
-  const out = new Map<string, { paid: number; refunded: number }>()
+  const out: InsideAmounts = new Map()
   for (const r of rows) {
-    if (r.kind !== 'sales_tax' || r.amountCents !== 0 || !r.orderId || !r.feesCents) continue
-    const t = out.get(r.orderId) ?? { paid: 0, refunded: 0 }
+    const k = r.kind as PassThrough
+    if (!PASS_THROUGH.includes(k) || r.amountCents !== 0 || !r.orderId || !r.feesCents) continue
+    const byKind = out.get(r.orderId) ?? {}
+    const t = byKind[k] ?? { paid: 0, refunded: 0 }
     if (r.feesCents < 0 && sold.has(r.orderId)) t.paid -= r.feesCents
     else if (r.feesCents > 0 && refunded.has(r.orderId)) t.refunded += r.feesCents
     else continue
-    out.set(r.orderId, t)
+    byKind[k] = t
+    out.set(r.orderId, byKind)
   }
   return out
 }
 
-/** How one statement row posts. The clearing line always balances the others. `tax` comes from `taxInsideAmounts`. */
+/** How one statement row posts. The clearing line always balances the others. `inside` comes from `taxInsideAmounts`. */
 export function rowPostings(
   row: EtsyRow,
   orders: Map<string, EtsyOrder>,
-  tax: Map<string, { paid: number; refunded: number }> = new Map()
+  inside: InsideAmounts = new Map()
 ): EtsyPosting[] {
   const p: EtsyPosting[] = []
   const A = row.amountCents
   const F = row.feesCents
-  const orderTax = row.orderId ? tax.get(row.orderId) : undefined
+  const orderInside = (row.orderId && inside.get(row.orderId)) || {}
   switch (row.kind) {
     case 'deposit':
       return []
     case 'sale': {
       const order = row.orderId ? orders.get(row.orderId) : undefined
-      const taxPart = A > 0 ? Math.min(orderTax?.paid ?? 0, A) : 0
-      const rest = A - taxPart
+      let rest = A
+      const parts: EtsyPosting[] = []
+      for (const k of PASS_THROUGH) {
+        const part = rest > 0 ? Math.min(orderInside[k]?.paid ?? 0, rest) : 0
+        rest -= part
+        if (part) parts.push({ target: k, cents: -part })
+      }
       const shipping = order && rest > 0 ? Math.min(order.shippingCents, rest) : 0
       if (rest - shipping) p.push({ target: 'sale', cents: -(rest - shipping) })
       if (shipping) p.push({ target: 'shipping', cents: -shipping })
-      if (taxPart) p.push({ target: 'sales_tax', cents: -taxPart })
+      p.push(...parts)
       if (F) p.push({ target: 'processing_fee', cents: -F })
       break
     }
     case 'refund': {
-      const taxPart = A < 0 ? Math.min(orderTax?.refunded ?? 0, -A) : 0
-      if (A + taxPart) p.push({ target: 'refund', cents: -(A + taxPart) })
-      if (taxPart) p.push({ target: 'sales_tax', cents: taxPart })
+      let rest = -A
+      const parts: EtsyPosting[] = []
+      for (const k of PASS_THROUGH) {
+        const part = rest > 0 ? Math.min(orderInside[k]?.refunded ?? 0, rest) : 0
+        rest -= part
+        if (part) parts.push({ target: k, cents: part })
+      }
+      if (rest) p.push({ target: 'refund', cents: rest })
+      p.push(...parts)
       if (F) p.push({ target: 'processing_fee', cents: -F })
       break
     }
     case 'sales_tax':
-      if (A) p.push({ target: 'sales_tax', cents: -A })
+    case 'state_fee': {
+      const k = row.kind
+      if (A) p.push({ target: k, cents: -A })
       if (F) {
-        // Tax inside a sale or refund in this import goes through the sales tax account (it nets to zero).
-        // Otherwise its sale or refund was imported earlier with the tax in Sales or Refunds, so correct those.
-        const inside = A === 0 && orderTax && (F < 0 ? orderTax.paid : orderTax.refunded)
-        p.push({ target: inside || A !== 0 ? 'sales_tax' : F < 0 ? 'sale' : 'refund', cents: -F })
+        // Part of a sale or refund in this import: through the pass-through account (it nets to zero).
+        // Otherwise its sale or refund was imported earlier with this money in Sales or Refunds, so correct those.
+        const inThisImport = A === 0 && (F < 0 ? orderInside[k]?.paid : orderInside[k]?.refunded)
+        p.push({ target: inThisImport || A !== 0 ? k : F < 0 ? 'sale' : 'refund', cents: -F })
       }
       break
+    }
     default:
       if (A + F) p.push({ target: row.kind, cents: -(A + F) })
   }
@@ -465,6 +489,14 @@ export const ETSY_ACCOUNTS: ChannelAccountSpec[] = [
     taxCategory: 'other_current_liabilities',
     note: 'Sales tax Etsy collected from buyers and paid to the states for you (marketplace facilitator). It nets to zero. Your accountant decides whether it belongs in gross receipts; it is kept separate so the 1099-K can be tied out.',
     targets: ['sales_tax']
+  },
+  {
+    number: '2220',
+    name: 'State fees collected by Etsy',
+    type: 'liability',
+    taxCategory: 'other_current_liabilities',
+    note: 'State fees buyers paid that Etsy collected and paid to the state for you, such as the Colorado Retail Delivery Fee. They are not sales tax and not your income or expense, so this nets to zero. Ask your accountant how to report them.',
+    targets: ['state_fee']
   },
   {
     number: '6101',

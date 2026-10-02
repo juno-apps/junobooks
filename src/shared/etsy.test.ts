@@ -47,7 +47,7 @@ describe('reading Etsy files', () => {
     expect(classifyEtsyRow('Reserve', 'Something new')).toBe('unknown')
     // Wording from real statements
     expect(classifyEtsyRow('Tax', 'Refund to buyer for sales tax')).toBe('sales_tax')
-    expect(classifyEtsyRow('Buyer Fee', 'Colorado Retail Delivery Fee (paid by buyer)')).toBe('sales_tax')
+    expect(classifyEtsyRow('Buyer Fee', 'Colorado Retail Delivery Fee (paid by buyer)')).toBe('state_fee')
     expect(classifyEtsyRow('Fee', 'Credit for transaction fee on Gold Band')).toBe('transaction_fee')
     expect(classifyEtsyRow('Fee', 'Credit for transaction fee on shipping')).toBe('transaction_fee')
     expect(classifyEtsyRow('Fee', 'Transaction fee: Free Shipping Label Ring')).toBe('transaction_fee')
@@ -173,12 +173,13 @@ describe('planning entries', () => {
       ['4400000001', { orderId: '4400000001', saleDate: '2026-09-03', itemsCents: 9000, shippingCents: 969, discountCents: 0, salesTaxCents: 0, totalCents: 10800, shipState: 'CO', shipCountry: 'United States' }]
     ])
     const tax = taxInsideAmounts(s.rows)
-    expect(tax.get('4400000001')).toEqual({ paid: 831, refunded: 400 })
+    expect(tax.get('4400000001')).toEqual({ sales_tax: { paid: 800, refunded: 400 }, state_fee: { paid: 31, refunded: 0 } })
     const sale = s.rows.find((r) => r.kind === 'sale')!
     expect(rowPostings(sale, ord, tax)).toEqual([
       { target: 'sale', cents: -9000 },
       { target: 'shipping', cents: -969 },
-      { target: 'sales_tax', cents: -831 },
+      { target: 'sales_tax', cents: -800 },
+      { target: 'state_fee', cents: -31 },
       { target: 'clearing', cents: 10800 }
     ])
     const refund = s.rows.find((r) => r.kind === 'refund')!
@@ -191,6 +192,7 @@ describe('planning entries', () => {
     const sum = (t: string): number =>
       plan.days.flatMap((d) => d.lines).filter((l) => l.target === t).reduce((a, l) => a + l.cents, 0)
     expect(sum('sales_tax')).toBe(0) // passes through
+    expect(sum('state_fee')).toBe(0)
     expect(sum('sale')).toBe(-9000 + 200) // tax for a sale imported earlier comes out of Sales
     expect(sum('refund')).toBe(5000 - 100) // tax returned on a refund imported earlier comes off Refunds
     expect(sum('transaction_fee')).toBe(-150) // the credit lowers transaction fees

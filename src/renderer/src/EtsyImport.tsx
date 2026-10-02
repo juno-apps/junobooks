@@ -26,7 +26,7 @@ const PAYOUT_STATUS: Record<EtsyPayout['status'], string> = {
 
 /** "Sales $166.00 (money in)" style wording for a target total (debit positive). */
 function describe(target: EtsyTarget, cents: number): string {
-  if (target === 'sales_tax' && cents === 0) return 'nets to $0.00'
+  if ((target === 'sales_tax' || target === 'state_fee') && cents === 0) return 'nets to $0.00'
   if (target === 'clearing')
     return `${formatCents(Math.abs(cents))} ${cents >= 0 ? 'added to' : 'taken from'} what Etsy holds`
   return `${formatCents(Math.abs(cents))} ${cents < 0 ? 'in' : 'out'}`
@@ -113,7 +113,7 @@ function EtsyImport({ onImported, onClose }: Props): JSX.Element {
     if (a) setAccounts(a.accounts)
   }
 
-  const shownTargets = preview ? preview.totals.filter((t) => t.cents !== 0 || t.target === 'sales_tax') : []
+  const shownTargets = preview ? preview.totals.filter((t) => t.cents !== 0 || t.target === 'sales_tax' || t.target === 'state_fee') : []
 
   return (
     <section className="panel journal-entry etsy-import">
@@ -271,6 +271,14 @@ function EtsyImport({ onImported, onClose }: Props): JSX.Element {
                   <span aria-hidden="true">⚑ </span>
                   Check with your accountant: Etsy collects and pays sales tax for you in most states. It is recorded in
                   and out of its own account (so it nets to zero) and kept separate from your sales.
+                </p>
+              )}
+              {shownTargets.some((t) => t.target === 'state_fee') && (
+                <p className="accountant-note">
+                  <span aria-hidden="true">⚑ </span>
+                  Check with your accountant: buyers paid state fees (such as Colorado&apos;s Retail Delivery Fee) that
+                  Etsy collected and paid to the state for you. They are not sales tax; they go in and out of their own
+                  account (so they net to zero) and are kept out of your sales.
                 </p>
               )}
               <div className="form-actions">
