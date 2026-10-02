@@ -101,25 +101,36 @@ function money(text: string | undefined): number | null {
   return parseAmountCell(t)
 }
 
-/** Sorts a statement row into a kind, from its Type and Title (Etsy's wording varies, so both are checked). */
+/**
+ * Sorts a statement row into a kind, from its Type and Title (Etsy's wording varies, so both are checked).
+ * Fee titles can carry a listing's name ("Transaction fee: <listing>", "Credit for transaction fee on <listing>"),
+ * so the fee checks look at how the title starts, after any "Credit for".
+ */
 export function classifyEtsyRow(type: string, title: string): EtsyKind {
   const t = type.trim().toLowerCase()
   const ti = title.trim().toLowerCase()
+  const base = ti.replace(/^credit for\s+/, '')
   if (t === 'deposit' || (/sent to your bank|deposit/.test(ti) && t !== 'fee')) return 'deposit'
   if (t === 'sale' || ti.startsWith('payment for order')) return 'sale'
-  if (t === 'refund' || /^refund/.test(ti)) return 'refund'
+  // Tax rows first: "Refund to buyer for sales tax" is a sales tax row, not a refund.
   if (t === 'tax' || t === 'vat' || t === 'sales tax') {
     return /sales tax|paid by buyer|buyer/.test(ti) ? 'sales_tax' : 'fee_tax'
   }
-  if (t === 'marketing' || /etsy ads|offsite ads|promoted listings/.test(ti)) {
-    return /offsite/.test(ti) ? 'offsite_ads' : 'etsy_ads'
+  // State fees the buyer paid and Etsy passed on (e.g. Colorado Retail Delivery Fee) work like sales tax.
+  if (t === 'buyer fee' || (/paid by buyer|retail delivery fee/.test(ti) && !/^transaction fee/.test(base)))
+    return 'sales_tax'
+  if (t === 'refund' || /^refund/.test(ti)) return 'refund'
+  if (t === 'transaction' || /^transaction fee/.test(base)) return 'transaction_fee'
+  if (/^processing fee/.test(base)) return 'processing_fee'
+  if (t === 'listing' || /^(listing fee|renew|auto-renew)/.test(base)) return 'listing_fee'
+  if (t === 'subscription' || /etsy plus|subscription/.test(base)) return 'subscription'
+  if (t === 'marketing' || /etsy ads|offsite ads|promoted listings/.test(base)) {
+    return /offsite/.test(base) ? 'offsite_ads' : 'etsy_ads'
   }
-  if (t === 'shipping' || t === 'shipping label' || t === 'postage' || /shipping label|postage/.test(ti))
+  if (t === 'shipping' || t === 'shipping label' || t === 'postage' || /shipping label|postage/.test(base))
     return 'shipping_label'
-  if (t === 'subscription' || /etsy plus|subscription/.test(ti)) return 'subscription'
-  if (t === 'listing' || /listing fee|renew/.test(ti)) return 'listing_fee'
-  if (t === 'transaction' || /^transaction fee/.test(ti)) return 'transaction_fee'
-  if (/processing fee/.test(ti)) return 'processing_fee'
+  if (/listing fee|renew/.test(base)) return 'listing_fee'
+  if (/processing fee/.test(base)) return 'processing_fee'
   if (t === 'payment') return 'payment'
   if (t === 'fee') return /tax|vat|gst/.test(ti) ? 'fee_tax' : 'other_fee'
   return 'unknown'
@@ -293,29 +304,67 @@ export interface EtsyPosting {
   cents: number
 }
 
-/** How one statement row posts. The clearing line always balances the others. */
-export function rowPostings(row: EtsyRow, orders: Map<string, EtsyOrder>): EtsyPosting[] {
+/**
+ * Sales tax (and buyer-paid state fees) that Etsy's sale and refund amounts already include, per order.
+ * Etsy's "Payment for Order" amount is what the buyer paid, tax included; a separate "Sales tax paid by buyer"
+ * row (Fees & Taxes only) takes the tax back out. Likewise a refund includes the tax given back, and
+ * "Refund to buyer for sales tax" returns it. Counted only for orders whose sale (or refund) is in `rows`,
+ * so that part can be moved out of Sales (or Refunds) and into the sales tax account.
+ */
+export function taxInsideAmounts(rows: EtsyRow[]): Map<string, { paid: number; refunded: number }> {
+  const sold = new Set(rows.filter((r) => r.kind === 'sale' && r.orderId).map((r) => r.orderId!))
+  const refunded = new Set(rows.filter((r) => r.kind === 'refund' && r.orderId).map((r) => r.orderId!))
+  const out = new Map<string, { paid: number; refunded: number }>()
+  for (const r of rows) {
+    if (r.kind !== 'sales_tax' || r.amountCents !== 0 || !r.orderId || !r.feesCents) continue
+    const t = out.get(r.orderId) ?? { paid: 0, refunded: 0 }
+    if (r.feesCents < 0 && sold.has(r.orderId)) t.paid -= r.feesCents
+    else if (r.feesCents > 0 && refunded.has(r.orderId)) t.refunded += r.feesCents
+    else continue
+    out.set(r.orderId, t)
+  }
+  return out
+}
+
+/** How one statement row posts. The clearing line always balances the others. `tax` comes from `taxInsideAmounts`. */
+export function rowPostings(
+  row: EtsyRow,
+  orders: Map<string, EtsyOrder>,
+  tax: Map<string, { paid: number; refunded: number }> = new Map()
+): EtsyPosting[] {
   const p: EtsyPosting[] = []
   const A = row.amountCents
   const F = row.feesCents
+  const orderTax = row.orderId ? tax.get(row.orderId) : undefined
   switch (row.kind) {
     case 'deposit':
       return []
     case 'sale': {
       const order = row.orderId ? orders.get(row.orderId) : undefined
-      const shipping = order && A > 0 ? Math.min(order.shippingCents, A) : 0
-      if (A - shipping) p.push({ target: 'sale', cents: -(A - shipping) })
+      const taxPart = A > 0 ? Math.min(orderTax?.paid ?? 0, A) : 0
+      const rest = A - taxPart
+      const shipping = order && rest > 0 ? Math.min(order.shippingCents, rest) : 0
+      if (rest - shipping) p.push({ target: 'sale', cents: -(rest - shipping) })
       if (shipping) p.push({ target: 'shipping', cents: -shipping })
+      if (taxPart) p.push({ target: 'sales_tax', cents: -taxPart })
       if (F) p.push({ target: 'processing_fee', cents: -F })
       break
     }
-    case 'refund':
-      if (A) p.push({ target: 'refund', cents: -A })
+    case 'refund': {
+      const taxPart = A < 0 ? Math.min(orderTax?.refunded ?? 0, -A) : 0
+      if (A + taxPart) p.push({ target: 'refund', cents: -(A + taxPart) })
+      if (taxPart) p.push({ target: 'sales_tax', cents: taxPart })
       if (F) p.push({ target: 'processing_fee', cents: -F })
       break
+    }
     case 'sales_tax':
       if (A) p.push({ target: 'sales_tax', cents: -A })
-      if (F) p.push({ target: 'sales_tax', cents: -F })
+      if (F) {
+        // Tax inside a sale or refund in this import goes through the sales tax account (it nets to zero).
+        // Otherwise its sale or refund was imported earlier with the tax in Sales or Refunds, so correct those.
+        const inside = A === 0 && orderTax && (F < 0 ? orderTax.paid : orderTax.refunded)
+        p.push({ target: inside || A !== 0 ? 'sales_tax' : F < 0 ? 'sale' : 'refund', cents: -F })
+      }
       break
     default:
       if (A + F) p.push({ target: row.kind, cents: -(A + F) })
@@ -347,12 +396,13 @@ export function planEtsy(rows: EtsyRow[], orders: Map<string, EtsyOrder>): EtsyP
     if (r.kind === 'deposit') deposits.push({ date: r.date, cents: r.depositCents, row: r.row, title: r.title })
     else byDay.set(r.date, [...(byDay.get(r.date) ?? []), r])
   }
+  const tax = taxInsideAmounts(rows)
   const days: PlannedEntry[] = []
   for (const date of [...byDay.keys()].sort()) {
     const dayRows = byDay.get(date)!
     const sums = new Map<EtsyTarget, number>()
     for (const r of dayRows)
-      for (const x of rowPostings(r, orders)) sums.set(x.target, (sums.get(x.target) ?? 0) + x.cents)
+      for (const x of rowPostings(r, orders, tax)) sums.set(x.target, (sums.get(x.target) ?? 0) + x.cents)
     const lines = [...sums].filter(([, c]) => c !== 0).map(([target, cents]) => ({ target, cents }))
     if (lines.length < 2) continue
     const sales = dayRows.filter((r) => r.kind === 'sale').length

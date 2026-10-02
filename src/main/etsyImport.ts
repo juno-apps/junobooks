@@ -9,6 +9,7 @@ import {
   parseEtsyStatement,
   planEtsy,
   rowPostings,
+  taxInsideAmounts,
   type EtsyOrder,
   type EtsyRow,
   type EtsyTarget
@@ -175,8 +176,9 @@ function readFiles(db: Database.Database, booksStart: string, input: EtsyFilesIn
 export function previewEtsy(db: Database.Database, booksStart: string, input: EtsyFilesInput): EtsyPreview {
   const p = readFiles(db, booksStart, input)
   const totals = new Map<EtsyTarget, { cents: number; rows: number }>()
+  const tax = taxInsideAmounts(p.fresh)
   for (const r of p.fresh) {
-    for (const x of rowPostings(r, p.orders)) {
+    for (const x of rowPostings(r, p.orders, tax)) {
       const t = totals.get(x.target) ?? { cents: 0, rows: 0 }
       t.cents += x.cents
       t.rows++

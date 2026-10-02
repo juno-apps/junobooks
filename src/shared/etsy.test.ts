@@ -9,7 +9,8 @@ import {
   parseEtsyOrders,
   parseEtsyStatement,
   planEtsy,
-  rowPostings
+  rowPostings,
+  taxInsideAmounts
 } from './etsy'
 
 const sample = (n: string): string => readFileSync(join(__dirname, '..', '..', 'samples', 'etsy', n), 'utf8')
@@ -44,6 +45,19 @@ describe('reading Etsy files', () => {
     expect(classifyEtsyRow('Fee', 'Regulatory operating fee')).toBe('other_fee')
     expect(classifyEtsyRow('Payment', 'Payment from credit card')).toBe('payment')
     expect(classifyEtsyRow('Reserve', 'Something new')).toBe('unknown')
+    // Wording from real statements
+    expect(classifyEtsyRow('Tax', 'Refund to buyer for sales tax')).toBe('sales_tax')
+    expect(classifyEtsyRow('Buyer Fee', 'Colorado Retail Delivery Fee (paid by buyer)')).toBe('sales_tax')
+    expect(classifyEtsyRow('Fee', 'Credit for transaction fee on Gold Band')).toBe('transaction_fee')
+    expect(classifyEtsyRow('Fee', 'Credit for transaction fee on shipping')).toBe('transaction_fee')
+    expect(classifyEtsyRow('Fee', 'Transaction fee: Free Shipping Label Ring')).toBe('transaction_fee')
+    expect(classifyEtsyRow('Fee', 'Credit for processing fee')).toBe('processing_fee')
+    expect(classifyEtsyRow('Fee', 'Credit for listing fee')).toBe('listing_fee')
+    expect(classifyEtsyRow('Fee', 'Credit for Etsy Ads fee')).toBe('etsy_ads')
+    expect(classifyEtsyRow('Marketing', 'Etsy Plus subscription fee')).toBe('subscription')
+    expect(classifyEtsyRow('Marketing', 'Fee for sale made through Offsite Ads')).toBe('offsite_ads')
+    expect(classifyEtsyRow('Shipping label', 'Credit for UPS shipping label adjustment')).toBe('shipping_label')
+    expect(classifyEtsyRow('Shipping', 'Shipsurance Package Insurance')).toBe('shipping_label')
     expect(orderIdFrom('Payment for Order #3301000001')).toBe('3301000001')
     expect(orderIdFrom('', 'Order #3301000002')).toBe('3301000002')
   })
@@ -137,6 +151,51 @@ describe('planning entries', () => {
       .filter((l) => l.target === 'clearing')
       .reduce((s, l) => s + l.cents, 0)
     expect(clearing).toBe(11065 - 1013) // everything up to the deposit, then two fees after it
+  })
+
+  it('takes the buyer-paid sales tax inside sale and refund amounts out of Sales and Refunds (real statement layout)', () => {
+    // Made-up rows in Etsy's real layout: the sale amount includes tax; tax rows use Fees & Taxes only.
+    const s = parseEtsyStatement(
+      [
+        'Date,Type,Title,Info,Currency,Amount,Fees & Taxes,Net,Tax Details',
+        '"Sep 3, 2026",Sale,"Payment for Order #4400000001",,USD,$108.00,--,$108.00,',
+        '"Sep 3, 2026",Tax,"Sales tax paid by buyer","Order #4400000001",USD,--,-$8.00,-$8.00,',
+        '"Sep 3, 2026","Buyer Fee","Colorado Retail Delivery Fee (paid by buyer)","Order #4400000001",USD,--,-$0.31,-$0.31,',
+        '"Sep 3, 2026",Fee,"Processing fee","Order #4400000001",USD,--,-$3.50,-$3.50,',
+        '"Sep 9, 2026",Refund,"Refund for Order #4400000001",,USD,-$54.00,--,-$54.00,',
+        '"Sep 9, 2026",Tax,"Refund to buyer for sales tax","Order #4400000001",USD,--,$4.00,$4.00,',
+        '"Sep 9, 2026",Fee,"Credit for transaction fee on Gold Band",,USD,--,$1.50,$1.50,',
+        '"Sep 9, 2026",Tax,"Sales tax paid by buyer","Order #4400000999",USD,--,-$2.00,-$2.00,',
+        '"Sep 9, 2026",Tax,"Refund to buyer for sales tax","Order #4400000888",USD,--,$1.00,$1.00,'
+      ].join('\n')
+    )
+    const ord = new Map([
+      ['4400000001', { orderId: '4400000001', saleDate: '2026-09-03', itemsCents: 9000, shippingCents: 969, discountCents: 0, salesTaxCents: 0, totalCents: 10800, shipState: 'CO', shipCountry: 'United States' }]
+    ])
+    const tax = taxInsideAmounts(s.rows)
+    expect(tax.get('4400000001')).toEqual({ paid: 831, refunded: 400 })
+    const sale = s.rows.find((r) => r.kind === 'sale')!
+    expect(rowPostings(sale, ord, tax)).toEqual([
+      { target: 'sale', cents: -9000 },
+      { target: 'shipping', cents: -969 },
+      { target: 'sales_tax', cents: -831 },
+      { target: 'clearing', cents: 10800 }
+    ])
+    const refund = s.rows.find((r) => r.kind === 'refund')!
+    expect(rowPostings(refund, ord, tax)).toEqual([
+      { target: 'refund', cents: 5000 },
+      { target: 'sales_tax', cents: 400 },
+      { target: 'clearing', cents: -5400 }
+    ])
+    const plan = planEtsy(s.rows, ord)
+    const sum = (t: string): number =>
+      plan.days.flatMap((d) => d.lines).filter((l) => l.target === t).reduce((a, l) => a + l.cents, 0)
+    expect(sum('sales_tax')).toBe(0) // passes through
+    expect(sum('sale')).toBe(-9000 + 200) // tax for a sale imported earlier comes out of Sales
+    expect(sum('refund')).toBe(5000 - 100) // tax returned on a refund imported earlier comes off Refunds
+    expect(sum('transaction_fee')).toBe(-150) // the credit lowers transaction fees
+    expect(sum('processing_fee')).toBe(350)
+    for (const d of plan.days) expect(d.lines.reduce((a, l) => a + l.cents, 0)).toBe(0)
   })
 
   it('numbers identical rows so both import, and re-reading gives the same fingerprints', () => {
