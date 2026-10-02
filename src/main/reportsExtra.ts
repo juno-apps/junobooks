@@ -23,7 +23,8 @@ export function salesByChannel(db: Database.Database, from: string, to: string):
     .prepare(
       `SELECT e.source, a.tax_category AS cat, SUM(l.amount_cents) AS c
        FROM journal_lines l JOIN journal_entries e ON e.id = l.entry_id JOIN accounts a ON a.id = l.account_id
-       WHERE e.status = 'posted' AND e.entry_date BETWEEN ? AND ? AND a.tax_category IN ('gross_receipts', 'returns_allowances')
+       WHERE e.status = 'posted' AND e.source <> 'closing' AND e.entry_date BETWEEN ? AND ?
+         AND a.tax_category IN ('gross_receipts', 'returns_allowances')
        GROUP BY e.source, a.tax_category`
     )
     .all(from, to) as { source: string; cat: string; c: number }[]
@@ -78,7 +79,7 @@ export function taxLineSummary(db: Database.Database, year: number): TaxLineSumm
       `SELECT a.id, a.number, a.name, a.type, a.tax_category AS cat, a.accountant_note AS note,
          COALESCE((SELECT SUM(l.amount_cents) FROM journal_lines l JOIN journal_entries e ON e.id = l.entry_id
                    WHERE l.account_id = a.id AND e.status = 'posted'
-                     AND e.entry_date <= @to AND (a.type IN ('asset', 'liability', 'equity') OR e.entry_date >= @from)), 0) AS c
+                     AND e.entry_date <= @to AND (a.type IN ('asset', 'liability', 'equity') OR (e.entry_date >= @from AND e.source <> 'closing'))), 0) AS c
        FROM accounts a ORDER BY a.number`
     )
     .all({ from, to }) as {
@@ -144,7 +145,7 @@ export function cogsSchedule(db: Database.Database, year: number): CogsSchedule 
         .prepare(
           `SELECT a.tax_category AS cat, SUM(l.amount_cents) AS c FROM journal_lines l JOIN journal_entries e ON e.id = l.entry_id
            JOIN accounts a ON a.id = l.account_id
-           WHERE e.status = 'posted' AND e.entry_date BETWEEN ? AND ? AND e.source <> ? AND a.subtype = 'cogs'
+           WHERE e.status = 'posted' AND e.entry_date BETWEEN ? AND ? AND e.source NOT IN (?, 'closing') AND a.subtype = 'cogs'
            GROUP BY a.tax_category`
         )
         .all(from, to, INVENTORY_SOURCE) as { cat: string; c: number }[]

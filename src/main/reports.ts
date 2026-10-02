@@ -35,14 +35,22 @@ function accounts(db: Database.Database): Acct[] {
 }
 
 /** Debit-minus-credit per account for posted entries dated within [from, to] (from null = since the start). */
-function sums(db: Database.Database, from: string | null, to: string): Map<number, number> {
+/** `skipClosing`: 'all' leaves year-end closing entries out (profit & loss); 'onEnd' leaves out only those dated on `to`
+ * (a trial balance at year end before closing); 'none' keeps them (balance sheet). */
+function sums(
+  db: Database.Database,
+  from: string | null,
+  to: string,
+  skipClosing: 'all' | 'onEnd' | 'none' = 'none'
+): Map<number, number> {
   const rows = db
     .prepare(
       `SELECT l.account_id AS id, SUM(l.amount_cents) AS c FROM journal_lines l JOIN journal_entries e ON e.id = l.entry_id
        WHERE e.status = 'posted' AND e.entry_date <= @to AND (@from IS NULL OR e.entry_date >= @from)
+         AND NOT (e.source = 'closing' AND (@skip = 'all' OR (@skip = 'onEnd' AND e.entry_date = @to)))
        GROUP BY l.account_id`
     )
-    .all({ from, to }) as { id: number; c: number }[]
+    .all({ from, to, skip: skipClosing }) as { id: number; c: number }[]
   return new Map(rows.map((r) => [r.id, r.c]))
 }
 
@@ -121,7 +129,7 @@ export function profitAndLoss(db: Database.Database, from: string, to: string, b
   checkPeriod(from, to)
   const all = accounts(db)
   const months = byMonth ? monthsIn(from, to) : []
-  const cols = [...months.map((m) => sums(db, m.from, m.to)), sums(db, from, to)]
+  const cols = [...months.map((m) => sums(db, m.from, m.to, 'all')), sums(db, from, to, 'all')]
   const columns = [...months.map((m) => m.label), 'Total']
   const credit = (): number => -1
   const debit = (): number => 1
@@ -180,7 +188,7 @@ export function balanceSheet(db: Database.Database, asOf: string): BalanceSheet 
   )
   const yearStart = `${asOf.slice(0, 4)}-01-01`
   const profitUpTo = (m: Map<number, number>): number =>
-    -all.filter((a) => a.type === 'income' || a.type === 'expense').reduce((s, a) => s + (m.get(a.id) ?? 0), 0)
+    0 - all.filter((a) => a.type === 'income' || a.type === 'expense').reduce((s, a) => s + (m.get(a.id) ?? 0), 0)
   const total = profitUpTo(col[0])
   const current = profitUpTo(sums(db, yearStart, asOf))
   const totalLE = liabilities.total[0] + equity.total[0] + total
@@ -198,7 +206,7 @@ export function balanceSheet(db: Database.Database, asOf: string): BalanceSheet 
 
 export function trialBalance(db: Database.Database, asOf: string): TrialBalance {
   if (!isValidDate(asOf)) throw new LedgerError('Choose the date.')
-  const m = sums(db, null, asOf)
+  const m = sums(db, null, asOf, 'onEnd')
   const rows = accounts(db)
     .map((a) => {
       const c = m.get(a.id) ?? 0

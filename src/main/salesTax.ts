@@ -79,7 +79,7 @@ const marketList = MARKETPLACES.map((m) => `'${m}'`).join(', ')
 
 function periodFigures(db: Database.Database, from: string, to: string) {
   const posted = `FROM journal_lines l JOIN journal_entries e ON e.id = l.entry_id JOIN accounts a ON a.id = l.account_id
-    WHERE e.status = 'posted' AND e.entry_date BETWEEN ? AND ?`
+    WHERE e.status = 'posted' AND e.source <> 'closing' AND e.entry_date BETWEEN ? AND ?`
   const gross = -sum(db, `SELECT SUM(l.amount_cents) AS c ${posted} AND a.tax_category = 'gross_receipts'`, from, to)
   const marketplace = -sum(
     db,

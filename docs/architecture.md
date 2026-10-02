@@ -43,9 +43,10 @@ JunoBooks-code/
       records.ts       Contractors + 1099-NEC list, fixed assets, mileage log, home office
       accountantNotes.ts  Notes and checks for the accountant for a year
       accountantPackage.ts  Year-end ZIP: Excel workbook, CSVs, receipts (exceljs, jszip)
+      closing.ts       Close books through a date; year-end closing entry
       db/migrations.ts Numbered schema migrations
     preload/           contextBridge API exposed to the renderer as window.juno
-    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange, JournalEntry, TransactionList, SimpleEntry, TransferEntry, AccountCombobox, AccountRegister, OpeningBalances, Receipts, Settings, ImportWizard, BankReview, RulesManager, Reconcile, EtsyImport, AmazonImport, Form1099K, Inventory, Sales, SalesTax, Reports, ReportsExtra, ReportBits, YearEndRecords, AccountantPackage; useFormError hook)
+    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange, JournalEntry, TransactionList, SimpleEntry, TransferEntry, AccountCombobox, AccountRegister, OpeningBalances, Receipts, Settings, ImportWizard, BankReview, RulesManager, Reconcile, EtsyImport, AmazonImport, Form1099K, Inventory, Sales, SalesTax, Reports, ReportsExtra, ReportBits, YearEndRecords, AccountantPackage, CloseBooks; useFormError hook)
     shared/            Code used by both main and renderer: entity types, US states, dates, money, company validation,
                        templates.ts (starting charts), taxLines.ts (tax categories + per-year line tables), chart.ts (view types),
                        accounts.ts (account input rules: kinds, debit/credit side, validation, number-range warning),
@@ -59,7 +60,7 @@ JunoBooks-code/
                        sales.ts (direct-sales types, tax rates, invoice totals, aging), invoiceHtml.ts (printable invoice),
                        amazon.ts / amazonImport.ts (Amazon settlement reading, kinds, plan, types), form1099k.ts (tie-out types), salesTax.ts (rates in force, quarters, report types),
                        reports.ts (report shapes, CSV helpers), reportsExtra.ts (detail report shapes), records.ts (year-end record types, 1099-NEC threshold, home-office math),
-                       pkg.ts (notes and package types), summaryHtml.ts (PDF summary page)
+                       pkg.ts (notes and package types), summaryHtml.ts (PDF summary page), closing.ts (closing types)
   scripts/run-tests.cjs
   scripts/live/         Playwright live checks (dev-only; see docs/topics/live-checks.md)
   samples/              Made-up example files (bank CSVs, Etsy statement and orders, Amazon settlement) for trying imports and live checks
@@ -166,7 +167,7 @@ Sole proprietor, Single-member LLC → Schedule C · Multi-member LLC, Partnersh
 - **Posted = locked:** a posted entry and its lines can't be edited or deleted. Only draft → posted → void is allowed.
 - **Void** (`voidEntry`): needs a reason, and every account in the entry must be active. The entry stays on record but drops out of balances. Voided entries never change.
 - **Reverse** (`reverseEntry`): posts an equal-and-opposite entry (source `reversal`) linked by `reverses_entry_id`, dated on or after the original. It works even when the original's period is locked. An entry can have only one live reversal, and a reversed entry can't be voided (void the reversal first).
-- **Period lock** (`setLockedThrough`): one "books closed through" date per company. Nothing dated on or before it can be posted or voided. Moving it later needs no reason. Moving it earlier or clearing it (reopening) needs a reason, and every change is kept in `period_lock_history` and the audit log.
+- **Period lock** (`setLockedThrough`; screen: Close books, `docs/topics/closing.md`): one "books closed through" date per company. Nothing dated on or before it can be posted or voided. Moving it later needs no reason. Moving it earlier or clearing it (reopening) needs a reason, and every change is kept in `period_lock_history` and the audit log.
 - **Balances** (`accountBalances`): debits minus credits per account, posted entries only, optionally as of a date. The chart screen shows balances as of today, so entries dated later (e.g. a Dec 31 year-end entry made in October) appear only in registers and reports for those dates. Each account stores its normal side, and the chart screen shows balances on that side (see `docs/topics/chart-of-accounts.md`).
 - **Accounts** used by posted entries can't change type or debit/credit side; accounts used in any entry can't be deleted (renaming is fine). Inactive accounts can't receive postings or voids, and only zero-balance accounts can be deactivated. Details in `docs/topics/chart-of-accounts.md`.
 - **Audit log** can't be edited or deleted. It rolls back with any failed change.
@@ -195,6 +196,7 @@ See `JunoBooks-PLAN.md` §10 (inventory method, S-corp election timing, which ba
 - `docs/topics/sales-tax.md`: dated sales tax rates, invoice rate prefill, period report for the CDTFA return, paying sales tax.
 - `docs/topics/reports.md`: reports screen, financial reports, CSV export, year-end detail reports.
 - `docs/topics/accountant-package.md`: notes for the accountant, the year-end ZIP (workbook tabs, PDF summary, CSVs, receipts).
+- `docs/topics/closing.md`: closing the books through a date, year-end closing entry, how reports treat closing entries.
 - `docs/topics/chart-of-accounts.md`: templates, numbering, entity-specific accounts, tax-line mapping, accountant notes, chart screen, editing accounts, adding/restoring accounts after creation.
 
 ## Latest handoff

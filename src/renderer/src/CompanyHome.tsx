@@ -7,6 +7,7 @@ import ChartOfAccounts from './ChartOfAccounts'
 import EntityTypeChange from './EntityTypeChange'
 import HomeStateChange from './HomeStateChange'
 import BankReview from './BankReview'
+import CloseBooks from './CloseBooks'
 import AmazonImport from './AmazonImport'
 import EtsyImport from './EtsyImport'
 import Form1099K from './Form1099K'
@@ -52,6 +53,7 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
           | 'reports'
           | 'records'
           | 'package'
+          | 'close'
       }
     | { kind: 'review'; accountId: number | null }
     | null
@@ -83,6 +85,7 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
       | 'reports'
       | 'records'
       | 'package'
+      | 'close'
       | SimpleKind,
     copyOf?: EntryListItem
   ): void {
@@ -169,6 +172,9 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
             <button type="button" onClick={() => startEntry('package')}>
               Accountant package
             </button>
+            <button type="button" onClick={() => startEntry('close')}>
+              Close books
+            </button>
             <button type="button" onClick={() => startEntry('reconcile')}>
               Reconcile
             </button>
@@ -204,6 +210,14 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
         <AmazonImport
           key={entryKey}
           onImported={() => setChartVersion((v) => v + 1)}
+          onClose={() => setEntering(null)}
+        />
+      )}
+      {entering?.kind === 'close' && (
+        <CloseBooks
+          key={entryKey}
+          firstYear={Number(company.booksStartDate.slice(0, 4))}
+          onChanged={() => setChartVersion((v) => v + 1)}
           onClose={() => setEntering(null)}
         />
       )}

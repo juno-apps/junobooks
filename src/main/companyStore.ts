@@ -38,6 +38,8 @@ import { balanceSheet, generalLedger, profitAndLoss, trialBalance } from './repo
 import { cogsSchedule, salesByChannel, taxLineSummary } from './reportsExtra'
 import * as records from './records'
 import { accountantNotes } from './accountantNotes'
+import { closeYear, closingView, setBooksClosed, yearCloseInfo } from './closing'
+import type { ClosingView, YearCloseInfo } from '../shared/closing'
 import { buildPackage } from './accountantPackage'
 import type { AccountantNote, PackageResult } from '../shared/pkg'
 import type {
@@ -647,6 +649,24 @@ export class CompanyBooks {
 
   profitAndLoss(from: string, to: string, byMonth = false): ProfitAndLoss {
     return profitAndLoss(this.db, from, to, byMonth)
+  }
+
+  closingView(): ClosingView {
+    return closingView(this.db)
+  }
+
+  setBooksClosed(date: string | null, reason: string, now: Date = new Date()): ClosingView {
+    setBooksClosed(this.db, date, reason, localDateString(now))
+    return closingView(this.db)
+  }
+
+  yearCloseInfo(year: number, now: Date = new Date()): YearCloseInfo {
+    return yearCloseInfo(this.db, year, this.entityTypeOn(`${year}-12-31`), this.profile(now).booksStartDate, localDateString(now))
+  }
+
+  closeYear(year: number, equityAccountId: number, now: Date = new Date()): ClosingView {
+    closeYear(this.db, year, equityAccountId, this.profile(now).booksStartDate, localDateString(now))
+    return closingView(this.db)
   }
 
   /** Entity type in force on a date. */

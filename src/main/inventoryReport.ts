@@ -52,7 +52,7 @@ export function inventoryYear(db: Database.Database, year: number, booksStart: s
       .prepare(
         `SELECT COALESCE(SUM(l.amount_cents), 0) AS c FROM journal_lines l JOIN journal_entries e ON e.id = l.entry_id
          JOIN accounts a ON a.id = l.account_id
-         WHERE e.status = 'posted' AND e.source <> ? AND e.entry_date BETWEEN ? AND ?
+         WHERE e.status = 'posted' AND e.source NOT IN (?, 'closing') AND e.entry_date BETWEEN ? AND ?
            AND (a.subtype = 'inventory' OR a.tax_category IN ('cogs_materials', 'cogs_purchases'))`
       )
       .get(INVENTORY_SOURCE, `${year}-01-01`, end) as { c: number }

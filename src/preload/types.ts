@@ -21,6 +21,7 @@ import type { TieOutRow } from '../shared/form1099k'
 import type { BalanceSheet, GeneralLedger, ProfitAndLoss, TrialBalance } from '../shared/reports'
 import type { ChannelSales, CogsSchedule, TaxLineSummary } from '../shared/reportsExtra'
 import type { AccountantNote, PackageResult } from '../shared/pkg'
+import type { ClosingView, YearCloseInfo } from '../shared/closing'
 import type {
   Contractor,
   ContractorInput,
@@ -72,6 +73,8 @@ import type {
 
 export type {
   AccountInput,
+  ClosingView,
+  YearCloseInfo,
   AccountantNote,
   PackageResult,
   Contractor,
@@ -264,6 +267,11 @@ export interface JunoApi {
   importAmazon: (input: AmazonImportInput) => Promise<Result<AmazonImportResult>>
   amazonPayouts: () => Promise<Result<EtsyPayout[]>>
   profitAndLoss: (from: string, to: string, byMonth: boolean) => Promise<Result<ProfitAndLoss>>
+  closingView: () => Promise<Result<ClosingView>>
+  /** null reopens everything; moving earlier needs a reason. */
+  setBooksClosed: (date: string | null, reason: string) => Promise<Result<ClosingView>>
+  yearCloseInfo: (year: number) => Promise<Result<YearCloseInfo>>
+  closeYear: (year: number, equityAccountId: number) => Promise<Result<ClosingView>>
   accountantNotes: (year: number) => Promise<Result<AccountantNote[]>>
   buildPackage: (year: number) => Promise<Result<PackageResult>>
   showPackage: (path: string) => Promise<Result<null>>

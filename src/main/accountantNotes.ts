@@ -56,7 +56,8 @@ export function accountantNotes(db: Database.Database, year: number, booksStart:
     .prepare(
       `SELECT DISTINCT a.number, a.name, a.accountant_note AS note FROM accounts a
        JOIN journal_lines l ON l.account_id = a.id JOIN journal_entries e ON e.id = l.entry_id
-       WHERE e.status = 'posted' AND e.entry_date BETWEEN ? AND ? AND a.accountant_note <> '' ORDER BY a.number`
+       WHERE e.status = 'posted' AND e.source <> 'closing' AND e.entry_date BETWEEN ? AND ? AND a.accountant_note <> ''
+       ORDER BY a.number`
     )
     .all(from, to) as { number: string; name: string; note: string }[]
   for (const a of used) add('Accounts', 'note', `${a.number} ${a.name}: ${a.note}`)
