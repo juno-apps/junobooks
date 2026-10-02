@@ -59,4 +59,4 @@ Pointer log only — a few lines per round. Details live in git history.
 - Round 22 polish ideas (1)–(3) approved; Transfer treated as done, pending owner review.
 
 ## Build run
-- **Resume point:** not started. Starts when the owner says "go" in a new session. First steps: set up Playwright and rewrite `docs/topics/live-checks.md`, then 2d (account register).
+- **Resume point:** not started. Starts when the owner says "go" in a new session. First steps: trigger the screen-control pop-up for the owner to approve, then set up Playwright and rewrite `docs/topics/live-checks.md`, then 2d (account register).

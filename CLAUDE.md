@@ -68,6 +68,7 @@ JunoBooks is a Windows desktop accounting app (Electron + SQLite) for small busi
 
 ## 10. Autonomous build run (temporary — remove when the run ends)
 Approved by the owner on 2026-10-02. In force from the moment the owner says **"go"** (or "continue the build run") until the final change list is delivered. Where this section conflicts with §6 or §7, this section wins. §8 and the normal safety rules are unchanged.
+- **Very first action on "go":** trigger the screen-control pop-up (computer-use `request_access` for `JunoBooks` and `electron.exe`) so the owner can approve it while at the computer. Then start building.
 - **Goal:** build everything that's left, unit by unit, straight through Phase 11: rest of Phase 2 (2d register, 2e opening balances, 2f receipts, 2g move data to `Documents\JunoBooks` + Settings), then Phases 3–11 from `JunoBooks-PLAN.md` §8.
 - **No stopping for the owner:** no plan approvals, no checkpoint confirmations. At the start of each phase, write a short unit plan into `progress-log.md` (include backlog items that fit the phase and need no owner choice), then build it.
 - **Model:** the owner stays on Opus 5.5 the whole run. No model-switch suggestions until the run ends.
