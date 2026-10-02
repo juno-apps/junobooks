@@ -107,5 +107,7 @@ export interface EntryListItem {
   voidReason: string | null
   /** Total of the debit side. */
   amountCents: number
+  /** Receipts attached (not removed). */
+  receiptCount: number
   lines: { accountId: number; accountNumber: string; accountName: string; amountCents: number; memo: string }[]
 }

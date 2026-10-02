@@ -19,6 +19,13 @@ Screens for typing transactions in by hand. All of them post through `postManual
 - Columns: date, #, memo, accounts (up to three names, then "+N more"), amount, status ("Voided", "Reversed by #N", "Reversal of #N"). Voided rows are greyed.
 - Clicking a row opens its lines and actions: **Duplicate** (always) opens the entry screen in copy mode; **Void…** (needs a reason) and **Reverse…** (date default today, optional memo) only on posted entries that aren't reversed. Each shows a one-line plain-English explanation. Errors come from the ledger.
 
+## Receipts (`src/renderer/src/Receipts.tsx`, `src/main/attachments.ts`, schema v6 `attachments`)
+- Any entry can have receipt files. Open an entry on the Transactions tab: the **Receipts** box lists its files (click to open in the Windows default program, **Show in folder**, **Remove…** with an optional reason) with **Attach receipt…** (file picker, several at once) or drag and drop onto the box. Right after posting on any entry screen, an **Attach receipt…** button sits under the success message. List rows show 📎 (with a count if more than one).
+- Files are **copied** into `<company>\receipts\<year of entry>\` named `date_vendor_amount.ext` (`receiptFileName`; vendor = entry memo made Windows-safe, at most 40 characters; amount = debit total; `-2`, `-3` added if the name is taken). The original is left where it was.
+- Accepted types: `RECEIPT_EXTENSIONS` (PDF, images, text/email, Office, CSV), up to 50 MB. Unreadable files, other types, and a file already attached to the same entry (same SHA-256) are skipped with a plain-English reason; the rest are attached.
+- **Remove** keeps the record (`removed_at`, `remove_reason`) and moves the file to `receipts\_removed\`. Database triggers refuse erasing a receipt record or changing it other than marking it removed; every change is in the audit log.
+- Receipts can be attached to voided entries and to entries in closed periods (they don't change any amount).
+
 ## Opening balances (`src/renderer/src/OpeningBalances.tsx`, `src/main/openingBalances.ts`)
 - Opened by **Opening balances** on company home. Lists every balance-sheet account (assets, liabilities, equity; inactive ones only if they already hold an amount) grouped as "What the business had / owed / Owner and equity accounts". Opening balance equity itself is not listed.
 - Amounts are typed on each account's normal side (what you had or owed; a card balance of $1,200 is 1200; an overdrawn bank is a minus amount). Blank = zero. Unreadable amounts get a red border and block saving.

@@ -2,6 +2,7 @@ import { Fragment, useEffect, useState, type FormEvent } from 'react'
 import type { EntryListItem } from '../../preload/types'
 import { localDateString } from '../../shared/dates'
 import { formatCents } from '../../shared/money'
+import Receipts from './Receipts'
 
 interface Props {
   /** Bumped by the parent when an entry is posted elsewhere, so the list reloads. */
@@ -93,7 +94,15 @@ function TransactionList({ version, onChanged, onDuplicate }: Props): JSX.Elemen
                   >
                     <td>{e.date}</td>
                     <td className="num">{e.id}</td>
-                    <td>{e.memo || <span className="muted">(no memo)</span>}</td>
+                    <td>
+                      {e.memo || <span className="muted">(no memo)</span>}
+                      {e.receiptCount > 0 && (
+                        <span className="receipt-badge" title={`${e.receiptCount} receipt${e.receiptCount === 1 ? '' : 's'} attached`}>
+                          {' '}
+                          📎{e.receiptCount > 1 ? e.receiptCount : ''}
+                        </span>
+                      )}
+                    </td>
                     <td>{accountsText(e)}</td>
                     <td className="amount">{formatCents(e.amountCents)}</td>
                     <td>{statusText(e)}</td>
@@ -124,6 +133,7 @@ function TransactionList({ version, onChanged, onDuplicate }: Props): JSX.Elemen
                           </tbody>
                         </table>
                         {e.status === 'void' && <p className="muted">Voided: {e.voidReason}</p>}
+                        <Receipts entryId={e.id} onChanged={onChanged} />
 
                         {!action && (
                           <div className="form-actions">

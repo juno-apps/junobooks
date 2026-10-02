@@ -332,6 +332,41 @@ export const MIGRATIONS: Migration[] = [
         SELECT RAISE(ABORT, 'This account still has a balance, so it can''t be deactivated.');
       END;
     `
+  },
+  {
+    version: 6,
+    description: 'Receipt attachments on entries',
+    sql: `
+      CREATE TABLE attachments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        entry_id INTEGER NOT NULL REFERENCES journal_entries(id),
+        stored_path TEXT NOT NULL,
+        original_name TEXT NOT NULL,
+        size_bytes INTEGER NOT NULL CHECK (size_bytes >= 0),
+        sha256 TEXT NOT NULL,
+        added_at TEXT NOT NULL,
+        removed_at TEXT,
+        remove_reason TEXT
+      ) STRICT;
+      CREATE INDEX attachments_entry ON attachments(entry_id);
+
+      -- Receipts are part of the record: they can be marked removed, never erased.
+      CREATE TRIGGER attachments_no_delete BEFORE DELETE ON attachments BEGIN
+        SELECT RAISE(ABORT, 'Receipts can be removed from an entry, but their record is kept.');
+      END;
+      CREATE TRIGGER attachments_only_remove BEFORE UPDATE ON attachments
+      WHEN NEW.entry_id IS NOT OLD.entry_id OR NEW.original_name IS NOT OLD.original_name
+        OR NEW.size_bytes IS NOT OLD.size_bytes OR NEW.sha256 IS NOT OLD.sha256 OR NEW.added_at IS NOT OLD.added_at
+        OR OLD.removed_at IS NOT NULL
+      BEGIN
+        SELECT RAISE(ABORT, 'A receipt record can only be marked removed.');
+      END;
+      ${auditTriggersV2(
+        'attachments',
+        ['id', 'entry_id', 'stored_path', 'original_name', 'size_bytes', 'sha256', 'added_at', 'removed_at', 'remove_reason'],
+        false
+      )}
+    `
   }
 ]
 

@@ -2,6 +2,7 @@ import type { AccountInput } from '../shared/accounts'
 import type { EntryListItem, ManualEntryInput } from '../shared/journal'
 import type { ChartAccount, ChartView } from '../shared/chart'
 import type { RegisterQuery, RegisterRow, RegisterView } from '../shared/register'
+import type { Attachment, AttachResult } from '../shared/attachments'
 import type { OpeningBalanceInput, OpeningBalancesView } from '../shared/opening'
 import type {
   CompanyHistory,
@@ -17,6 +18,8 @@ import type {
 
 export type {
   AccountInput,
+  Attachment,
+  AttachResult,
   ChartAccount,
   ChartView,
   CompanyHistory,
@@ -66,6 +69,15 @@ export interface JunoApi {
   listEntries: () => Promise<EntryListItem[]>
   getOpeningBalances: () => Promise<Result<OpeningBalancesView>>
   saveOpeningBalances: (input: OpeningBalanceInput[]) => Promise<Result<number | null>>
+  listAttachments: (entryId: number) => Promise<Result<Attachment[]>>
+  addAttachments: (entryId: number, paths: string[]) => Promise<Result<AttachResult>>
+  /** Opens the file picker, then attaches what was chosen (nothing if cancelled). */
+  pickAttachments: (entryId: number) => Promise<Result<AttachResult>>
+  openAttachment: (id: number) => Promise<Result<null>>
+  showAttachment: (id: number) => Promise<Result<null>>
+  removeAttachment: (id: number, reason: string) => Promise<Result<void>>
+  /** The disk path of a file dropped on the window. */
+  pathForFile: (file: File) => string
   getRegister: (q: RegisterQuery) => Promise<Result<RegisterView>>
   voidEntry: (id: number, reason: string) => Promise<Result<EntryListItem[]>>
   reverseEntry: (id: number, date: string, memo?: string) => Promise<Result<EntryListItem[]>>

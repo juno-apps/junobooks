@@ -4,6 +4,7 @@ import { localDateString } from '../../shared/dates'
 import { buildTransfer, transferGroups } from '../../shared/everyday'
 import { formatCents, parseMoney } from '../../shared/money'
 import AccountCombobox from './AccountCombobox'
+import Receipts from './Receipts'
 import { useFormError } from './useFormError'
 
 interface Props {
@@ -125,6 +126,7 @@ function TransferEntry({ onPosted, onClose }: Props): JSX.Element {
             Transfer posted (entry #{posted.id}): {posted.text}.
           </p>
         )}
+        {posted && <Receipts key={posted.id} entryId={posted.id} compact onChanged={onPosted} />}
         <div className="form-actions">
           <button type="submit" className="primary" disabled={busy}>
             Post transfer

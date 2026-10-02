@@ -8,7 +8,8 @@ export function listEntries(db: Database.Database): EntryListItem[] {
   const entries = db
     .prepare(
       `SELECT e.id, e.entry_date, e.memo, e.status, e.source, e.reverses_entry_id, e.void_reason,
-         (SELECT r.id FROM journal_entries r WHERE r.reverses_entry_id = e.id AND r.status = 'posted') AS reversed_by
+         (SELECT r.id FROM journal_entries r WHERE r.reverses_entry_id = e.id AND r.status = 'posted') AS reversed_by,
+         (SELECT COUNT(*) FROM attachments t WHERE t.entry_id = e.id AND t.removed_at IS NULL) AS receipts
        FROM journal_entries e
        ORDER BY e.entry_date DESC, e.id DESC`
     )
@@ -21,6 +22,7 @@ export function listEntries(db: Database.Database): EntryListItem[] {
     reverses_entry_id: number | null
     void_reason: string | null
     reversed_by: number | null
+    receipts: number
   }[]
 
   const lines = db
@@ -50,6 +52,7 @@ export function listEntries(db: Database.Database): EntryListItem[] {
       reversedById: e.reversed_by,
       voidReason: e.void_reason,
       amountCents: entryLines.reduce((s, l) => s + Math.max(l.amountCents, 0), 0),
+      receiptCount: e.receipts,
       lines: entryLines
     }
   })

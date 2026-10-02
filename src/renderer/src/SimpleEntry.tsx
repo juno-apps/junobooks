@@ -14,6 +14,7 @@ import {
 } from '../../shared/everyday'
 import { formatCents } from '../../shared/money'
 import AccountCombobox from './AccountCombobox'
+import Receipts from './Receipts'
 import { useFormError } from './useFormError'
 
 export type SimpleKind = 'expense' | 'income'
@@ -228,6 +229,7 @@ function SimpleEntry({ kind, onPosted, onClose }: Props): JSX.Element {
             {mode.done} (entry #{posted.id}): {posted.text}.
           </p>
         )}
+        {posted && <Receipts key={posted.id} entryId={posted.id} compact onChanged={onPosted} />}
         <div className="form-actions">
           <button type="submit" className="primary" disabled={busy}>
             {mode.button}

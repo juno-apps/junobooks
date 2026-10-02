@@ -331,6 +331,11 @@ button.danger {
 
 .home-actions {
   margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.home-actions button {
+  white-space: nowrap;
 }
 
 .success {
@@ -538,6 +543,41 @@ button.danger {
   padding: 0.6rem 0.8rem;
   background: #f6f7f9;
   border-radius: 4px;
+}
+
+.receipts {
+  margin: 0.6rem 0;
+  padding: 0.5rem 0.7rem;
+  border: 1px dashed #ccc;
+  border-radius: 4px;
+}
+
+.receipts.dragging {
+  border-color: #2c5a85;
+  background: #eef4fb;
+}
+
+.receipts h4 {
+  margin: 0 0 0.3rem;
+  font-size: 0.9rem;
+}
+
+.receipt-list {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.receipt-remove {
+  margin: 0.3rem 0;
+}
+
+.receipts-compact {
+  display: block;
+  margin: 0.3rem 0;
+}
+
+.receipt-badge {
+  white-space: nowrap;
 }
 
 .account-link {

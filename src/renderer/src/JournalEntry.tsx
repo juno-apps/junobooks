@@ -3,6 +3,7 @@ import type { ChartAccount, EntryListItem, ManualEntryInput } from '../../preloa
 import { localDateString } from '../../shared/dates'
 import { blankRow, mirrorPair, rowsToLines, rowTotals, type EntryRow } from '../../shared/journal'
 import { formatCents } from '../../shared/money'
+import Receipts from './Receipts'
 import { useFormError } from './useFormError'
 
 interface Props {
@@ -259,6 +260,7 @@ function JournalEntry({ copyOf, onPosted, onClose }: Props): JSX.Element {
 
         {error && <p className="error">{error}</p>}
         {posted !== null && <p className="success">Entry #{posted} posted.</p>}
+        {posted !== null && <Receipts key={posted} entryId={posted} compact onChanged={onPosted} />}
         <div className="form-actions">
           <button type="submit" className="primary" disabled={busy}>
             Post entry

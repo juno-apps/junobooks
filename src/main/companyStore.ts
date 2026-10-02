@@ -19,6 +19,8 @@ import type { AccountInput } from '../shared/accounts'
 import type { EntryListItem, ManualEntryInput } from '../shared/journal'
 import { listEntries } from './entries'
 import { accountRegister } from './register'
+import { addAttachments, attachmentFile, listAttachments, removeAttachment } from './attachments'
+import type { Attachment, AttachResult } from '../shared/attachments'
 import { getOpeningBalances, saveOpeningBalances } from './openingBalances'
 import type { OpeningBalanceInput, OpeningBalancesView } from '../shared/opening'
 import type { RegisterQuery, RegisterView } from '../shared/register'
@@ -294,6 +296,22 @@ export class CompanyBooks {
 
   saveOpeningBalances(input: OpeningBalanceInput[], now: Date = new Date()): number | null {
     return saveOpeningBalances(this.db, this.profile(now).booksStartDate, input)
+  }
+
+  attachments(entryId: number): Attachment[] {
+    return listAttachments(this.db, entryId)
+  }
+
+  attach(entryId: number, paths: string[], now: Date = new Date()): AttachResult {
+    return addAttachments(this.db, this.dir, entryId, paths, now)
+  }
+
+  attachmentFile(id: number): string {
+    return attachmentFile(this.db, this.dir, id)
+  }
+
+  removeAttachment(id: number, reason = '', now: Date = new Date()): void {
+    removeAttachment(this.db, this.dir, id, reason, now)
   }
 
   register(q: RegisterQuery): RegisterView {

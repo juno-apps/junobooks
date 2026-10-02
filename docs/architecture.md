@@ -26,15 +26,17 @@ JunoBooks-code/
       entries.ts       Read-only entry list for the screens (writing stays in ledger.ts)
       register.ts      Read-only account register (lines + running balance)
       openingBalances.ts  Opening balances: read, and replace (void old + post new)
+      attachments.ts   Receipt files: copy into receipts\<year>\, list, remove (kept on record)
       db/migrations.ts Numbered schema migrations
     preload/           contextBridge API exposed to the renderer as window.juno
-    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange, JournalEntry, TransactionList, SimpleEntry, TransferEntry, AccountCombobox, AccountRegister, OpeningBalances; useFormError hook)
+    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange, JournalEntry, TransactionList, SimpleEntry, TransferEntry, AccountCombobox, AccountRegister, OpeningBalances, Receipts; useFormError hook)
     shared/            Code used by both main and renderer: entity types, US states, dates, money, company validation,
                        templates.ts (starting charts), taxLines.ts (tax categories + per-year line tables), chart.ts (view types),
                        accounts.ts (account input rules: kinds, debit/credit side, validation, number-range warning),
                        journal.ts (entry-screen rows → ledger lines, live totals, two-line balancing, entry list type),
                        everyday.ts (Expense/Income/Transfer screens: account groups, type-to-narrow filter, entry builders),
-                       register.ts (register view types, column wording), opening.ts (opening-balance types, difference)
+                       register.ts (register view types, column wording), opening.ts (opening-balance types, difference),
+                       attachments.ts (receipt naming, accepted types)
   scripts/run-tests.cjs
   test-data/           Dev data root (git-ignored, never real books)
     app-settings.json
@@ -89,6 +91,9 @@ Opening an older file backs it up first (`backups/books-<time>-before-upgrade-vX
 - Posting or voiding an entry is refused if any of its accounts is inactive.
 - An account can't be deactivated while its posted balance (all dates) is non-zero.
 
+**v6**
+- `attachments` (`STRICT`): entry_id, stored_path (relative to the company folder), original_name, size_bytes, sha256, added_at, removed_at, remove_reason. Rows can't be deleted; the only change allowed is marking one removed (and its stored_path moving to `receipts/_removed/`). Audited.
+
 Files open in WAL mode with foreign keys on. Dates are `YYYY-MM-DD` text.
 
 **Backups:** on close (and before any migration) the WAL is checkpointed and the file copied to `backups/books-<ISO time>[-label].sqlite`. Only the newest 30 are kept (sorted by name, since names start with the timestamp).
@@ -131,5 +136,5 @@ None yet. Created only when the owner types "create new handoff."
 
 ## Status
 - **Phase 0 complete:** installs from GitHub, opens, updates itself.
-- **Phase 1 complete (schema v5):** create/list/switch companies, core schema + audit log, ledger engine + period lock, templates + chart of accounts + tax lines, account editing, entity-type and home-state changes with start dates (correct/remove, chart follows entity changes, restore missing accounts). 
-- **Phase 2 in progress** (manual entry). 2a–2e built: journal entry screen, transaction list, Expense / Income / Transfer screens, account register, opening balances (see `docs/topics/manual-entry.md`). Build-run units are verified by Claude, owner review pending. Resume point: see `progress-log.md` → Build run. Units: 2a journal entry screen · 2b transaction list (void, reverse, duplicate) · 2c Expense/Income/Transfer screens · 2d account register · 2e opening balances · 2f receipts (schema v6) · 2g move packaged data to `Documents\JunoBooks` + Settings. Sub-accounts stay parked until Phase 9.
+- **Phase 1 complete (schema v5 at the end of Phase 1):** create/list/switch companies, core schema + audit log, ledger engine + period lock, templates + chart of accounts + tax lines, account editing, entity-type and home-state changes with start dates (correct/remove, chart follows entity changes, restore missing accounts). 
+- **Phase 2 in progress** (manual entry). 2a–2f built: journal entry screen, transaction list, Expense / Income / Transfer screens, account register, opening balances, receipts (schema v6) (see `docs/topics/manual-entry.md`). Build-run units are verified by Claude, owner review pending. Resume point: see `progress-log.md` → Build run. Units: 2a journal entry screen · 2b transaction list (void, reverse, duplicate) · 2c Expense/Income/Transfer screens · 2d account register · 2e opening balances · 2f receipts (schema v6) · 2g move packaged data to `Documents\JunoBooks` + Settings. Sub-accounts stay parked until Phase 9.

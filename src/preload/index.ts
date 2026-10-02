@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { JunoApi } from './types'
 
 const api: JunoApi = {
@@ -25,6 +25,13 @@ const api: JunoApi = {
   listEntries: () => ipcRenderer.invoke('entries:list'),
   getOpeningBalances: () => ipcRenderer.invoke('opening:get'),
   saveOpeningBalances: (input) => ipcRenderer.invoke('opening:save', input),
+  listAttachments: (entryId) => ipcRenderer.invoke('attachments:list', entryId),
+  addAttachments: (entryId, paths) => ipcRenderer.invoke('attachments:add', entryId, paths),
+  pickAttachments: (entryId) => ipcRenderer.invoke('attachments:pick', entryId),
+  openAttachment: (id) => ipcRenderer.invoke('attachments:open', id),
+  showAttachment: (id) => ipcRenderer.invoke('attachments:show', id),
+  removeAttachment: (id, reason) => ipcRenderer.invoke('attachments:remove', id, reason),
+  pathForFile: (file) => webUtils.getPathForFile(file),
   getRegister: (q) => ipcRenderer.invoke('accounts:register', q),
   voidEntry: (id, reason) => ipcRenderer.invoke('entries:void', id, reason),
   reverseEntry: (id, date, memo) => ipcRenderer.invoke('entries:reverse', id, date, memo)

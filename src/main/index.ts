@@ -1,4 +1,5 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
+import { RECEIPT_EXTENSIONS } from '../shared/attachments'
 import { autoUpdater } from 'electron-updater'
 import { join } from 'path'
 import type { AccountInput } from '../shared/accounts'
@@ -123,6 +124,37 @@ app.whenReady().then(() => {
   ipcMain.handle('entries:list', () => current?.entries() ?? [])
   ipcMain.handle('opening:get', () => wrap(() => requireCompany().openingBalances()))
   ipcMain.handle('opening:save', (_e, input: OpeningBalanceInput[]) => wrap(() => requireCompany().saveOpeningBalances(input)))
+  ipcMain.handle('attachments:list', (_e, entryId: number) => wrap(() => requireCompany().attachments(entryId)))
+  ipcMain.handle('attachments:add', (_e, entryId: number, paths: string[]) => wrap(() => requireCompany().attach(entryId, paths)))
+  ipcMain.handle('attachments:pick', async (e, entryId: number) => {
+    const win = BrowserWindow.fromWebContents(e.sender)
+    const opts: Electron.OpenDialogOptions = {
+      title: 'Attach receipts',
+      properties: ['openFile', 'multiSelections'],
+      filters: [
+        { name: 'Receipts', extensions: RECEIPT_EXTENSIONS },
+        { name: 'All files', extensions: ['*'] }
+      ]
+    }
+    const picked = win ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts)
+    if (picked.canceled || picked.filePaths.length === 0) return { ok: true, value: { added: [], skipped: [] } }
+    return wrap(() => requireCompany().attach(entryId, picked.filePaths))
+  })
+  ipcMain.handle('attachments:open', async (_e, id: number) => {
+    const file = wrap(() => requireCompany().attachmentFile(id))
+    if (!file.ok) return file
+    const problem = await shell.openPath(file.value)
+    return problem ? { ok: false, error: `Windows couldn't open it: ${problem}` } : { ok: true, value: null }
+  })
+  ipcMain.handle('attachments:show', (_e, id: number) =>
+    wrap(() => {
+      shell.showItemInFolder(requireCompany().attachmentFile(id))
+      return null
+    })
+  )
+  ipcMain.handle('attachments:remove', (_e, id: number, reason: string) =>
+    wrap(() => requireCompany().removeAttachment(id, reason))
+  )
   ipcMain.handle('accounts:register', (_e, q: RegisterQuery) => wrap(() => requireCompany().register(q)))
   ipcMain.handle('entries:void', (_e, id: number, reason: string) => wrap(() => requireCompany().voidEntry(id, reason)))
   ipcMain.handle('entries:reverse', (_e, id: number, date: string, memo?: string) =>
