@@ -16,6 +16,8 @@ import type {
 import type { ColumnMapping } from '../shared/csvImport'
 import type { CategorizationRule, RuleInput } from '../shared/rules'
 import type { ReconcileView } from '../shared/reconcile'
+import type { AmazonImportInput, AmazonImportResult, AmazonMapping, AmazonPreview } from '../shared/amazonImport'
+import type { TieOutRow } from '../shared/form1099k'
 import type {
   AgingRow,
   BusinessDetails,
@@ -54,6 +56,11 @@ import type {
 
 export type {
   AccountInput,
+  AmazonImportInput,
+  AmazonImportResult,
+  AmazonMapping,
+  AmazonPreview,
+  TieOutRow,
   AgingRow,
   BusinessDetails,
   CertificateInput,
@@ -212,6 +219,14 @@ export interface JunoApi {
   setFiledMethod: (year: number, method: InventoryMethod | null, reason: string) => Promise<Result<InventoryYearReport>>
   inventoryAdjustmentAccounts: () => Promise<Result<{ inventoryAccountId: number | null; cogsAccountId: number | null }>>
   postInventoryAdjustment: (year: number, inventoryAccountId: number, cogsAccountId: number) => Promise<Result<InventoryYearReport>>
+  amazonAccounts: () => Promise<Result<EtsyAccountStatus[]>>
+  addAmazonAccounts: () => Promise<Result<EtsyAccountStatus[]>>
+  previewAmazon: (text: string) => Promise<Result<AmazonPreview>>
+  importAmazon: (input: AmazonImportInput) => Promise<Result<AmazonImportResult>>
+  amazonPayouts: () => Promise<Result<EtsyPayout[]>>
+  tieOut1099k: (year: number) => Promise<Result<TieOutRow[]>>
+  /** null clears the amount. */
+  set1099k: (year: number, platform: string, grossCents: number | null, notes: string) => Promise<Result<TieOutRow[]>>
   etsyAccounts: () => Promise<Result<EtsyAccountStatus[]>>
   addEtsyAccounts: () => Promise<Result<EtsyAccountStatus[]>>
   previewEtsy: (input: EtsyFilesInput) => Promise<Result<EtsyPreview>>

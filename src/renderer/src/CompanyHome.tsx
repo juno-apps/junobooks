@@ -7,7 +7,9 @@ import ChartOfAccounts from './ChartOfAccounts'
 import EntityTypeChange from './EntityTypeChange'
 import HomeStateChange from './HomeStateChange'
 import BankReview from './BankReview'
+import AmazonImport from './AmazonImport'
 import EtsyImport from './EtsyImport'
+import Form1099K from './Form1099K'
 import ImportWizard from './ImportWizard'
 import Inventory from './Inventory'
 import JournalEntry from './JournalEntry'
@@ -30,7 +32,19 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
   /** The entry screen: closed, an expense, income or transfer, a blank journal entry, or a copy of an existing entry. */
   const [entering, setEntering] = useState<
     | { kind: 'journal'; copyOf?: EntryListItem }
-    | { kind: SimpleKind | 'transfer' | 'opening' | 'import' | 'reconcile' | 'etsy' | 'inventory' | 'sales' }
+    | {
+        kind:
+          | SimpleKind
+          | 'transfer'
+          | 'opening'
+          | 'import'
+          | 'reconcile'
+          | 'etsy'
+          | 'inventory'
+          | 'sales'
+          | 'amazon'
+          | '1099k'
+      }
     | { kind: 'review'; accountId: number | null }
     | null
   >(null)
@@ -46,7 +60,18 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
   }, [chartVersion, company.folder])
 
   function startEntry(
-    kind: 'journal' | 'transfer' | 'opening' | 'import' | 'reconcile' | 'etsy' | 'inventory' | 'sales' | SimpleKind,
+    kind:
+      | 'journal'
+      | 'transfer'
+      | 'opening'
+      | 'import'
+      | 'reconcile'
+      | 'etsy'
+      | 'inventory'
+      | 'sales'
+      | 'amazon'
+      | '1099k'
+      | SimpleKind,
     copyOf?: EntryListItem
   ): void {
     setEntering(kind === 'journal' ? { kind, copyOf } : { kind })
@@ -114,6 +139,12 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
             <button type="button" onClick={() => startEntry('etsy')}>
               Import from Etsy
             </button>
+            <button type="button" onClick={() => startEntry('amazon')}>
+              Import from Amazon
+            </button>
+            <button type="button" onClick={() => startEntry('1099k')}>
+              1099-K tie-out
+            </button>
             <button type="button" onClick={() => startEntry('reconcile')}>
               Reconcile
             </button>
@@ -144,6 +175,20 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
       )}
       {entering?.kind === 'inventory' && (
         <Inventory key={entryKey} onChanged={() => setChartVersion((v) => v + 1)} onClose={() => setEntering(null)} />
+      )}
+      {entering?.kind === 'amazon' && (
+        <AmazonImport
+          key={entryKey}
+          onImported={() => setChartVersion((v) => v + 1)}
+          onClose={() => setEntering(null)}
+        />
+      )}
+      {entering?.kind === '1099k' && (
+        <Form1099K
+          key={entryKey}
+          firstYear={Number(company.booksStartDate.slice(0, 4))}
+          onClose={() => setEntering(null)}
+        />
       )}
       {entering?.kind === 'etsy' && (
         <EtsyImport key={entryKey} onImported={() => setChartVersion((v) => v + 1)} onClose={() => setEntering(null)} />

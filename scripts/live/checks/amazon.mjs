@@ -1,0 +1,50 @@
+// Phase 7: Amazon settlement import and the 1099-K tie-out.
+import { join } from 'path'
+import { launch, createCompany, shot, check, done, ROOT } from '../lib.mjs'
+
+const { app, page, errors } = await launch({ fresh: true })
+await createCompany(page)
+const willPick = (f) =>
+  app.evaluate(({ dialog }, file) => {
+    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [file] })
+  }, f)
+
+await page.getByRole('button', { name: 'Import from Amazon' }).click()
+await page.getByRole('heading', { name: 'Import from Amazon' }).waitFor()
+await page.getByRole('button', { name: 'Add these accounts' }).click()
+await page.locator('.etsy-setup').waitFor({ state: 'detached' })
+await willPick(join(ROOT, 'samples', 'amazon', 'settlement-24000000001.txt'))
+await page.getByRole('button', { name: 'Choose settlement report…' }).click()
+await page.getByRole('heading', { name: /Settlement 24000000001/ }).waitFor()
+const text = await page.locator('.etsy-import').innerText()
+check(text.includes('a payout of $59.39 on 2026-03-17'), 'payout shown')
+check(text.includes('held back $2.52 of reserve'), 'reserve explained')
+const map = await page.locator('.etsy-map').innerText()
+check(map.includes('Sales (item price)') && map.includes('$145.00 in'), 'sales $145.00')
+check(map.includes('Referral fees') && map.includes('$18.00 out'), 'referral fees $18.00')
+await shot(page, 'amazon-preview')
+await page.getByRole('button', { name: 'Import settlement' }).click()
+await page.getByText(/Imported 15 rows: 4 daily entries and the payout/).waitFor()
+check((await page.locator('.payouts').innerText()).includes('$59.39'), 'payout listed')
+await page.getByRole('button', { name: 'Close' }).click()
+
+// 1099-K tie-out
+await page.getByRole('button', { name: '1099-K tie-out' }).click()
+await page.getByRole('heading', { name: '1099-K tie-out' }).waitFor()
+const row = page.locator('.tie-out tbody > tr').filter({ hasText: 'Amazon' }).first()
+check((await row.innerText()).includes('$156.98'), 'Amazon imported gross 156.98')
+await page.getByLabel('Amazon 1099-K amount').fill('160.00')
+await row.getByRole('button', { name: 'Save' }).click()
+await page.getByText('Saved Amazon.').waitFor()
+check((await page.locator('.tie-out tbody > tr').filter({ hasText: 'Amazon' }).first().innerText()).includes('$3.02'), 'difference $3.02')
+check((await page.locator('.form-1099k .accountant-note').count()) === 1, 'reasons shown for a difference')
+await page.getByLabel('Other platform', { exact: true }).fill('PayPal')
+await page.getByLabel('Other platform amount').fill('250')
+await page.getByRole('button', { name: 'Add', exact: true }).click()
+await page.getByText('Saved PayPal.').waitFor()
+check((await page.locator('.tie-out').innerText()).includes('PayPal'), 'other platform added')
+await page.locator('.tie-out tbody > tr').filter({ hasText: 'Amazon' }).first().getByRole('button', { name: 'By month' }).click()
+check((await page.locator('.months').innerText()).includes('Mar\t$156.98') || (await page.locator('.months').innerText()).includes('$156.98'), 'by-month breakdown')
+await shot(page, 'amazon-1099k')
+await app.close()
+done(errors)

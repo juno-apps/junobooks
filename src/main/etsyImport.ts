@@ -33,8 +33,7 @@ export const CHANNEL = 'etsy'
 
 function findByName(db: Database.Database, name: string): { id: number; isActive: number } | undefined {
   return db.prepare('SELECT id, is_active AS isActive FROM accounts WHERE lower(name) = lower(?)').get(name) as
-    | { id: number; isActive: number }
-    | undefined
+    { id: number; isActive: number } | undefined
 }
 
 export function etsyAccounts(db: Database.Database): EtsyAccountStatus[] {
@@ -50,7 +49,10 @@ export function addEtsyAccounts(db: Database.Database, ctx: ChartContext, now: D
       let n = Number(s.number)
       const end = Math.floor(n / 100) * 100 + 100
       while (n < end && taken.get(String(n))) n++
-      if (n >= end) throw new LedgerError(`There is no free account number near ${s.number} for "${s.name}". Add it yourself on the chart of accounts.`)
+      if (n >= end)
+        throw new LedgerError(
+          `There is no free account number near ${s.number} for "${s.name}". Add it yourself on the chart of accounts.`
+        )
       const id = addAccount(
         db,
         {
@@ -104,9 +106,9 @@ function savedDepositAccount(db: Database.Database): number | null {
     )
     .get(CHANNEL) as { id: number } | undefined
   if (r) return r.id
-  const checking = db.prepare("SELECT id FROM accounts WHERE subtype = 'bank' AND is_active = 1 ORDER BY number LIMIT 1").get() as
-    | { id: number }
-    | undefined
+  const checking = db
+    .prepare("SELECT id FROM accounts WHERE subtype = 'bank' AND is_active = 1 ORDER BY number LIMIT 1")
+    .get() as { id: number } | undefined
   return checking?.id ?? null
 }
 
@@ -208,14 +210,20 @@ export function previewEtsy(db: Database.Database, booksStart: string, input: Et
 
 function activeAccount(db: Database.Database, id: number | null | undefined, what: string): number {
   if (!id) throw new LedgerError(`Choose an account for ${what}.`)
-  const a = db.prepare('SELECT name, is_active FROM accounts WHERE id = ?').get(id) as { name: string; is_active: number } | undefined
+  const a = db.prepare('SELECT name, is_active FROM accounts WHERE id = ?').get(id) as
+    { name: string; is_active: number } | undefined
   if (!a) throw new LedgerError(`The account for ${what} no longer exists.`)
   if (!a.is_active) throw new LedgerError(`The account for ${what} ("${a.name}") is inactive.`)
   return id
 }
 
 /** Posts the new rows: one entry per day, one transfer per deposit, all or nothing. */
-export function importEtsy(db: Database.Database, booksStart: string, input: EtsyImportInput, now: Date = new Date()): EtsyImportResult {
+export function importEtsy(
+  db: Database.Database,
+  booksStart: string,
+  input: EtsyImportInput,
+  now: Date = new Date()
+): EtsyImportResult {
   const p = readFiles(db, booksStart, input)
   const plan = planEtsy(p.fresh, p.orders)
   const used = new Set<EtsyTarget>(plan.days.flatMap((d) => d.lines.map((l) => l.target)))
@@ -225,11 +233,14 @@ export function importEtsy(db: Database.Database, booksStart: string, input: Ets
   const clearing = accountFor.get('clearing')
   for (const [t, id] of accountFor) {
     if (t !== 'clearing' && id === clearing) {
-      throw new LedgerError(`"${ETSY_TARGET_LABELS[t]}" can't use the Etsy payment account itself. Choose another account.`)
+      throw new LedgerError(
+        `"${ETSY_TARGET_LABELS[t]}" can't use the Etsy payment account itself. Choose another account.`
+      )
     }
   }
   const depositAccount = plan.deposits.length ? activeAccount(db, input.depositAccountId, 'Etsy deposits') : null
-  if (depositAccount !== null && depositAccount === clearing) throw new LedgerError('Deposits must go to your bank account, not the Etsy payment account.')
+  if (depositAccount !== null && depositAccount === clearing)
+    throw new LedgerError('Deposits must go to your bank account, not the Etsy payment account.')
   if (p.fresh.length === 0) throw new LedgerError('Everything in this statement was already imported.')
 
   const stamp = now.toISOString()
@@ -277,7 +288,11 @@ export function importEtsy(db: Database.Database, booksStart: string, input: Ets
         date: day.date,
         memo: day.memo,
         source: CHANNEL,
-        lines: day.lines.map((l) => ({ accountId: accountFor.get(l.target)!, amountCents: l.cents, memo: ETSY_TARGET_LABELS[l.target] }))
+        lines: day.lines.map((l) => ({
+          accountId: accountFor.get(l.target)!,
+          amountCents: l.cents,
+          memo: ETSY_TARGET_LABELS[l.target]
+        }))
       })
       for (const r of day.rows) entryForRow.set(r, id)
     }
@@ -294,12 +309,14 @@ export function importEtsy(db: Database.Database, booksStart: string, input: Ets
       entryForRow.set(d.row, id)
     }
     const rec = db.prepare(
-      `INSERT INTO marketplace_rows (channel, batch_id, fingerprint, row_date, kind, cents, entry_id, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO marketplace_rows (channel, batch_id, fingerprint, row_date, kind, cents, gross_cents, entry_id, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     p.fresh.forEach((r, i) => {
       const cents = r.kind === 'deposit' ? r.depositCents : r.amountCents + r.feesCents
-      rec.run(CHANNEL, batchId, p.freshFps[i], r.date, r.kind, cents, entryForRow.get(r.row) ?? null, stamp)
+      // Gross for the 1099-K: what buyers paid (sales with shipping, and sales tax), before fees and refunds.
+      const gross = (r.kind === 'sale' || r.kind === 'sales_tax') && r.amountCents > 0 ? r.amountCents : 0
+      rec.run(CHANNEL, batchId, p.freshFps[i], r.date, r.kind, cents, gross, entryForRow.get(r.row) ?? null, stamp)
     })
     return {
       entries: plan.days.length,
@@ -312,7 +329,7 @@ export function importEtsy(db: Database.Database, booksStart: string, input: Ets
 }
 
 /** Every Etsy deposit and whether the bank side has been found in an imported bank file. */
-export function etsyPayouts(db: Database.Database): EtsyPayout[] {
+export function etsyPayouts(db: Database.Database, channel: string = CHANNEL): EtsyPayout[] {
   const rows = db
     .prepare(
       `SELECT m.row_date AS date, m.cents, m.entry_id AS entryId, a.id AS accountId, a.name AS depositAccountName
@@ -323,15 +340,25 @@ export function etsyPayouts(db: Database.Database): EtsyPayout[] {
        WHERE m.channel = ? AND m.kind = 'deposit'
        ORDER BY m.row_date DESC, m.id DESC`
     )
-    .all(CHANNEL) as { date: string; cents: number; entryId: number; accountId: number; depositAccountName: string }[]
-  const tied = db.prepare(`SELECT txn_date AS d FROM bank_lines WHERE entry_id = ? AND status IN ('matched', 'posted') LIMIT 1`)
+    .all(channel) as { date: string; cents: number; entryId: number; accountId: number; depositAccountName: string }[]
+  const tied = db.prepare(
+    `SELECT txn_date AS d FROM bank_lines WHERE entry_id = ? AND status IN ('matched', 'posted') LIMIT 1`
+  )
   const waiting = db.prepare(
     `SELECT txn_date AS d FROM bank_lines WHERE status = 'new' AND account_id = ? AND amount_cents = ?
        AND abs(julianday(txn_date) - julianday(?)) <= ? ORDER BY abs(julianday(txn_date) - julianday(?)) LIMIT 1`
   )
   return rows.map((r) => {
     const t = tied.get(r.entryId) as { d: string } | undefined
-    if (t) return { date: r.date, cents: r.cents, entryId: r.entryId, depositAccountName: r.depositAccountName, status: 'matched', bankLineDate: t.d }
+    if (t)
+      return {
+        date: r.date,
+        cents: r.cents,
+        entryId: r.entryId,
+        depositAccountName: r.depositAccountName,
+        status: 'matched',
+        bankLineDate: t.d
+      }
     const w = waiting.get(r.accountId, r.cents, r.date, MATCH_DAYS, r.date) as { d: string } | undefined
     return {
       date: r.date,

@@ -35,9 +35,11 @@ JunoBooks-code/
       inventory.ts     Inventory facts: items, purchases, counts, filed method per year
       inventoryReport.ts  Inventory year report (four methods) and the year-end entry
       sales.ts         Customers, resale certificates, invoices, payments received, aging
+      amazonImport.ts  Amazon settlement imports (and the shared add-channel-accounts helper)
+      form1099k.ts     1099-K tie-out per year and platform
       db/migrations.ts Numbered schema migrations
     preload/           contextBridge API exposed to the renderer as window.juno
-    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange, JournalEntry, TransactionList, SimpleEntry, TransferEntry, AccountCombobox, AccountRegister, OpeningBalances, Receipts, Settings, ImportWizard, BankReview, RulesManager, Reconcile, EtsyImport, Inventory, Sales; useFormError hook)
+    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange, JournalEntry, TransactionList, SimpleEntry, TransferEntry, AccountCombobox, AccountRegister, OpeningBalances, Receipts, Settings, ImportWizard, BankReview, RulesManager, Reconcile, EtsyImport, AmazonImport, Form1099K, Inventory, Sales; useFormError hook)
     shared/            Code used by both main and renderer: entity types, US states, dates, money, company validation,
                        templates.ts (starting charts), taxLines.ts (tax categories + per-year line tables), chart.ts (view types),
                        accounts.ts (account input rules: kinds, debit/credit side, validation, number-range warning),
@@ -48,10 +50,11 @@ JunoBooks-code/
                        bankImport.ts (import types, account groups for import screens), rules.ts (rule matching, suggested text),
                        reconcile.ts (reconciliation view types, totals), etsy.ts (Etsy file reading, row kinds, posting plan, Etsy accounts),
                        etsyImport.ts (Etsy import types), inventory.ts (quantities, the four methods), inventoryView.ts (inventory screen types),
-                       sales.ts (direct-sales types, tax rates, invoice totals, aging), invoiceHtml.ts (printable invoice)
+                       sales.ts (direct-sales types, tax rates, invoice totals, aging), invoiceHtml.ts (printable invoice),
+                       amazon.ts / amazonImport.ts (Amazon settlement reading, kinds, plan, types), form1099k.ts (tie-out types)
   scripts/run-tests.cjs
   scripts/live/         Playwright live checks (dev-only; see docs/topics/live-checks.md)
-  samples/              Made-up example files (bank CSVs, Etsy statement and orders) for trying imports and live checks
+  samples/              Made-up example files (bank CSVs, Etsy statement and orders, Amazon settlement) for trying imports and live checks
   test-data/           Dev data root (git-ignored, never real books)
     app-settings.json
     Companies/<Company Name>/
@@ -131,6 +134,10 @@ Opening an older file backs it up first (`backups/books-<time>-before-upgrade-vX
 - `company_profile` adds address, email, phone (its audit triggers re-created).
 - `customers`, `resale_certificates` (no delete), `invoices` (draft/open/void; finalized ones fixed), `invoice_lines` (draft-only changes), `payments` (no delete), `payment_applications` (fixed). All audited.
 
+**v12** (details in `docs/topics/amazon-1099k.md`)
+- `marketplace_rows.gross_cents` (gross receipts per imported row, for the 1099-K tie-out).
+- `form_1099k` (year + platform unique, box 1a gross, notes). Audited.
+
 Files open in WAL mode with foreign keys on. Dates are `YYYY-MM-DD` text.
 
 **Backups:** on close (and before any migration) the WAL is checkpointed and the file copied to `backups/books-<ISO time>[-label].sqlite`. Only the newest 30 are kept (sorted by name, since names start with the timestamp).
@@ -170,6 +177,7 @@ See `JunoBooks-PLAN.md` §10 (inventory method, S-corp election timing, which ba
 - `docs/topics/etsy-import.md`: Etsy statement + orders import, row kinds, how they post, Etsy accounts, payouts tie-out.
 - `docs/topics/inventory.md`: inventory items, purchases, counts, the four methods, filed method, year-end entry.
 - `docs/topics/direct-sales.md`: customers, resale certificates, invoices (draft, finalize, void, PDF), payments received, aging.
+- `docs/topics/amazon-1099k.md`: Amazon settlement import (kinds, reserves, payout), 1099-K tie-out.
 - `docs/topics/chart-of-accounts.md`: templates, numbering, entity-specific accounts, tax-line mapping, accountant notes, chart screen, editing accounts, adding/restoring accounts after creation.
 
 ## Latest handoff
@@ -183,4 +191,5 @@ None yet. Created only when the owner types "create new handoff."
 - **Phase 4 complete (schema v9):** Etsy importer with payouts tie-out (`docs/topics/etsy-import.md`). Verified by Claude with made-up files; real exports untested (backlog).
 - **Phase 5 complete (schema v10):** inventory with four methods side by side, filed method per year, year-end entry (`docs/topics/inventory.md`). Filed method for 2026 is the owner's/accountant's choice (backlog).
 - **Phase 6 complete (schema v11):** customers, resale certificates, invoices with PDF, payments, aging (`docs/topics/direct-sales.md`).
+- **Phase 7 complete (schema v12):** Amazon settlement importer and 1099-K tie-out (`docs/topics/amazon-1099k.md`). Real Amazon reports untested (backlog).
 - Build run in progress: see `progress-log.md` → Build run for the resume point.

@@ -807,6 +807,24 @@ export const MIGRATIONS: Migration[] = [
       )}
       ${auditTriggersV2('payment_applications', ['id', 'payment_id', 'invoice_id', 'amount_cents'], false)}
     `
+  },
+  {
+    version: 12,
+    description: 'Gross receipts per imported marketplace row, and 1099-K amounts per year and platform',
+    sql: `
+      ALTER TABLE marketplace_rows ADD COLUMN gross_cents INTEGER NOT NULL DEFAULT 0;
+
+      CREATE TABLE form_1099k (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        year INTEGER NOT NULL,
+        platform TEXT NOT NULL CHECK (length(trim(platform)) > 0),
+        gross_cents INTEGER NOT NULL CHECK (gross_cents >= 0),
+        notes TEXT NOT NULL DEFAULT '',
+        updated_at TEXT NOT NULL,
+        UNIQUE (year, platform)
+      ) STRICT;
+      ${auditTriggersV2('form_1099k', ['id', 'year', 'platform', 'gross_cents', 'notes', 'updated_at'], false)}
+    `
   }
 ]
 

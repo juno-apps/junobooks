@@ -879,6 +879,42 @@ button.attention {
   font-weight: normal;
 }
 
+.form-1099k {
+  max-width: 1000px;
+}
+
+.form-1099k .narrow {
+  width: 8rem;
+}
+
+.tie-out td input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.tie-out td.amount input {
+  width: 8rem;
+  text-align: right;
+}
+
+.tie-out .months td {
+  padding: 0 0.4rem;
+  font-size: 0.85rem;
+}
+
+.link-button.small {
+  font-size: 0.8rem;
+}
+
+.add-platform {
+  margin: 0.8rem 0;
+  max-width: 640px;
+}
+
+.add-platform input {
+  flex: 1;
+}
+
 .account-link {
   color: inherit;
   text-decoration: none;

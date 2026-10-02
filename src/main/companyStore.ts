@@ -30,6 +30,11 @@ import {
 } from './reconcile'
 import type { ReconcileView } from '../shared/reconcile'
 import { addEtsyAccounts, etsyAccounts, etsyPayouts, importEtsy, previewEtsy } from './etsyImport'
+import { addChannelAccounts, AMAZON, channelAccounts, importAmazon, previewAmazon } from './amazonImport'
+import { AMAZON_ACCOUNTS } from '../shared/amazon'
+import type { AmazonImportInput, AmazonImportResult, AmazonPreview } from '../shared/amazonImport'
+import { set1099k, tieOut } from './form1099k'
+import type { TieOutRow } from '../shared/form1099k'
 import {
   addItem,
   addPurchase,
@@ -595,6 +600,36 @@ export class CompanyBooks {
   postInventoryAdjustment(year: number, inventoryAccountId: number, cogsAccountId: number, now: Date = new Date()): InventoryYearReport {
     postInventoryAdjustment(this.db, year, this.profile(now).booksStartDate, inventoryAccountId, cogsAccountId, now)
     return this.inventoryYear(year, now)
+  }
+
+  amazonAccounts(): EtsyAccountStatus[] {
+    return channelAccounts(this.db, AMAZON_ACCOUNTS)
+  }
+
+  addAmazonAccounts(now: Date = new Date()): EtsyAccountStatus[] {
+    addChannelAccounts(this.db, this.chartContext(now), AMAZON_ACCOUNTS, 'Added for Amazon imports.', now)
+    return channelAccounts(this.db, AMAZON_ACCOUNTS)
+  }
+
+  previewAmazon(text: string, now: Date = new Date()): AmazonPreview {
+    return previewAmazon(this.db, this.profile(now).booksStartDate, text)
+  }
+
+  importAmazon(input: AmazonImportInput, now: Date = new Date()): AmazonImportResult {
+    return importAmazon(this.db, this.profile(now).booksStartDate, input, now)
+  }
+
+  amazonPayouts(): EtsyPayout[] {
+    return etsyPayouts(this.db, AMAZON)
+  }
+
+  tieOut1099k(year: number): TieOutRow[] {
+    return tieOut(this.db, year)
+  }
+
+  set1099k(year: number, platform: string, grossCents: number | null, notes: string, now: Date = new Date()): TieOutRow[] {
+    set1099k(this.db, year, platform, grossCents, notes, now)
+    return tieOut(this.db, year)
   }
 
   etsyAccounts(): EtsyAccountStatus[] {

@@ -30,6 +30,7 @@ import { readImportFile } from './bankImport'
 import type { PostBankLineInput, StageImportInput } from '../shared/bankImport'
 import type { RuleInput } from '../shared/rules'
 import type { EtsyFilesInput, EtsyImportInput } from '../shared/etsyImport'
+import type { AmazonImportInput } from '../shared/amazonImport'
 import type { InventoryMethod } from '../shared/inventory'
 import type { ItemInput, PurchaseInput } from '../shared/inventoryView'
 import type { BusinessDetails, CertificateInput, CustomerInput, InvoiceInput, PaymentInput } from '../shared/sales'
@@ -382,6 +383,15 @@ app.whenReady().then(() => {
   ipcMain.handle('inventory:adjustmentAccounts', () => wrap(() => requireCompany().inventoryAdjustmentAccounts()))
   ipcMain.handle('inventory:postAdjustment', (_e, year: number, inv: number, cogs: number) =>
     wrap(() => requireCompany().postInventoryAdjustment(year, inv, cogs))
+  )
+  ipcMain.handle('amazon:accounts', () => wrap(() => requireCompany().amazonAccounts()))
+  ipcMain.handle('amazon:addAccounts', () => wrap(() => requireCompany().addAmazonAccounts()))
+  ipcMain.handle('amazon:preview', (_e, text: string) => wrap(() => requireCompany().previewAmazon(text)))
+  ipcMain.handle('amazon:import', (_e, input: AmazonImportInput) => wrap(() => requireCompany().importAmazon(input)))
+  ipcMain.handle('amazon:payouts', () => wrap(() => requireCompany().amazonPayouts()))
+  ipcMain.handle('1099k:get', (_e, year: number) => wrap(() => requireCompany().tieOut1099k(year)))
+  ipcMain.handle('1099k:set', (_e, year: number, platform: string, cents: number | null, notes: string) =>
+    wrap(() => requireCompany().set1099k(year, platform, cents, notes))
   )
   ipcMain.handle('etsy:accounts', () => wrap(() => requireCompany().etsyAccounts()))
   ipcMain.handle('etsy:addAccounts', () => wrap(() => requireCompany().addEtsyAccounts()))

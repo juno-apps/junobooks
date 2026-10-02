@@ -24,7 +24,8 @@ Imports Etsy's monthly **payments statement** CSV (Shop Manager → Finances →
 - Company home → **Import from Etsy**. Accounts setup box (until added), then **Choose statement…** and optional **Choose orders file…**.
 - Preview: rows new / already imported / before the books start, how many daily entries and deposits, whether shipping could be split out of every sale, unreadable rows, rows Etsy worded in an unrecognized way (with examples), and a table of each kind of activity with its total and its account box, plus the deposits and the bank account they go to. **Import N Etsy rows** posts everything in one transaction (all or nothing; a closed period refuses the whole import).
 - Re-importing a statement skips rows already imported (`marketplace_rows`, fingerprint per row, repeats numbered), so a longer statement later adds only the new rows. Orders are kept (`marketplace_orders`) so later statements can still split shipping, and for sales tax and 1099-K work in later phases.
-- **Etsy deposits and your bank** lists every imported deposit: "Found in the bank" (tied to an imported bank line), "In a bank import, waiting in Review imported lines" (a new bank line on that account with the same amount within 10 days), or "Not in an imported bank file yet".
+- Each imported sale and sales-tax row also records its gross (`marketplace_rows.gross_cents`) for the 1099-K tie-out (`amazon-1099k.md`).
+- **Etsy deposits and your bank** (`PayoutsTable`, shared with Amazon) lists every imported deposit: "Found in the bank" (tied to an imported bank line), "In a bank import, waiting in Review imported lines" (a new bank line on that account with the same amount within 10 days), or "Not in an imported bank file yet".
 
 ## Database (schema v9)
 - `import_batches.channel` ('bank' or 'etsy'); the bank import history shows bank batches only.
