@@ -29,6 +29,15 @@ import {
   undoLastReconciliation
 } from './reconcile'
 import type { ReconcileView } from '../shared/reconcile'
+import { addEtsyAccounts, etsyAccounts, etsyPayouts, importEtsy, previewEtsy } from './etsyImport'
+import type {
+  EtsyAccountStatus,
+  EtsyFilesInput,
+  EtsyImportInput,
+  EtsyImportResult,
+  EtsyPayout,
+  EtsyPreview
+} from '../shared/etsyImport'
 import type { CategorizationRule, RuleInput } from '../shared/rules'
 import {
   ignoreBankLines,
@@ -403,6 +412,27 @@ export class CompanyBooks {
   deleteRule(id: number): CategorizationRule[] {
     deleteRule(this.db, id)
     return listRules(this.db)
+  }
+
+  etsyAccounts(): EtsyAccountStatus[] {
+    return etsyAccounts(this.db)
+  }
+
+  addEtsyAccounts(now: Date = new Date()): EtsyAccountStatus[] {
+    addEtsyAccounts(this.db, this.chartContext(now), now)
+    return etsyAccounts(this.db)
+  }
+
+  previewEtsy(input: EtsyFilesInput, now: Date = new Date()): EtsyPreview {
+    return previewEtsy(this.db, this.profile(now).booksStartDate, input)
+  }
+
+  importEtsy(input: EtsyImportInput, now: Date = new Date()): EtsyImportResult {
+    return importEtsy(this.db, this.profile(now).booksStartDate, input, now)
+  }
+
+  etsyPayouts(): EtsyPayout[] {
+    return etsyPayouts(this.db)
   }
 
   reconcileView(accountId: number): ReconcileView {

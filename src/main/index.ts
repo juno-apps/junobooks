@@ -15,6 +15,7 @@ import type { SettingsView } from '../shared/settings'
 import { readImportFile } from './bankImport'
 import type { PostBankLineInput, StageImportInput } from '../shared/bankImport'
 import type { RuleInput } from '../shared/rules'
+import type { EtsyFilesInput, EtsyImportInput } from '../shared/etsyImport'
 import { BACKUPS_TO_KEEP } from './companyStore'
 
 const isDev = !app.isPackaged
@@ -239,6 +240,11 @@ app.whenReady().then(() => {
     wrap(() => requireCompany().updateRule(id, input))
   )
   ipcMain.handle('rules:delete', (_e, id: number) => wrap(() => requireCompany().deleteRule(id)))
+  ipcMain.handle('etsy:accounts', () => wrap(() => requireCompany().etsyAccounts()))
+  ipcMain.handle('etsy:addAccounts', () => wrap(() => requireCompany().addEtsyAccounts()))
+  ipcMain.handle('etsy:preview', (_e, input: EtsyFilesInput) => wrap(() => requireCompany().previewEtsy(input)))
+  ipcMain.handle('etsy:import', (_e, input: EtsyImportInput) => wrap(() => requireCompany().importEtsy(input)))
+  ipcMain.handle('etsy:payouts', () => wrap(() => requireCompany().etsyPayouts()))
   ipcMain.handle('reconcile:get', (_e, accountId: number) => wrap(() => requireCompany().reconcileView(accountId)))
   ipcMain.handle('reconcile:statement', (_e, accountId: number, date: string, cents: number) =>
     wrap(() => requireCompany().setStatement(accountId, date, cents))

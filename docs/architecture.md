@@ -31,9 +31,10 @@ JunoBooks-code/
       bankImport.ts    Bank/card CSV imports: read file, stage lines, review, post, ignore
       rules.ts         Categorization rules: list, add, edit, delete, matcher
       reconcile.ts     Cleared status and reconciliations (start, tick, finish, cancel, undo)
+      etsyImport.ts    Etsy statement imports: accounts setup, preview, posting, payouts tie-out
       db/migrations.ts Numbered schema migrations
     preload/           contextBridge API exposed to the renderer as window.juno
-    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange, JournalEntry, TransactionList, SimpleEntry, TransferEntry, AccountCombobox, AccountRegister, OpeningBalances, Receipts, Settings, ImportWizard, BankReview, RulesManager, Reconcile; useFormError hook)
+    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange, JournalEntry, TransactionList, SimpleEntry, TransferEntry, AccountCombobox, AccountRegister, OpeningBalances, Receipts, Settings, ImportWizard, BankReview, RulesManager, Reconcile, EtsyImport; useFormError hook)
     shared/            Code used by both main and renderer: entity types, US states, dates, money, company validation,
                        templates.ts (starting charts), taxLines.ts (tax categories + per-year line tables), chart.ts (view types),
                        accounts.ts (account input rules: kinds, debit/credit side, validation, number-range warning),
@@ -42,10 +43,11 @@ JunoBooks-code/
                        register.ts (register view types, column wording), opening.ts (opening-balance types, difference), settings.ts (Settings view type),
                        attachments.ts (receipt naming, accepted types), csvImport.ts (CSV reading, column guessing, mapping, fingerprints),
                        bankImport.ts (import types, account groups for import screens), rules.ts (rule matching, suggested text),
-                       reconcile.ts (reconciliation view types, totals)
+                       reconcile.ts (reconciliation view types, totals), etsy.ts (Etsy file reading, row kinds, posting plan, Etsy accounts),
+                       etsyImport.ts (Etsy import types)
   scripts/run-tests.cjs
   scripts/live/         Playwright live checks (dev-only; see docs/topics/live-checks.md)
-  samples/              Made-up example files (bank CSVs) for trying imports and live checks
+  samples/              Made-up example files (bank CSVs, Etsy statement and orders) for trying imports and live checks
   test-data/           Dev data root (git-ignored, never real books)
     app-settings.json
     Companies/<Company Name>/
@@ -114,6 +116,10 @@ Opening an older file backs it up first (`backups/books-<time>-before-upgrade-vX
 - `line_clearing`: journal_line_id (unique), status (cleared/reconciled), reconciliation_id (set exactly when reconciled). Reconciled rows can't change or be deleted unless their reconciliation is undone.
 - Trigger: an entry with a reconciled line can't be voided. Both tables audited.
 
+**v9** (marketplace imports; details in `docs/topics/etsy-import.md`)
+- `import_batches` adds `channel` ('bank' default, 'etsy').
+- `marketplace_rows` (imported statement rows, unique fingerprint per channel, entry link; can't change or be deleted), `channel_mappings` (account per kind per channel), `marketplace_orders` (orders by channel + order id). Rows and mappings audited.
+
 Files open in WAL mode with foreign keys on. Dates are `YYYY-MM-DD` text.
 
 **Backups:** on close (and before any migration) the WAL is checkpointed and the file copied to `backups/books-<ISO time>[-label].sqlite`. Only the newest 30 are kept (sorted by name, since names start with the timestamp).
@@ -150,6 +156,7 @@ See `JunoBooks-PLAN.md` §10 (inventory method, S-corp election timing, which ba
 - `docs/topics/live-checks.md`: how to run and click through the app for a live check, the standing access permission, traps.
 - `docs/topics/manual-entry.md`: journal entry screen, transaction list (void, reverse, duplicate), opening balances, account register, everyday screens, error messages, entry-screen rules, the books-start-date rule for manual entries.
 - `docs/topics/bank-import.md`: bank/card CSV import wizard, column guessing, duplicates, review and posting of imported lines, sign rule.
+- `docs/topics/etsy-import.md`: Etsy statement + orders import, row kinds, how they post, Etsy accounts, payouts tie-out.
 - `docs/topics/chart-of-accounts.md`: templates, numbering, entity-specific accounts, tax-line mapping, accountant notes, chart screen, editing accounts, adding/restoring accounts after creation.
 
 ## Latest handoff
@@ -160,4 +167,5 @@ None yet. Created only when the owner types "create new handoff."
 - **Phase 1 complete (schema v5 at the end of Phase 1):** create/list/switch companies, core schema + audit log, ledger engine + period lock, templates + chart of accounts + tax lines, account editing, entity-type and home-state changes with start dates (correct/remove, chart follows entity changes, restore missing accounts). 
 - **Phase 2 complete (schema v6):** journal entry screen, transaction list, Expense / Income / Transfer, account register, opening balances, receipts, data folder `Documents\JunoBooks` + Settings (see `docs/topics/manual-entry.md`). 2d–2g verified by Claude, owner review pending. Sub-accounts stay parked until Phase 9.
 - **Phase 3 complete (schema v8):** CSV import wizard, review screen, categorization rules, matching to entries already in the books, cleared status and reconciliation (`docs/topics/bank-import.md`). Verified by Claude, owner review pending.
+- **Phase 4 complete (schema v9):** Etsy importer with payouts tie-out (`docs/topics/etsy-import.md`). Verified by Claude with made-up files; real exports untested (backlog).
 - Build run in progress: see `progress-log.md` → Build run for the resume point.

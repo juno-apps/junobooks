@@ -520,6 +520,60 @@ export const MIGRATIONS: Migration[] = [
       )}
       ${auditTriggersV2('line_clearing', ['id', 'journal_line_id', 'status', 'reconciliation_id', 'updated_at'], false)}
     `
+  },
+  {
+    version: 9,
+    description: 'Marketplace imports (Etsy): imported statement rows, account choices per kind, orders',
+    sql: `
+      ALTER TABLE import_batches ADD COLUMN channel TEXT NOT NULL DEFAULT 'bank';
+
+      CREATE TABLE marketplace_rows (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        channel TEXT NOT NULL,
+        batch_id INTEGER NOT NULL REFERENCES import_batches(id),
+        fingerprint TEXT NOT NULL,
+        row_date TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        cents INTEGER NOT NULL,
+        entry_id INTEGER REFERENCES journal_entries(id),
+        created_at TEXT NOT NULL,
+        UNIQUE (channel, fingerprint)
+      ) STRICT;
+      CREATE TRIGGER marketplace_rows_no_change BEFORE UPDATE ON marketplace_rows BEGIN
+        SELECT RAISE(ABORT, 'Imported marketplace rows can''t be changed.');
+      END;
+      CREATE TRIGGER marketplace_rows_no_delete BEFORE DELETE ON marketplace_rows BEGIN
+        SELECT RAISE(ABORT, 'Imported marketplace rows are kept on record.');
+      END;
+
+      CREATE TABLE channel_mappings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        channel TEXT NOT NULL,
+        target TEXT NOT NULL,
+        account_id INTEGER NOT NULL REFERENCES accounts(id),
+        updated_at TEXT NOT NULL,
+        UNIQUE (channel, target)
+      ) STRICT;
+
+      CREATE TABLE marketplace_orders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        channel TEXT NOT NULL,
+        order_id TEXT NOT NULL,
+        sale_date TEXT,
+        items_cents INTEGER NOT NULL,
+        shipping_cents INTEGER NOT NULL,
+        discount_cents INTEGER NOT NULL,
+        sales_tax_cents INTEGER NOT NULL,
+        total_cents INTEGER NOT NULL,
+        ship_state TEXT NOT NULL,
+        ship_country TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        UNIQUE (channel, order_id)
+      ) STRICT;
+
+      ${auditTriggersV2('marketplace_rows', ['id', 'channel', 'batch_id', 'row_date', 'kind', 'cents', 'entry_id'], false)}
+      ${auditTriggersV2('channel_mappings', ['id', 'channel', 'target', 'account_id', 'updated_at'], false)}
+    `
   }
 ]
 

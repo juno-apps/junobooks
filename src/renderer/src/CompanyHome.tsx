@@ -7,6 +7,7 @@ import ChartOfAccounts from './ChartOfAccounts'
 import EntityTypeChange from './EntityTypeChange'
 import HomeStateChange from './HomeStateChange'
 import BankReview from './BankReview'
+import EtsyImport from './EtsyImport'
 import ImportWizard from './ImportWizard'
 import JournalEntry from './JournalEntry'
 import OpeningBalances from './OpeningBalances'
@@ -27,7 +28,7 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
   /** The entry screen: closed, an expense, income or transfer, a blank journal entry, or a copy of an existing entry. */
   const [entering, setEntering] = useState<
     | { kind: 'journal'; copyOf?: EntryListItem }
-    | { kind: SimpleKind | 'transfer' | 'opening' | 'import' | 'reconcile' }
+    | { kind: SimpleKind | 'transfer' | 'opening' | 'import' | 'reconcile' | 'etsy' }
     | { kind: 'review'; accountId: number | null }
     | null
   >(null)
@@ -43,7 +44,7 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
   }, [chartVersion, company.folder])
 
   function startEntry(
-    kind: 'journal' | 'transfer' | 'opening' | 'import' | 'reconcile' | SimpleKind,
+    kind: 'journal' | 'transfer' | 'opening' | 'import' | 'reconcile' | 'etsy' | SimpleKind,
     copyOf?: EntryListItem
   ): void {
     setEntering(kind === 'journal' ? { kind, copyOf } : { kind })
@@ -108,6 +109,9 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
             <button type="button" onClick={() => startEntry('import')}>
               Import bank file
             </button>
+            <button type="button" onClick={() => startEntry('etsy')}>
+              Import from Etsy
+            </button>
             <button type="button" onClick={() => startEntry('reconcile')}>
               Reconcile
             </button>
@@ -126,6 +130,9 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
           onPosted={() => setChartVersion((v) => v + 1)}
           onClose={() => setEntering(null)}
         />
+      )}
+      {entering?.kind === 'etsy' && (
+        <EtsyImport key={entryKey} onImported={() => setChartVersion((v) => v + 1)} onClose={() => setEntering(null)} />
       )}
       {entering?.kind === 'reconcile' && (
         <Reconcile

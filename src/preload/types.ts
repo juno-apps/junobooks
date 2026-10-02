@@ -16,6 +16,15 @@ import type {
 import type { ColumnMapping } from '../shared/csvImport'
 import type { CategorizationRule, RuleInput } from '../shared/rules'
 import type { ReconcileView } from '../shared/reconcile'
+import type {
+  EtsyAccountStatus,
+  EtsyFilesInput,
+  EtsyImportInput,
+  EtsyImportResult,
+  EtsyMapping,
+  EtsyPayout,
+  EtsyPreview
+} from '../shared/etsyImport'
 import type { OpeningBalanceInput, OpeningBalancesView } from '../shared/opening'
 import type {
   CompanyHistory,
@@ -31,6 +40,13 @@ import type {
 
 export type {
   AccountInput,
+  EtsyAccountStatus,
+  EtsyFilesInput,
+  EtsyImportInput,
+  EtsyImportResult,
+  EtsyMapping,
+  EtsyPayout,
+  EtsyPreview,
   ReconcileView,
   CategorizationRule,
   RuleInput,
@@ -126,6 +142,11 @@ export interface JunoApi {
   addRule: (input: RuleInput) => Promise<Result<CategorizationRule[]>>
   updateRule: (id: number, input: RuleInput & { isActive: boolean }) => Promise<Result<CategorizationRule[]>>
   deleteRule: (id: number) => Promise<Result<CategorizationRule[]>>
+  etsyAccounts: () => Promise<Result<EtsyAccountStatus[]>>
+  addEtsyAccounts: () => Promise<Result<EtsyAccountStatus[]>>
+  previewEtsy: (input: EtsyFilesInput) => Promise<Result<EtsyPreview>>
+  importEtsy: (input: EtsyImportInput) => Promise<Result<EtsyImportResult>>
+  etsyPayouts: () => Promise<Result<EtsyPayout[]>>
   getReconcile: (accountId: number) => Promise<Result<ReconcileView>>
   /** Statement end date and ending balance (normal side, in cents). */
   setStatement: (accountId: number, date: string, cents: number) => Promise<Result<ReconcileView>>

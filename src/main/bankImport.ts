@@ -305,7 +305,7 @@ export function importHistory(db: Database.Database): ImportBatchSummary[] {
       `SELECT b.id, b.account_id AS accountId, a.name AS accountName, b.file_name AS fileName, b.imported_at AS importedAt,
          b.added_count AS added, b.duplicate_count AS duplicates,
          (SELECT COUNT(*) FROM bank_lines l WHERE l.batch_id = b.id AND l.status = 'new') AS waiting
-       FROM import_batches b JOIN accounts a ON a.id = b.account_id ORDER BY b.id DESC`
+       FROM import_batches b JOIN accounts a ON a.id = b.account_id WHERE b.channel = 'bank' ORDER BY b.id DESC`
     )
     .all() as ImportBatchSummary[]
 }
