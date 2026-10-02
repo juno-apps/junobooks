@@ -27,8 +27,14 @@ An imported line's `amountCents` is the change on the **imported account's debit
 - **Make a rule…** on a review row opens a form prefilled with the description minus reference numbers (`suggestMatchText`, at most four words), the row's account and memo, and "Only for lines imported into <account>" (on by default). Saving fills in every matching line still without an account.
 - **Categorization rules** (link at the top of the review screen) lists rules with Edit, Turn off/on and Delete. Words need at least three letters.
 
+## Matching lines to entries already in the books (`matchCandidates`, `matchBankLine`)
+- For each line waiting for review, posted entries that have a line on the **same account for the same amount**, dated within **10 days** (`MATCH_DAYS`), are offered (closest date first, at most three) in an "Already in your books?" box: **Match #N · date · memo (other side)**.
+- Left out: entries already tied to another imported line of the same account, reversed entries, and reversals.
+- Matching sets the line to `matched` with that entry; nothing new is posted. Typical cases: a payment typed in by hand that cleared the bank days later; a card payment posted from the checking import, then seen again in the card import.
+- If the matched entry is voided later, the line returns to review.
+
 ## Rules kept by the database (schema v7)
 - `bank_lines`: what the bank said (account, date, description, amount, fingerprint) can never change and rows can't be deleted; only status and entry link change. `import_batches` can't be changed or deleted. Both audited, as are `categorization_rules`.
 
 ## Not built yet
-Matching lines to entries typed in by hand (3d), cleared status and reconciliation (3e).
+Cleared status and reconciliation (3e).

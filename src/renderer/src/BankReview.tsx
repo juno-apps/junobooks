@@ -121,6 +121,16 @@ function BankReview({ initialAccountId, onPosted, onClose }: Props): JSX.Element
     if (r.value.posted.length) onPosted()
   }
 
+  async function match(l: BankLine, entryId: number): Promise<void> {
+    const r = await window.juno.matchBankLine(l.id, entryId)
+    if (!r.ok) setMessage({ text: r.error, bad: true })
+    else {
+      setMessage({ text: `Matched with entry #${entryId}. Nothing new was posted.`, bad: false })
+      onPosted()
+    }
+    await reload()
+  }
+
   async function ignore(targets: BankLine[]): Promise<void> {
     if (targets.length === 0) return
     const r = await window.juno.ignoreBankLines(targets.map((l) => l.id))
@@ -235,6 +245,21 @@ function BankReview({ initialAccountId, onPosted, onClose }: Props): JSX.Element
                           <div className="account-description">Its entry was voided; post it again or ignore it.</div>
                         )}
                         {d.error && <div className="error">{d.error}</div>}
+                        {l.matches.length > 0 && (
+                          <div className="match-box">
+                            Already in your books? Match it instead of posting it again:
+                            {l.matches.map((m) => (
+                              <button
+                                key={m.entryId}
+                                type="button"
+                                className="match-button"
+                                onClick={() => void match(l, m.entryId)}
+                              >
+                                Match #{m.entryId} · {m.date} · {m.memo || '(no memo)'} ({m.otherSide})
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </td>
                       <td className="amount">{l.amountCents > 0 ? formatCents(l.amountCents) : ''}</td>
                       <td className="amount">{l.amountCents < 0 ? formatCents(-l.amountCents) : ''}</td>

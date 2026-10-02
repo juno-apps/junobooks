@@ -640,6 +640,12 @@ button.danger {
   box-sizing: border-box;
 }
 
+.review-table td:nth-child(2),
+.import-preview td:first-child,
+.register-table td:first-child {
+  white-space: nowrap;
+}
+
 .review-table .row-actions {
   white-space: nowrap;
 }
@@ -673,6 +679,21 @@ button.attention {
   padding: 0.6rem 0.8rem;
   border: 1px solid #ddd;
   border-radius: 6px;
+}
+
+.match-box {
+  margin-top: 0.3rem;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.85rem;
+  background: #fff7e6;
+  border-left: 3px solid #d9a441;
+}
+
+.match-button {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+  text-align: left;
 }
 
 .account-link {

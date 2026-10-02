@@ -41,9 +41,23 @@ export interface BankLine {
   entryId: number | null
   /** The entry it was posted to or matched with was later voided, so it needs another look. */
   entryVoided: boolean
-  /** Suggested from a categorization rule (3c). */
+  /** Entries already in the books that look like this line (same account and amount, within MATCH_DAYS), closest date first. */
+  matches: MatchCandidate[]
+  /** Suggested from a categorization rule. */
   suggestion: { accountId: number; payee: string; ruleId: number; matchText: string } | null
 }
+
+export interface MatchCandidate {
+  entryId: number
+  date: string
+  memo: string
+  /** The entry's other account(s), e.g. "Materials" or "Split (2 accounts)". */
+  otherSide: string
+  source: string
+}
+
+/** How far apart (in days) an imported line and an entry may be dated and still be suggested as the same thing. */
+export const MATCH_DAYS = 10
 
 export interface PostBankLineInput {
   lineId: number

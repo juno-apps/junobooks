@@ -4,12 +4,14 @@ import { basename } from 'path'
 import type {
   BankLine,
   ImportBatchSummary,
+  MatchCandidate,
   ImportFile,
   PostBankLineInput,
   PostBankLinesResult,
   StageImportInput,
   StageImportResult
 } from '../shared/bankImport'
+import { MATCH_DAYS } from '../shared/bankImport'
 import { applyMapping, layoutKey, numberedFingerprints, parseCsv, type ColumnMapping } from '../shared/csvImport'
 import { LedgerError, postEntry } from './ledger'
 import { ruleMatcher } from './rules'
@@ -122,7 +124,67 @@ const LINE_SELECT = `SELECT l.id, l.batch_id AS batchId, l.account_id AS account
   CASE WHEN e.status = 'void' THEN 1 ELSE 0 END AS entryVoided
   FROM bank_lines l LEFT JOIN journal_entries e ON e.id = l.entry_id`
 
-type LineRow = Omit<BankLine, 'entryVoided' | 'suggestion'> & { entryVoided: number }
+type LineRow = Omit<BankLine, 'entryVoided' | 'suggestion' | 'matches'> & { entryVoided: number }
+
+const addDays = (date: string, days: number): string => {
+  const d = new Date(`${date}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + days)
+  return d.toISOString().slice(0, 10)
+}
+
+/** Posted entries that look like this imported line: a line on the same account for the same amount, dated within
+ * MATCH_DAYS, and not already tied to another imported line of that account. Closest date first, at most three. */
+export function matchCandidates(
+  db: Database.Database,
+  line: { id: number; accountId: number; amountCents: number; date: string }
+): MatchCandidate[] {
+  const rows = db
+    .prepare(
+      `SELECT DISTINCT e.id AS entryId, e.entry_date AS date, e.memo, e.source
+       FROM journal_entries e JOIN journal_lines jl ON jl.entry_id = e.id
+       WHERE e.status = 'posted' AND jl.account_id = @acct AND jl.amount_cents = @amt
+         AND e.entry_date BETWEEN @from AND @to
+         AND NOT EXISTS (SELECT 1 FROM bank_lines b WHERE b.entry_id = e.id AND b.account_id = @acct
+                         AND b.status IN ('posted', 'matched') AND b.id <> @line)
+         AND NOT EXISTS (SELECT 1 FROM journal_entries r WHERE r.reverses_entry_id = e.id AND r.status = 'posted')
+         AND e.reverses_entry_id IS NULL
+       ORDER BY abs(julianday(e.entry_date) - julianday(@date)), e.id
+       LIMIT 3`
+    )
+    .all({
+      acct: line.accountId,
+      amt: line.amountCents,
+      from: addDays(line.date, -MATCH_DAYS),
+      to: addDays(line.date, MATCH_DAYS),
+      date: line.date,
+      line: line.id
+    }) as Omit<MatchCandidate, 'otherSide'>[]
+  const others = db.prepare(
+    `SELECT DISTINCT a.name FROM journal_lines l JOIN accounts a ON a.id = l.account_id WHERE l.entry_id = ? AND l.account_id <> ?`
+  )
+  return rows.map((r) => {
+    const names = (others.all(r.entryId, line.accountId) as { name: string }[]).map((x) => x.name)
+    return { ...r, otherSide: names.length === 1 ? names[0] : `Split (${names.length} accounts)` }
+  })
+}
+
+/** Ties an imported line to an entry already in the books, instead of posting a second one. */
+export function matchBankLine(db: Database.Database, lineId: number, entryId: number, now: Date = new Date()): void {
+  db.transaction(() => {
+    const l = lineForUpdate(db, lineId)
+    if (!reviewable(l)) throw new LedgerError('This line was already dealt with.')
+    if (!matchCandidates(db, l).some((c) => c.entryId === entryId)) {
+      throw new LedgerError(
+        `Entry #${entryId} doesn't match this line (same account and amount, within ${MATCH_DAYS} days).`
+      )
+    }
+    db.prepare(`UPDATE bank_lines SET status = 'matched', entry_id = ?, updated_at = ? WHERE id = ?`).run(
+      entryId,
+      now.toISOString(),
+      lineId
+    )
+  })()
+}
 
 /** Lines waiting for review: new ones, plus posted/matched ones whose entry was voided since. */
 export function linesToReview(db: Database.Database, accountId?: number): BankLine[] {
@@ -140,6 +202,7 @@ export function linesToReview(db: Database.Database, accountId?: number): BankLi
     return {
       ...r,
       entryVoided: !!r.entryVoided,
+      matches: matchCandidates(db, r),
       suggestion: rule
         ? { accountId: rule.accountId, payee: rule.payee, ruleId: rule.id, matchText: rule.matchText }
         : null
@@ -152,7 +215,7 @@ export function ignoredLines(db: Database.Database, accountId: number): BankLine
     db
       .prepare(`${LINE_SELECT} WHERE l.status = 'ignored' AND l.account_id = ? ORDER BY l.txn_date, l.id`)
       .all(accountId) as LineRow[]
-  ).map((r) => ({ ...r, entryVoided: !!r.entryVoided, suggestion: null }))
+  ).map((r) => ({ ...r, entryVoided: !!r.entryVoided, matches: [], suggestion: null }))
 }
 
 /** How many lines wait for review, per account. */

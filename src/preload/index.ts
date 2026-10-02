@@ -44,6 +44,7 @@ const api: JunoApi = {
   ignoredLines: (accountId) => ipcRenderer.invoke('imports:ignored', accountId),
   reviewCounts: () => ipcRenderer.invoke('imports:counts'),
   postBankLines: (items) => ipcRenderer.invoke('imports:post', items),
+  matchBankLine: (lineId, entryId) => ipcRenderer.invoke('imports:match', lineId, entryId),
   ignoreBankLines: (ids) => ipcRenderer.invoke('imports:ignore', ids),
   restoreBankLine: (id) => ipcRenderer.invoke('imports:restore', id),
   importHistory: () => ipcRenderer.invoke('imports:history'),

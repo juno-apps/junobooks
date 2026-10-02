@@ -227,6 +227,9 @@ app.whenReady().then(() => {
   ipcMain.handle('imports:ignored', (_e, accountId: number) => wrap(() => requireCompany().ignoredLines(accountId)))
   ipcMain.handle('imports:counts', () => (current ? current.reviewCounts() : []))
   ipcMain.handle('imports:post', (_e, items: PostBankLineInput[]) => wrap(() => requireCompany().postBankLines(items)))
+  ipcMain.handle('imports:match', (_e, lineId: number, entryId: number) =>
+    wrap(() => requireCompany().matchBankLine(lineId, entryId))
+  )
   ipcMain.handle('imports:ignore', (_e, ids: number[]) => wrap(() => requireCompany().ignoreBankLines(ids)))
   ipcMain.handle('imports:restore', (_e, id: number) => wrap(() => requireCompany().restoreBankLine(id)))
   ipcMain.handle('imports:history', () => wrap(() => requireCompany().importHistory()))

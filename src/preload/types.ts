@@ -116,6 +116,7 @@ export interface JunoApi {
   ignoredLines: (accountId: number) => Promise<Result<BankLine[]>>
   reviewCounts: () => Promise<{ accountId: number; count: number }[]>
   postBankLines: (items: PostBankLineInput[]) => Promise<Result<PostBankLinesResult>>
+  matchBankLine: (lineId: number, entryId: number) => Promise<Result<void>>
   ignoreBankLines: (ids: number[]) => Promise<Result<void>>
   restoreBankLine: (id: number) => Promise<Result<void>>
   importHistory: () => Promise<Result<ImportBatchSummary[]>>

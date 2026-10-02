@@ -26,6 +26,7 @@ import {
   ignoredLines,
   importHistory,
   linesToReview,
+  matchBankLine,
   postBankLines,
   restoreBankLine,
   reviewCounts,
@@ -358,6 +359,10 @@ export class CompanyBooks {
 
   postBankLines(items: PostBankLineInput[], now: Date = new Date()): PostBankLinesResult {
     return postBankLines(this.db, this.profile(now).booksStartDate, items, now)
+  }
+
+  matchBankLine(lineId: number, entryId: number, now: Date = new Date()): void {
+    matchBankLine(this.db, lineId, entryId, now)
   }
 
   ignoreBankLines(ids: number[], now: Date = new Date()): void {
