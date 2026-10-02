@@ -34,9 +34,10 @@ JunoBooks-code/
       etsyImport.ts    Etsy statement imports: accounts setup, preview, posting, payouts tie-out
       inventory.ts     Inventory facts: items, purchases, counts, filed method per year
       inventoryReport.ts  Inventory year report (four methods) and the year-end entry
+      sales.ts         Customers, resale certificates, invoices, payments received, aging
       db/migrations.ts Numbered schema migrations
     preload/           contextBridge API exposed to the renderer as window.juno
-    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange, JournalEntry, TransactionList, SimpleEntry, TransferEntry, AccountCombobox, AccountRegister, OpeningBalances, Receipts, Settings, ImportWizard, BankReview, RulesManager, Reconcile, EtsyImport, Inventory; useFormError hook)
+    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange, JournalEntry, TransactionList, SimpleEntry, TransferEntry, AccountCombobox, AccountRegister, OpeningBalances, Receipts, Settings, ImportWizard, BankReview, RulesManager, Reconcile, EtsyImport, Inventory, Sales; useFormError hook)
     shared/            Code used by both main and renderer: entity types, US states, dates, money, company validation,
                        templates.ts (starting charts), taxLines.ts (tax categories + per-year line tables), chart.ts (view types),
                        accounts.ts (account input rules: kinds, debit/credit side, validation, number-range warning),
@@ -46,7 +47,8 @@ JunoBooks-code/
                        attachments.ts (receipt naming, accepted types), csvImport.ts (CSV reading, column guessing, mapping, fingerprints),
                        bankImport.ts (import types, account groups for import screens), rules.ts (rule matching, suggested text),
                        reconcile.ts (reconciliation view types, totals), etsy.ts (Etsy file reading, row kinds, posting plan, Etsy accounts),
-                       etsyImport.ts (Etsy import types), inventory.ts (quantities, the four methods), inventoryView.ts (inventory screen types)
+                       etsyImport.ts (Etsy import types), inventory.ts (quantities, the four methods), inventoryView.ts (inventory screen types),
+                       sales.ts (direct-sales types, tax rates, invoice totals, aging), invoiceHtml.ts (printable invoice)
   scripts/run-tests.cjs
   scripts/live/         Playwright live checks (dev-only; see docs/topics/live-checks.md)
   samples/              Made-up example files (bank CSVs, Etsy statement and orders) for trying imports and live checks
@@ -125,6 +127,10 @@ Opening an older file backs it up first (`backups/books-<time>-before-upgrade-vX
 **v10** (inventory; details in `docs/topics/inventory.md`)
 - `inventory_items`, `inventory_purchases` (quantity in thousandths, cost cents, opening flag, soft remove; no delete), `inventory_counts` (unique item + date), `inventory_methods` (append-only filed method per year), `inventory_adjustments` (year-end entries). All audited.
 
+**v11** (direct sales; details in `docs/topics/direct-sales.md`)
+- `company_profile` adds address, email, phone (its audit triggers re-created).
+- `customers`, `resale_certificates` (no delete), `invoices` (draft/open/void; finalized ones fixed), `invoice_lines` (draft-only changes), `payments` (no delete), `payment_applications` (fixed). All audited.
+
 Files open in WAL mode with foreign keys on. Dates are `YYYY-MM-DD` text.
 
 **Backups:** on close (and before any migration) the WAL is checkpointed and the file copied to `backups/books-<ISO time>[-label].sqlite`. Only the newest 30 are kept (sorted by name, since names start with the timestamp).
@@ -163,6 +169,7 @@ See `JunoBooks-PLAN.md` §10 (inventory method, S-corp election timing, which ba
 - `docs/topics/bank-import.md`: bank/card CSV import wizard, column guessing, duplicates, review and posting of imported lines, sign rule.
 - `docs/topics/etsy-import.md`: Etsy statement + orders import, row kinds, how they post, Etsy accounts, payouts tie-out.
 - `docs/topics/inventory.md`: inventory items, purchases, counts, the four methods, filed method, year-end entry.
+- `docs/topics/direct-sales.md`: customers, resale certificates, invoices (draft, finalize, void, PDF), payments received, aging.
 - `docs/topics/chart-of-accounts.md`: templates, numbering, entity-specific accounts, tax-line mapping, accountant notes, chart screen, editing accounts, adding/restoring accounts after creation.
 
 ## Latest handoff
@@ -175,4 +182,5 @@ None yet. Created only when the owner types "create new handoff."
 - **Phase 3 complete (schema v8):** CSV import wizard, review screen, categorization rules, matching to entries already in the books, cleared status and reconciliation (`docs/topics/bank-import.md`). Verified by Claude, owner review pending.
 - **Phase 4 complete (schema v9):** Etsy importer with payouts tie-out (`docs/topics/etsy-import.md`). Verified by Claude with made-up files; real exports untested (backlog).
 - **Phase 5 complete (schema v10):** inventory with four methods side by side, filed method per year, year-end entry (`docs/topics/inventory.md`). Filed method for 2026 is the owner's/accountant's choice (backlog).
+- **Phase 6 complete (schema v11):** customers, resale certificates, invoices with PDF, payments, aging (`docs/topics/direct-sales.md`).
 - Build run in progress: see `progress-log.md` → Build run for the resume point.
