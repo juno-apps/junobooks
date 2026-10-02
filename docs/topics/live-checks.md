@@ -12,7 +12,7 @@ The owner has given full access to whatever is needed to control for live checks
 4. The window can start behind others or off to the side. Bring it forward from PowerShell (`ShowWindow` / `SetForegroundWindow` on the `electron` process whose `MainWindowTitle` is "JunoBooks"). Maximize it by double-clicking the title bar.
 5. Use a **new test company** (name it "Live check"), never an existing test company. Companies are created through the app's New company form; this adds a folder under `test-data\Companies`.
 6. Check the happy path, the refusals (wrong input gives a plain-English message), and the resulting balances on the Chart of accounts tab.
-7. Tidy up: stop the `electron.exe` processes and the `node.exe` running `electron-vite` that you started, and set `lastCompany` in `test-datapp-settings.json` back to the company the owner had open.
+7. Tidy up: stop the `electron.exe` processes and the `node.exe` running `electron-vite` that you started, and set `lastCompany` in `test-data\app-settings.json` back to the company the owner had open.
 
 ## Traps
 - **Don't use `open_application` on "Electron".** It starts a blank Electron welcome window, not JunoBooks.
