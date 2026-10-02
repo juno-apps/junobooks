@@ -93,6 +93,7 @@ const api: JunoApi = {
   importAmazon: (input) => ipcRenderer.invoke('amazon:import', input),
   amazonPayouts: () => ipcRenderer.invoke('amazon:payouts'),
   profitAndLoss: (from, to, byMonth) => ipcRenderer.invoke('reports:pl', from, to, byMonth),
+  dashboard: () => ipcRenderer.invoke('company:dashboard'),
   closingView: () => ipcRenderer.invoke('closing:view'),
   setBooksClosed: (date, reason) => ipcRenderer.invoke('closing:set', date, reason),
   yearCloseInfo: (year) => ipcRenderer.invoke('closing:yearInfo', year),

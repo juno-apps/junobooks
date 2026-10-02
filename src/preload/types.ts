@@ -22,6 +22,7 @@ import type { BalanceSheet, GeneralLedger, ProfitAndLoss, TrialBalance } from '.
 import type { ChannelSales, CogsSchedule, TaxLineSummary } from '../shared/reportsExtra'
 import type { AccountantNote, PackageResult } from '../shared/pkg'
 import type { ClosingView, YearCloseInfo } from '../shared/closing'
+import type { Dashboard } from '../shared/dashboard'
 import type {
   Contractor,
   ContractorInput,
@@ -73,6 +74,7 @@ import type {
 
 export type {
   AccountInput,
+  Dashboard,
   ClosingView,
   YearCloseInfo,
   AccountantNote,
@@ -267,6 +269,7 @@ export interface JunoApi {
   importAmazon: (input: AmazonImportInput) => Promise<Result<AmazonImportResult>>
   amazonPayouts: () => Promise<Result<EtsyPayout[]>>
   profitAndLoss: (from: string, to: string, byMonth: boolean) => Promise<Result<ProfitAndLoss>>
+  dashboard: () => Promise<Result<Dashboard>>
   closingView: () => Promise<Result<ClosingView>>
   /** null reopens everything; moving earlier needs a reason. */
   setBooksClosed: (date: string | null, reason: string) => Promise<Result<ClosingView>>

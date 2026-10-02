@@ -7,6 +7,7 @@ import ChartOfAccounts from './ChartOfAccounts'
 import EntityTypeChange from './EntityTypeChange'
 import HomeStateChange from './HomeStateChange'
 import BankReview from './BankReview'
+import DashboardPanel from './DashboardPanel'
 import CloseBooks from './CloseBooks'
 import AmazonImport from './AmazonImport'
 import EtsyImport from './EtsyImport'
@@ -34,6 +35,7 @@ interface Props {
 function CompanyHome({ company, onChanged }: Props): JSX.Element {
   const [changingEntity, setChangingEntity] = useState(false)
   const [changingState, setChangingState] = useState(false)
+  const [showDetails, setShowDetails] = useState(false)
   /** The entry screen: closed, an expense, income or transfer, a blank journal entry, or a copy of an existing entry. */
   const [entering, setEntering] = useState<
     | { kind: 'journal'; copyOf?: EntryListItem }
@@ -101,94 +103,109 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
   const template = TEMPLATES.find((t) => t.id === company.template)
   return (
     <>
-      <section className="panel">
+      <section className="panel home-panel">
         <h1>{company.name}</h1>
-        <dl className="details">
-          <dt>Entity type</dt>
-          <dd>
-            {entity.label}{' '}
-            <button type="button" className="link-button" onClick={() => setChangingEntity((v) => !v)}>
-              Change
-            </button>
-          </dd>
-          <dt>Federal tax return</dt>
-          <dd>{TAX_FORM_LABELS[entity.taxForm]}</dd>
-          <dt>Home state</dt>
-          <dd>
-            {getStateName(company.homeState)}{' '}
-            <button type="button" className="link-button" onClick={() => setChangingState((v) => !v)}>
-              Change
-            </button>
-          </dd>
-          <dt>Books start</dt>
-          <dd>{company.booksStartDate}</dd>
-          {template && (
-            <>
-              <dt>Chart of accounts</dt>
-              <dd>{template.label} template</dd>
-            </>
-          )}
-          <dt>Company folder</dt>
-          <dd className="path">{company.dir}</dd>
-        </dl>
-        {company.template && !entering && (
-          <div className="form-actions home-actions">
-            <button type="button" className="primary" onClick={() => startEntry('expense')}>
-              New expense
-            </button>
-            <button type="button" className="primary" onClick={() => startEntry('income')}>
-              New income
-            </button>
-            <button type="button" className="primary" onClick={() => startEntry('transfer')}>
-              New transfer
-            </button>
-            <button type="button" onClick={() => startEntry('journal')}>
-              New journal entry
-            </button>
-            <button type="button" onClick={() => startEntry('opening')}>
-              Opening balances
-            </button>
-            <button type="button" onClick={() => startEntry('import')}>
-              Import bank file
-            </button>
-            <button type="button" onClick={() => startEntry('etsy')}>
-              Import from Etsy
-            </button>
-            <button type="button" onClick={() => startEntry('amazon')}>
-              Import from Amazon
-            </button>
-            <button type="button" onClick={() => startEntry('1099k')}>
-              1099-K tie-out
-            </button>
-            <button type="button" onClick={() => startEntry('salesTax')}>
-              Sales tax
-            </button>
-            <button type="button" onClick={() => startEntry('reports')}>
-              Reports
-            </button>
-            <button type="button" onClick={() => startEntry('records')}>
-              Year-end records
-            </button>
-            <button type="button" onClick={() => startEntry('package')}>
-              Accountant package
-            </button>
-            <button type="button" onClick={() => startEntry('close')}>
-              Close books
-            </button>
-            <button type="button" onClick={() => startEntry('reconcile')}>
-              Reconcile
-            </button>
-            <button type="button" onClick={() => startEntry('inventory')}>
-              Inventory
-            </button>
-            <button type="button" onClick={() => startEntry('sales')}>
-              Invoices
-            </button>
-            {toReview > 0 && (
-              <button type="button" className="primary attention" onClick={() => startReview(null)}>
-                Review imported lines ({toReview})
+        <p className="company-line">
+          {entity.label} · {TAX_FORM_LABELS[entity.taxForm]} · {getStateName(company.homeState)} · books start{' '}
+          {company.booksStartDate}{' '}
+          <button type="button" className="link-button" onClick={() => setShowDetails((v) => !v)}>
+            {showDetails ? 'Hide details' : 'Details'}
+          </button>
+        </p>
+        {showDetails && (
+          <dl className="details">
+            <dt>Entity type</dt>
+            <dd>
+              {entity.label}{' '}
+              <button type="button" className="link-button" onClick={() => setChangingEntity((v) => !v)}>
+                Change
               </button>
+            </dd>
+            <dt>Federal tax return</dt>
+            <dd>{TAX_FORM_LABELS[entity.taxForm]}</dd>
+            <dt>Home state</dt>
+            <dd>
+              {getStateName(company.homeState)}{' '}
+              <button type="button" className="link-button" onClick={() => setChangingState((v) => !v)}>
+                Change
+              </button>
+            </dd>
+            <dt>Books start</dt>
+            <dd>{company.booksStartDate}</dd>
+            {template && (
+              <>
+                <dt>Chart of accounts</dt>
+                <dd>{template.label} template</dd>
+              </>
             )}
+            <dt>Company folder</dt>
+            <dd className="path">{company.dir}</dd>
+          </dl>
+        )}
+        {company.template && !entering && (
+          <div className="home-groups">
+            {(
+              [
+                [
+                  'Enter',
+                  [
+                    ['New expense', 'expense', true],
+                    ['New income', 'income', true],
+                    ['New transfer', 'transfer', true],
+                    ['New journal entry', 'journal', false],
+                    ['Opening balances', 'opening', false]
+                  ]
+                ],
+                [
+                  'Bring in',
+                  [
+                    ['Import bank file', 'import', false],
+                    ['Import from Etsy', 'etsy', false],
+                    ['Import from Amazon', 'amazon', false],
+                    ['Reconcile', 'reconcile', false]
+                  ]
+                ],
+                [
+                  'Sell and make',
+                  [
+                    ['Invoices', 'sales', false],
+                    ['Inventory', 'inventory', false],
+                    ['Sales tax', 'salesTax', false]
+                  ]
+                ],
+                [
+                  'Year end',
+                  [
+                    ['Reports', 'reports', false],
+                    ['Year-end records', 'records', false],
+                    ['1099-K tie-out', '1099k', false],
+                    ['Accountant package', 'package', false],
+                    ['Close books', 'close', false]
+                  ]
+                ]
+              ] as [string, [string, Parameters<typeof startEntry>[0], boolean][]][]
+            ).map(([title, buttons]) => (
+              <div key={title} className="home-group">
+                <span className="home-group-title">{title}</span>
+                <div className="form-actions home-actions">
+                  {buttons.map(([label, kind, primary]) => (
+                    <button
+                      key={label}
+                      type="button"
+                      className={primary ? 'primary' : ''}
+                      onClick={() => startEntry(kind)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                  {title === 'Bring in' && toReview > 0 && (
+                    <button type="button" className="primary attention" onClick={() => startReview(null)}>
+                      Review imported lines ({toReview})
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </section>
@@ -211,6 +228,14 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
           key={entryKey}
           onImported={() => setChartVersion((v) => v + 1)}
           onClose={() => setEntering(null)}
+        />
+      )}
+      {company.template && !entering && (
+        <DashboardPanel
+          version={chartVersion}
+          onAction={(action) =>
+            action === 'review' ? startReview(null) : startEntry(action === 'invoices' ? 'sales' : action)
+          }
         />
       )}
       {entering?.kind === 'close' && (

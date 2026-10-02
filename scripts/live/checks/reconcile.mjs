@@ -40,7 +40,7 @@ await page.getByRole('button', { name: 'Cancel' }).click()
 
 // Register shows R and blank for the uncashed check.
 await page.getByRole('button', { name: 'Chart of accounts' }).click()
-await page.getByRole('button', { name: 'Checking account' }).click()
+await page.getByRole('button', { name: 'Checking account', exact: true }).click()
 const reg = await page.locator('.register-table tbody').innerText()
 check((reg.match(/\tR/g) ?? []).length === 2 || (reg.match(/R\n/g) ?? []).length >= 1, 'register marks reconciled lines R')
 await shot(page, 'reconcile-register')

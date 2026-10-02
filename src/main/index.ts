@@ -429,6 +429,7 @@ app.whenReady().then(() => {
   ipcMain.handle('reports:pl', (_e, from: string, to: string, byMonth: boolean) =>
     wrap(() => requireCompany().profitAndLoss(from, to, byMonth))
   )
+  ipcMain.handle('company:dashboard', () => wrap(() => requireCompany().dashboard()))
   ipcMain.handle('closing:view', () => wrap(() => requireCompany().closingView()))
   ipcMain.handle('closing:set', (_e, date: string | null, reason: string) => wrap(() => requireCompany().setBooksClosed(date, reason)))
   ipcMain.handle('closing:yearInfo', (_e, year: number) => wrap(() => requireCompany().yearCloseInfo(year)))

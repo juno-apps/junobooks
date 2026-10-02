@@ -4,7 +4,7 @@ import { launch, createCompany, shot, check, done, post } from '../lib.mjs'
 const { app, page, errors } = await launch({ fresh: true })
 await createCompany(page)
 
-await page.getByRole('button', { name: 'Sales tax' }).click()
+await page.getByRole('button', { name: 'Sales tax', exact: true }).click()
 await page.getByRole('heading', { name: 'Sales tax', level: 2 }).waitFor()
 await page.locator('.sales-tax .tabs').getByRole('button', { name: 'Rates' }).click()
 await page.getByLabel('Rate place').fill('San Diego')
@@ -46,7 +46,7 @@ await post(page, '2026-03-10', 'Craft fair cash', [['1000', 5000], ['4000', -500
 await page.reload()
 await page.waitForSelector('.app-main h1')
 
-await page.getByRole('button', { name: 'Sales tax' }).click()
+await page.getByRole('button', { name: 'Sales tax', exact: true }).click()
 await page.getByLabel('Sales tax year').selectOption('2026')
 await page.locator('.quarter-buttons').getByRole('button', { name: 'Q1' }).click()
 await page.locator('.tax-report').waitFor()

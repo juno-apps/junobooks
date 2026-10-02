@@ -39,6 +39,8 @@ import { cogsSchedule, salesByChannel, taxLineSummary } from './reportsExtra'
 import * as records from './records'
 import { accountantNotes } from './accountantNotes'
 import { closeYear, closingView, setBooksClosed, yearCloseInfo } from './closing'
+import { dashboard } from './dashboard'
+import type { Dashboard } from '../shared/dashboard'
 import type { ClosingView, YearCloseInfo } from '../shared/closing'
 import { buildPackage } from './accountantPackage'
 import type { AccountantNote, PackageResult } from '../shared/pkg'
@@ -649,6 +651,10 @@ export class CompanyBooks {
 
   profitAndLoss(from: string, to: string, byMonth = false): ProfitAndLoss {
     return profitAndLoss(this.db, from, to, byMonth)
+  }
+
+  dashboard(now: Date = new Date()): Dashboard {
+    return dashboard(this.db, this.profile(now).booksStartDate, localDateString(now))
   }
 
   closingView(): ClosingView {

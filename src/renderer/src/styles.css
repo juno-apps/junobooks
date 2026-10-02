@@ -48,6 +48,10 @@ body {
   max-width: 560px;
 }
 
+.panel.home-panel {
+  max-width: 1100px;
+}
+
 .panel h1 {
   margin-top: 0;
 }
@@ -1144,4 +1148,83 @@ button.attention {
 
 .lock-history {
   font-size: 0.85rem;
+}
+
+.company-line {
+  color: #555;
+  margin: -0.4rem 0 0.8rem;
+}
+
+.home-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.home-group {
+  display: flex;
+  align-items: baseline;
+  gap: 0.8rem;
+}
+
+.home-group-title {
+  width: 6.5rem;
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #777;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.home-group .home-actions {
+  margin-top: 0;
+}
+
+.dashboard {
+  margin: 1.2rem 0 0.4rem;
+  max-width: 1100px;
+}
+
+.figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 0.6rem;
+}
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #e3e3e3;
+  border-radius: 6px;
+  background: #fafbfc;
+}
+
+.figure strong {
+  font-size: 1.2rem;
+}
+
+.figure .small {
+  font-size: 0.75rem;
+}
+
+.figure strong.unusual {
+  color: #a12622;
+}
+
+.todo h3 {
+  margin: 0.9rem 0 0.3rem;
+  font-size: 1rem;
+}
+
+.todo ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.todo li {
+  margin: 0.15rem 0;
 }

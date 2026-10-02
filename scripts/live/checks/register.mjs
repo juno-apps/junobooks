@@ -12,7 +12,7 @@ await page.reload()
 await page.waitForSelector('.app-main h1')
 
 await page.getByRole('button', { name: 'Chart of accounts' }).click()
-await page.getByRole('button', { name: 'Checking account' }).click()
+await page.getByRole('button', { name: 'Checking account', exact: true }).click()
 await page.getByRole('heading', { name: '1000 Checking account' }).waitFor()
 const rows = page.locator('.register-table tbody tr')
 check((await rows.count()) === 3, 'three posted rows (voided hidden)')
