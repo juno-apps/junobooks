@@ -93,6 +93,32 @@ describe('1099-K tie-out', () => {
     expect(books.tieOut1099k(2025)[0].importedCents).toBe(0)
   })
 
+  it('a settlement that ends owed to Amazon has no payout; the card charge posted to the Amazon payment account clears it', () => {
+    const head = 'settlement-id\tsettlement-start-date\tsettlement-end-date\tdeposit-date\ttotal-amount\tcurrency\ttransaction-type\torder-id\tamount-type\tamount-description\tamount\tposted-date'
+    const owed = [
+      head,
+      '25000000001\t2026-08-30 00:00:00 UTC\t2026-09-13 00:00:00 UTC\t2026-09-15 00:00:00 UTC\t-208.54\tUSD\t\t\t\t\t\t',
+      '25000000001\t\t\t\t\tUSD\tServiceFee\t\tCost of Advertising\tTransactionTotalAmount\t-190.90\t2026-09-02',
+      '25000000001\t\t\t\t\tUSD\tother-transaction\t111-0000002-0000002\tother-transaction\tShipping label purchase\t-17.64\t2026-09-09'
+    ].join('\n')
+    const p = books.previewAmazon(owed)
+    expect(p.deposit).toBeNull()
+    books.importAmazon({ text: owed, fileName: 'o.txt', mapping: p.mapping, depositAccountId: p.depositAccountId })
+    expect(bal('Amazon payment account')).toBe(-20854)
+    expect(bal('Checking account')).toBe(0)
+
+    const card = books.chart().accounts.find((a) => a.number === '2100')!.id
+    const text = 'Date,Description,Amount\n09/20/2026,AMAZON SELLER CHARGE,208.54'
+    books.stageImport({ accountId: card, fileName: 'card.csv', text, mapping: guessMapping(parseCsv(text), true) })
+    const [charge] = books.linesToReview()
+    // No entry exists to match: the owed amount was never posted as a payout.
+    expect(charge.matches).toEqual([])
+    const amazonAccount = books.chart().accounts.find((a) => a.name === 'Amazon payment account')!.id
+    expect(books.postBankLines([{ lineId: charge.id, accountId: amazonAccount, memo: '' }]).failed).toEqual([])
+    expect(bal('Amazon payment account')).toBe(0)
+    expect(books.chart().accounts.find((a) => a.number === '2100')!.balanceCents).toBe(20854)
+  })
+
   it('bank import of the payout matches the Amazon payout entry', () => {
     importIt()
     const text = 'Date,Description,Amount\n03/18/2026,AMAZON.COM SERVICES PAYOUT,59.39'
