@@ -8,7 +8,6 @@ Ideas parked for later. Items are added when the owner starts a message with "ba
 ## Data/logic changes
 
 
-- Test the Amazon importer with a real settlement report (flat file V2). Phase 7 was built from Amazon's documented layout and the made-up file in `samples/amazon/`.
 
 ## Feature ideas
 
