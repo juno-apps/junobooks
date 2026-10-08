@@ -2,7 +2,10 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { AccountInput, ChartAccount, ChartView, Result } from '../../preload/types'
 import {
   ACCOUNT_TYPES,
+  MAX_LEVELS,
   numberRangeWarning,
+  parentProblem,
+  treeOrder,
   SUBTYPE_OPTIONS,
   suggestAccountNumber,
   SYSTEM_SUBTYPES,
@@ -59,10 +62,9 @@ function AccountForm({ account, chart, onDone, onCancel }: Props): JSX.Element {
     setInput((prev) => ({ ...prev, type, subtype: '', taxCategory: '', parentId: null }))
   }
 
-  // Possible parents: top-level accounts of the same type (not this one). An account with sub-accounts stays top level.
-  const hasChildren = account !== null && chart.accounts.some((a) => a.parentId === account.id)
-  const parents = chart.accounts.filter(
-    (a) => a.type === input.type && a.parentId === null && a.id !== account?.id && a.isActive
+  // Possible parents: active accounts of the same type, in tree order, that wouldn't make a loop or go past MAX_LEVELS.
+  const parents = treeOrder(chart.accounts.filter((a) => a.type === input.type)).filter(
+    ({ item }) => item.isActive && !parentProblem(chart.accounts, account?.id ?? null, item.id)
   )
 
   function suggestNumber(): void {
@@ -196,27 +198,29 @@ function AccountForm({ account, chart, onDone, onCancel }: Props): JSX.Element {
           </span>
         </label>
 
-        {!hasChildren && (
-          <label>
-            Sub-account of (optional)
-            <select
-              value={input.parentId ?? ''}
-              onChange={(e) => set('parentId', e.target.value ? Number(e.target.value) : null)}
-              aria-label="Sub-account of"
-            >
-              <option value="">None (a main account)</option>
-              {parents.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.number} {p.name}
-                </option>
-              ))}
-            </select>
-            <span className="hint">
-              Groups this account under another on the chart and in reports, with a subtotal (e.g. &ldquo;Etsy
-              fees&rdquo; under &ldquo;Commissions and fees&rdquo;). It keeps its own tax category.
-            </span>
-          </label>
-        )}
+        <label>
+          Sub-account of (optional)
+          <select
+            value={input.parentId ?? ''}
+            onChange={(e) => set('parentId', e.target.value ? Number(e.target.value) : null)}
+            aria-label="Sub-account of"
+          >
+            <option value="">None (a main account)</option>
+            {parents.map(({ item, depth }) => (
+              <option key={item.id} value={item.id}>
+                {'   '.repeat(depth)}
+                {item.number} {item.name}
+              </option>
+            ))}
+          </select>
+          <span className="hint">
+            Groups this account under another on the chart and in reports, with a subtotal (e.g. &ldquo;Etsy
+            fees&rdquo; under &ldquo;Commissions and fees&rdquo;). It keeps its own tax category. Accounts can nest up
+            to {MAX_LEVELS} levels deep; two or three levels are usually easiest to read.
+            {account && chart.accounts.some((a) => a.parentId === account.id) &&
+              ' Accounts under this one move along with it.'}
+          </span>
+        </label>
 
         <label>
           Description (optional)

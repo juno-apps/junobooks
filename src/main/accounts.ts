@@ -2,9 +2,11 @@ import type Database from 'better-sqlite3'
 import {
   effectiveSubtype,
   normalBalanceFor,
+  parentProblem,
   SYSTEM_SUBTYPES,
   validateAccountInput,
-  type AccountInput
+  type AccountInput,
+  type TreeNode
 } from '../shared/accounts'
 import type { EntityTypeId } from '../shared/entities'
 import { formatCents } from '../shared/money'
@@ -85,17 +87,22 @@ function noteForCategory(ctx: ChartContext, number: string, category: string, ol
   return `The tax category was changed from "${categoryLabel(oldCategory)}" to "${categoryLabel(category)}". Confirm this is right.`
 }
 
-/** The id of a top-level account with this number and type, to place a new account under (or null). */
-export function parentFor(db: Database.Database, number: string | undefined, type: AccountType): number | null {
-  if (!number) return null
-  const r = db
-    .prepare('SELECT id FROM accounts WHERE number = ? AND type = ? AND parent_id IS NULL')
-    .get(number, type) as { id: number } | undefined
-  return r?.id ?? null
+function treeNodes(db: Database.Database): TreeNode[] {
+  return db.prepare('SELECT id, parent_id AS parentId FROM accounts').all() as TreeNode[]
 }
 
-/** A parent must exist, have the same type, be top level itself, and not be the account; an account that has
- * sub-accounts can't become one. */
+/** The id of the account with this number and type, to place a new account under (or null, also when it is
+ * already as deep as accounts can go). */
+export function parentFor(db: Database.Database, number: string | undefined, type: AccountType): number | null {
+  if (!number) return null
+  const r = db.prepare('SELECT id FROM accounts WHERE number = ? AND type = ?').get(number, type) as
+    { id: number } | undefined
+  if (!r || parentProblem(treeNodes(db), null, r.id)) return null
+  return r.id
+}
+
+/** A parent must exist, have the same type, not be the account or sit under it, and keep everything within
+ * MAX_LEVELS. */
 function checkParent(
   db: Database.Database,
   id: number | null,
@@ -104,15 +111,11 @@ function checkParent(
 ): void {
   if (parentId === null || parentId === undefined) return
   if (parentId === id) throw new AccountError("An account can't be a sub-account of itself.")
-  const p = db.prepare('SELECT type, parent_id FROM accounts WHERE id = ?').get(parentId) as
-    { type: AccountType; parent_id: number | null } | undefined
+  const p = db.prepare('SELECT type FROM accounts WHERE id = ?').get(parentId) as { type: AccountType } | undefined
   if (!p) throw new AccountError("That parent account doesn't exist.")
   if (p.type !== type) throw new AccountError('A sub-account must be the same type as the account it sits under.')
-  if (p.parent_id !== null)
-    throw new AccountError('Sub-accounts go one level deep: choose a top-level account as the parent.')
-  if (id !== null && db.prepare('SELECT 1 FROM accounts WHERE parent_id = ? LIMIT 1').get(id)) {
-    throw new AccountError("This account has sub-accounts of its own, so it can't sit under another account.")
-  }
+  const problem = parentProblem(treeNodes(db), id, parentId)
+  if (problem) throw new AccountError(problem)
 }
 
 function checkInput(input: AccountInput): { number: string; name: string; description: string } {

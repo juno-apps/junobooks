@@ -10,7 +10,7 @@ export interface AccountInput {
   subtype: AccountSubtype
   taxCategory: TaxCategoryKey | ''
   description: string
-  /** Sub-account of this account (same type, one level deep). Omitted on edit = unchanged; null = top level. */
+  /** Sub-account of this account (same type, up to MAX_LEVELS deep). Omitted on edit = unchanged; null = top level. */
   parentId?: number | null
 }
 
@@ -52,6 +52,64 @@ export const SUBTYPE_OPTIONS: Record<AccountType, { value: AccountSubtype; label
 export const SYSTEM_SUBTYPES: AccountSubtype[] = ['opening_balance']
 
 export const NAME_MAX = 100
+
+/** How deep accounts can nest: a main account is level 1, its sub-account level 2, and so on. */
+export const MAX_LEVELS = 5
+
+export interface TreeNode {
+  id: number
+  parentId: number | null
+}
+
+/** The chain from this account up to its main account (this one first). Stops on a loop, which can't normally exist. */
+function ancestors(nodes: TreeNode[], id: number): number[] {
+  const byId = new Map(nodes.map((n) => [n.id, n]))
+  const chain: number[] = []
+  for (let cur: number | null = id; cur !== null && !chain.includes(cur); cur = byId.get(cur)?.parentId ?? null) {
+    chain.push(cur)
+  }
+  return chain
+}
+
+/** 1 for a main account, 2 for its sub-account, … */
+export function levelOf(nodes: TreeNode[], id: number): number {
+  return ancestors(nodes, id).length
+}
+
+/** How many levels this account and everything under it span (1 when nothing sits under it). */
+export function levelsSpanned(nodes: TreeNode[], id: number, seen = new Set<number>()): number {
+  if (seen.has(id)) return 0
+  seen.add(id)
+  const children = nodes.filter((n) => n.parentId === id)
+  return 1 + Math.max(0, ...children.map((c) => levelsSpanned(nodes, c.id, seen)))
+}
+
+/** Why `parentId` can't hold account `id` (null = a new account), or null if it can. Type is checked separately. */
+export function parentProblem(nodes: TreeNode[], id: number | null, parentId: number): string | null {
+  if (parentId === id) return "An account can't be a sub-account of itself."
+  if (id !== null && ancestors(nodes, parentId).includes(id))
+    return 'That account sits under this one, so it can\'t be its parent.'
+  const span = id === null ? 1 : levelsSpanned(nodes, id)
+  if (levelOf(nodes, parentId) + span > MAX_LEVELS)
+    return `Accounts can nest up to ${MAX_LEVELS} levels deep (a main account and four levels under it). Choose a parent higher up.`
+  return null
+}
+
+/** Items in tree order: each main account followed by everything under it, keeping the given order among siblings.
+ * An item whose parent isn't in the list is treated as a main account. */
+export function treeOrder<T extends TreeNode>(items: T[]): { item: T; depth: number }[] {
+  const ids = new Set(items.map((i) => i.id))
+  const out: { item: T; depth: number }[] = []
+  const done = new Set<number>()
+  const visit = (item: T, depth: number): void => {
+    if (done.has(item.id)) return
+    done.add(item.id)
+    out.push({ item, depth })
+    for (const c of items) if (c.parentId === item.id) visit(c, depth + 1)
+  }
+  for (const i of items) if (i.parentId === null || !ids.has(i.parentId)) visit(i, 0)
+  return out
+}
 
 /** The subtype actually stored. For expenses it follows the tax category. */
 export function effectiveSubtype(type: AccountType, subtype: AccountSubtype, taxCategory: string): AccountSubtype {

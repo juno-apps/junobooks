@@ -79,26 +79,24 @@ function monthsIn(from: string, to: string): { label: string; from: string; to: 
   return out
 }
 
-/** Orders rows so sub-accounts sit right under their parent (depth 1), each group by number. */
+/** Orders rows so sub-accounts sit right under their parent (one depth step per level), each group by number.
+ * A parent with sub-accounts is followed, after everything under it, by "Total <parent>": its own amount plus all
+ * of its sub-accounts at every level. Totals are not counted again in the section total. */
 export function nest(rows: ReportRow[]): ReportRow[] {
   const ids = new Set(rows.map((r) => r.accountId))
-  const top = rows.filter((r) => r.parentId === null || !ids.has(r.parentId))
   const out: ReportRow[] = []
-  for (const t of top) {
-    out.push({ ...t, depth: 0 })
-    const children = rows.filter((r) => r.parentId === t.accountId)
-    for (const c of children) out.push({ ...c, depth: 1 })
-    if (children.length > 0) {
-      // "Total <parent>": the parent's own amount plus its sub-accounts. Not counted again in the section total.
-      out.push({
-        ...t,
-        name: `Total ${t.name}`,
-        values: t.values.map((v, i) => v + children.reduce((s, c) => s + c.values[i], 0)),
-        depth: 0,
-        subtotal: true
-      })
-    }
+  const done = new Set<number>()
+  /** Adds the row and everything under it; returns their combined values. */
+  const visit = (r: ReportRow, depth: number): number[] => {
+    done.add(r.accountId)
+    out.push({ ...r, depth })
+    const sum = [...r.values]
+    const children = rows.filter((c) => c.parentId === r.accountId && !done.has(c.accountId))
+    for (const c of children) visit(c, depth + 1).forEach((v, i) => (sum[i] += v))
+    if (children.length > 0) out.push({ ...r, name: `Total ${r.name}`, values: sum, depth, subtotal: true })
+    return sum
   }
+  for (const r of rows) if (r.parentId === null || !ids.has(r.parentId)) visit(r, 0)
   return out
 }
 
@@ -116,11 +114,16 @@ function section(
     depth: 0,
     parentId: a.parentId
   }))
-  const nonZero = new Set(rows.filter((r) => r.values.some((v) => v !== 0)).map((r) => r.accountId))
-  // Keep a parent when any of its sub-accounts has something, so they stay grouped.
-  const shown = rows.filter(
-    (r) => nonZero.has(r.accountId) || rows.some((c) => c.parentId === r.accountId && nonZero.has(c.accountId))
-  )
+  // Show accounts with something, plus every account above them, so sub-accounts stay grouped.
+  const byId = new Map(rows.map((r) => [r.accountId, r]))
+  const keep = new Set<number>()
+  for (const r of rows) {
+    if (!r.values.some((v) => v !== 0)) continue
+    for (let cur: ReportRow | undefined = r; cur && !keep.has(cur.accountId); cur = byId.get(cur.parentId ?? -1)) {
+      keep.add(cur.accountId)
+    }
+  }
+  const shown = rows.filter((r) => keep.has(r.accountId))
   const total = columns.map((_, i) => shown.reduce((s, r) => s + r.values[i], 0))
   return { title, rows: nest(shown), total }
 }

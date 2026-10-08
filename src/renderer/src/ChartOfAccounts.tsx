@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { ChartAccount, ChartView } from '../../preload/types'
+import { treeOrder } from '../../shared/accounts'
 import { TAX_FORM_LABELS } from '../../shared/entities'
 import { formatCents } from '../../shared/money'
 import AccountForm from './AccountForm'
@@ -144,14 +145,8 @@ function ChartOfAccounts(): JSX.Element {
         {GROUPS.map((g) => {
           const inGroup = shown.filter(g.test)
           if (inGroup.length === 0) return null
-          // Sub-accounts sit right under their parent, indented.
-          const ids = new Set(inGroup.map((a) => a.id))
-          const rows = inGroup
-            .filter((a) => a.parentId === null || !ids.has(a.parentId))
-            .flatMap((p) => [
-              { a: p, depth: 0 },
-              ...inGroup.filter((c) => c.parentId === p.id).map((c) => ({ a: c, depth: 1 }))
-            ])
+          // Sub-accounts sit right under their parent, indented one step per level.
+          const rows = treeOrder(inGroup).map(({ item, depth }) => ({ a: item, depth }))
           return (
             <tbody key={g.title}>
               <tr className="group-row">
@@ -160,7 +155,7 @@ function ChartOfAccounts(): JSX.Element {
               {rows.map(({ a, depth }) => (
                 <tr key={a.id} className={`${a.isActive ? '' : 'inactive'}${depth ? ' sub-account' : ''}`}>
                   <td className="num">{a.number}</td>
-                  <td style={depth ? { paddingLeft: '1.6rem' } : undefined}>
+                  <td style={depth ? { paddingLeft: `${depth * 1.6}rem` } : undefined}>
                     <button type="button" className="link-button account-link" onClick={() => setViewing(a.id)}>
                       {a.name}
                     </button>
