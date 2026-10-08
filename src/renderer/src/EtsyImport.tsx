@@ -9,7 +9,7 @@ import type {
   ImportFile
 } from '../../preload/types'
 import { importAccountGroups, lineCategoryGroups } from '../../shared/bankImport'
-import { ETSY_TARGET_LABELS, type EtsyTarget } from '../../shared/etsy'
+import { ETSY_TARGET_LABELS, parseEtsyOrders, parseEtsyStatement, type EtsyTarget } from '../../shared/etsy'
 import { formatCents } from '../../shared/money'
 import AccountCombobox from './AccountCombobox'
 
@@ -82,11 +82,20 @@ function EtsyImport({ onImported, onClose }: Props): JSX.Element {
   const categoryGroups = lineCategoryGroups(accounts, -1, -1)
   const balanceGroups = importAccountGroups(accounts)
 
-  async function pick(set: (f: ImportFile) => void): Promise<void> {
+  /** Checks the chosen file's columns first: a wrong file is refused and never put in the slot, so the previous good file stays. */
+  async function pick(kind: 'statement' | 'orders'): Promise<void> {
     setError(null)
     const r = await window.juno.pickImportFile()
-    if (!r.ok) setError(r.error)
-    else if (r.value) set(r.value)
+    if (!r.ok) return setError(r.error)
+    if (!r.value) return
+    try {
+      if (kind === 'statement') parseEtsyStatement(r.value.text)
+      else parseEtsyOrders(r.value.text)
+    } catch (e) {
+      return setError(`${r.value.fileName} was not used. ${e instanceof Error ? e.message : String(e)}`)
+    }
+    if (kind === 'statement') setStatement(r.value)
+    else setOrders(r.value)
   }
 
   async function run(): Promise<void> {
@@ -167,7 +176,7 @@ function EtsyImport({ onImported, onClose }: Props): JSX.Element {
             <strong>Payments statement:</strong>{' '}
             {statement ? statement.fileName : <span className="muted">not chosen</span>}
           </span>
-          <button type="button" onClick={() => void pick(setStatement)}>
+          <button type="button" onClick={() => void pick('statement')}>
             {statement ? 'Change…' : 'Choose statement…'}
           </button>
         </div>
@@ -176,7 +185,7 @@ function EtsyImport({ onImported, onClose }: Props): JSX.Element {
             <strong>Sold Orders (optional):</strong>{' '}
             {orders ? orders.fileName : <span className="muted">not chosen</span>}
           </span>
-          <button type="button" onClick={() => void pick(setOrders)}>
+          <button type="button" onClick={() => void pick('orders')}>
             {orders ? 'Change…' : 'Choose orders file…'}
           </button>
           {orders && (

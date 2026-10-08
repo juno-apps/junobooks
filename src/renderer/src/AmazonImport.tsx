@@ -8,7 +8,7 @@ import type {
   EtsyPayout,
   ImportFile
 } from '../../preload/types'
-import { AMAZON_TARGET_LABELS, type AmazonTarget } from '../../shared/amazon'
+import { AMAZON_TARGET_LABELS, parseAmazonSettlement, type AmazonTarget } from '../../shared/amazon'
 import { importAccountGroups, lineCategoryGroups } from '../../shared/bankImport'
 import { formatCents } from '../../shared/money'
 import AccountCombobox from './AccountCombobox'
@@ -143,8 +143,16 @@ function AmazonImport({ onImported, onClose }: Props): JSX.Element {
             type="button"
             onClick={async () => {
               const r = await window.juno.pickImportFile()
-              if (!r.ok) setError(r.error)
-              else if (r.value) setFile(r.value)
+              setError(null)
+              if (!r.ok) return setError(r.error)
+              if (!r.value) return
+              try {
+                parseAmazonSettlement(r.value.text)
+              } catch (e) {
+                // A wrong file is refused and never put in the slot, so the previous good file stays.
+                return setError(`${r.value.fileName} was not used. ${e instanceof Error ? e.message : String(e)}`)
+              }
+              setFile(r.value)
             }}
           >
             {file ? 'Change…' : 'Choose settlement report…'}
