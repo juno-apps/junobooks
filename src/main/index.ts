@@ -36,6 +36,7 @@ import type { ContractorInput, FixedAssetInput, HomeOffice, TripInput } from '..
 import type { InventoryMethod } from '../shared/inventory'
 import type { ItemInput, PurchaseInput } from '../shared/inventoryView'
 import type { BusinessDetails, CertificateInput, CustomerInput, InvoiceInput, PaymentInput } from '../shared/sales'
+import type { SupplierInput } from '../shared/contacts'
 import { invoiceHtml } from '../shared/invoiceHtml'
 import { summaryHtml } from '../shared/summaryHtml'
 import { getEntityType, TAX_FORM_LABELS as FORM_LABELS } from '../shared/entities'
@@ -326,6 +327,11 @@ app.whenReady().then(() => {
   ipcMain.handle('sales:business', () => wrap(() => requireCompany().businessDetails()))
   ipcMain.handle('sales:setBusiness', (_e, d: Omit<BusinessDetails, 'name'>) =>
     wrap(() => requireCompany().setBusinessDetails(d))
+  )
+  ipcMain.handle('contacts:list', () => wrap(() => requireCompany().contacts()))
+  ipcMain.handle('contacts:suppliers', () => wrap(() => requireCompany().suppliers()))
+  ipcMain.handle('contacts:saveSupplier', (_e, id: number | null, s: SupplierInput & { isActive?: boolean }) =>
+    wrap(() => requireCompany().saveSupplier(id, s))
   )
   ipcMain.handle('sales:customers', () => wrap(() => requireCompany().customers()))
   ipcMain.handle('sales:addCustomer', (_e, input: CustomerInput) => wrap(() => requireCompany().addCustomer(input)))

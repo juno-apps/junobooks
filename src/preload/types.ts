@@ -23,6 +23,7 @@ import type { ChannelSales, CogsSchedule, TaxLineSummary } from '../shared/repor
 import type { AccountantNote, PackageResult } from '../shared/pkg'
 import type { ClosingView, YearCloseInfo } from '../shared/closing'
 import type { Dashboard } from '../shared/dashboard'
+import type { ContactRow, Supplier, SupplierInput, SupplierKind } from '../shared/contacts'
 import type {
   Contractor,
   ContractorInput,
@@ -74,6 +75,10 @@ import type {
 
 export type {
   AccountInput,
+  ContactRow,
+  Supplier,
+  SupplierInput,
+  SupplierKind,
   Dashboard,
   ClosingView,
   YearCloseInfo,
@@ -278,6 +283,9 @@ export interface JunoApi {
   accountantNotes: (year: number) => Promise<Result<AccountantNote[]>>
   buildPackage: (year: number) => Promise<Result<PackageResult>>
   showPackage: (path: string) => Promise<Result<null>>
+  contacts: () => Promise<Result<ContactRow[]>>
+  suppliers: () => Promise<Result<Supplier[]>>
+  saveSupplier: (id: number | null, s: SupplierInput & { isActive?: boolean }) => Promise<Result<Supplier[]>>
   contractors: () => Promise<Result<Contractor[]>>
   saveContractor: (id: number | null, c: ContractorInput & { isActive?: boolean }) => Promise<Result<Contractor[]>>
   necReport: (year: number) => Promise<Result<NecReport>>

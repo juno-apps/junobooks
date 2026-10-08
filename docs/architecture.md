@@ -41,13 +41,14 @@ JunoBooks-code/
       reports.ts       Profit & loss, balance sheet, trial balance, general ledger
       reportsExtra.ts  Sales by channel, tax-line summary, cost of goods sold schedule
       records.ts       Contractors + 1099-NEC list, fixed assets, mileage log, home office
+      contacts.ts      Suppliers and the combined Contacts list
       accountantNotes.ts  Notes and checks for the accountant for a year
       accountantPackage.ts  Year-end ZIP: Excel workbook, CSVs, receipts (exceljs, jszip)
       closing.ts       Close books through a date; year-end closing entry
       dashboard.ts     Company home summary and to-do list
       db/migrations.ts Numbered schema migrations
     preload/           contextBridge API exposed to the renderer as window.juno
-    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange, JournalEntry, TransactionList, SimpleEntry, TransferEntry, AccountCombobox, AccountRegister, OpeningBalances, Receipts, Settings, ImportWizard, BankReview, RulesManager, Reconcile, EtsyImport, AmazonImport, Form1099K, Inventory, Sales, SalesTax, Reports, ReportsExtra, ReportBits, YearEndRecords, AccountantPackage, CloseBooks, DashboardPanel; useFormError hook)
+    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange, JournalEntry, TransactionList, SimpleEntry, TransferEntry, AccountCombobox, AccountRegister, OpeningBalances, Receipts, Settings, ImportWizard, BankReview, RulesManager, Reconcile, EtsyImport, AmazonImport, Form1099K, Inventory, Sales, SalesTax, Reports, ReportsExtra, ReportBits, YearEndRecords, AccountantPackage, CloseBooks, DashboardPanel, Contacts; useFormError hook)
     shared/            Code used by both main and renderer: entity types, US states, dates, money, company validation,
                        templates.ts (starting charts), taxLines.ts (tax categories + per-year line tables), chart.ts (view types),
                        accounts.ts (account input rules: kinds, debit/credit side, validation, number-range warning),
@@ -61,7 +62,7 @@ JunoBooks-code/
                        sales.ts (direct-sales types, tax rates, invoice totals, aging), invoiceHtml.ts (printable invoice),
                        amazon.ts / amazonImport.ts (Amazon settlement reading, kinds, plan, types), form1099k.ts (tie-out types), salesTax.ts (rates in force, quarters, report types),
                        reports.ts (report shapes, CSV helpers), reportsExtra.ts (detail report shapes), records.ts (year-end record types, 1099-NEC threshold, home-office math),
-                       pkg.ts (notes and package types), summaryHtml.ts (PDF summary page), closing.ts (closing types), dashboard.ts (home summary type)
+                       pkg.ts (notes and package types), summaryHtml.ts (PDF summary page), closing.ts (closing types), dashboard.ts (home summary type), contacts.ts (suppliers, contact list types)
   scripts/run-tests.cjs
   scripts/live/         Playwright live checks (dev-only; see docs/topics/live-checks.md)
   samples/              Made-up example files (bank CSVs, Etsy statement and orders, Amazon settlement) for trying imports and live checks
@@ -85,7 +86,7 @@ JunoBooks-code/
 - One company is open at a time. Switching opens the new one first, then closes (and backs up) the old one. The last opened company reopens on startup.
 - New company form: name, entity type, home state (default CA), books start date (default Jan 1 this year), starting chart of accounts (template). The initial entity type and home state take effect on the books start date. The chart is created in the same transaction.
 - Companies created before templates existed show a one-time "Set up the chart of accounts" panel (refused if the company already has accounts).
-- **Company home**: the company name with a one-line summary (entity type, return, home state, books start; **Details** shows the full profile with the Change links and the company folder), the screens grouped as buttons (Enter: New expense/income/transfer, New journal entry, Opening balances · Bring in: Import bank file, Import from Etsy, Import from Amazon, Reconcile, Review imported lines when any wait · Sell and make: Invoices, Inventory, Sales tax · Year end: Reports, Year-end records, 1099-K tie-out, Accountant package, Close books), then the **dashboard** (`src/main/dashboard.ts`, `DashboardPanel.tsx`; hidden while a screen is open): this year so far (sales, costs and expenses, net income; closing entries left out), cash (cash-category accounts), owed to you (receivables and marketplace payment accounts), you owe (cards, bills, sales tax, payroll, loans), and a **To do** list whose lines open the right screen: imported lines to review, overdue and draft invoices, bank/card accounts not reconciled through the month before last, sales tax waiting to be paid, books open past the end of last month, last year not closed. Below: the Transactions and Chart of accounts tabs (see `docs/topics/chart-of-accounts.md`).
+- **Company home**: the company name with a one-line summary (entity type, return, home state, books start; **Details** shows the full profile with the Change links and the company folder), the screens grouped as buttons (Enter: New expense/income/transfer, New journal entry, Opening balances · Bring in: Import bank file, Import from Etsy, Import from Amazon, Reconcile, Review imported lines when any wait · Buy: Contacts · Sell and make: Invoices, Inventory, Sales tax · Year end: Reports, Year-end records, 1099-K tie-out, Accountant package, Close books), then the **dashboard** (`src/main/dashboard.ts`, `DashboardPanel.tsx`; hidden while a screen is open): this year so far (sales, costs and expenses, net income; closing entries left out), cash (cash-category accounts), owed to you (receivables and marketplace payment accounts), you owe (cards, bills, sales tax, payroll, loans), and a **To do** list whose lines open the right screen: imported lines to review, overdue and draft invoices, bank/card accounts not reconciled through the month before last, sales tax waiting to be paid, books open past the end of last month, last year not closed. Below: the Transactions and Chart of accounts tabs (see `docs/topics/chart-of-accounts.md`).
 - **Entity type and home state changes** (`companyHistory.ts`, "Change" links on company home): a new value plus a start date is added to `entity_type_history` / `home_state_history`. Both share one set of rules (`validateHistoryChange` in `shared/company.ts`): the date can't be before the books start, on or before the books-closed-through date, on a date that already has an entry, or change nothing. Future dates are allowed. "Correct starting type/state" replaces the first row's value (same date); "Remove" deletes a later change (never the starting one). Both are refused if the books are closed through the date involved. Every change shows a "Check with your accountant" note. The history list reloads after every save. An entity-type add/correct also adds the accounts the new type needs, in the same transaction (see `docs/topics/chart-of-accounts.md`); existing accounts are never changed or removed. A home-state change records history only.
 
 ## Database schema
@@ -154,6 +155,9 @@ Opening an older file backs it up first (`backups/books-<time>-before-upgrade-vX
 **v14** (year-end records; `docs/topics/reports.md`)
 - `contractors` (W-9 flag, tax ID last 4 only, match words), `fixed_assets`, `mileage_trips` (miles in tenths), `mileage_rates` (per year, tenths of a cent), `home_office` (per year). Contractors, fixed assets and trips audited.
 
+**v15** (`docs/topics/contacts.md`)
+- `suppliers` (kind, contact details, your account number, payment terms in days, usual account; unique name ignoring case; no delete). Audited.
+
 Files open in WAL mode with foreign keys on. Dates are `YYYY-MM-DD` text.
 
 **Backups:** on close (and before any migration) the WAL is checkpointed and the file copied to `backups/books-<ISO time>[-label].sqlite`. Only the newest 30 are kept (sorted by name, since names start with the timestamp).
@@ -198,6 +202,7 @@ See `JunoBooks-PLAN.md` §10 (inventory method, S-corp election timing, which ba
 - `docs/topics/reports.md`: reports screen, financial reports, CSV export, year-end detail reports.
 - `docs/topics/accountant-package.md`: notes for the accountant, the year-end ZIP (workbook tabs, PDF summary, CSVs, receipts).
 - `docs/topics/closing.md`: closing the books through a date, year-end closing entry, how reports treat closing entries.
+- `docs/topics/contacts.md`: Contacts list (suppliers, customers, contractors), supplier details.
 - `docs/topics/chart-of-accounts.md`: templates, numbering, entity-specific accounts, tax-line mapping, accountant notes, chart screen, editing accounts, adding/restoring accounts after creation.
 
 ## Latest handoff
@@ -215,4 +220,5 @@ None yet. Created only when the owner types "create new handoff."
 - **Phase 8 complete (schema v13):** sales tax rates by date and the period report (`docs/topics/sales-tax.md`).
 - **Phase 9 complete (schema v14):** sub-accounts up to 5 levels (chart and reports), Reports screen with profit & loss, balance sheet, trial balance, general ledger, sales by channel, tax-line summary, cost of goods sold, inventory methods, CSV export, and Year-end records (contractors/1099-NEC, fixed assets, mileage, home office; schema v14) (`docs/topics/reports.md`).
 - **Phase 10 complete:** accountant package (`docs/topics/accountant-package.md`).
+- **Contacts (schema v15):** suppliers and one Contacts list (`docs/topics/contacts.md`). Next: supplier bills (pay later), then a Supplier box on the Expense screen.
 - **Phase 11 complete:** Close books (period lock screen), year-end close, dashboard and grouped home (`docs/topics/closing.md`, Companies → Company home).

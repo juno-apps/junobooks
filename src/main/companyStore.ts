@@ -37,6 +37,8 @@ import { set1099k, tieOut } from './form1099k'
 import { balanceSheet, generalLedger, profitAndLoss, trialBalance } from './reports'
 import { cogsSchedule, salesByChannel, taxLineSummary } from './reportsExtra'
 import * as records from './records'
+import * as contacts from './contacts'
+import type { ContactRow, Supplier, SupplierInput } from '../shared/contacts'
 import { accountantNotes } from './accountantNotes'
 import { closeYear, closingView, setBooksClosed, yearCloseInfo } from './closing'
 import { dashboard } from './dashboard'
@@ -696,6 +698,19 @@ export class CompanyBooks {
   saveContractor(id: number | null, c: ContractorInput & { isActive?: boolean }, now: Date = new Date()): Contractor[] {
     records.saveContractor(this.db, id, c, now)
     return records.listContractors(this.db)
+  }
+
+  suppliers(): Supplier[] {
+    return contacts.listSuppliers(this.db)
+  }
+
+  saveSupplier(id: number | null, s: SupplierInput & { isActive?: boolean }, now: Date = new Date()): Supplier[] {
+    contacts.saveSupplier(this.db, id, s, now)
+    return contacts.listSuppliers(this.db)
+  }
+
+  contacts(): ContactRow[] {
+    return contacts.listContacts(this.db)
   }
 
   necReport(year: number): NecReport {

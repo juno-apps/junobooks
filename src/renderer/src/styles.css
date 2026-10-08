@@ -931,6 +931,24 @@ button.attention {
   max-width: 1000px;
 }
 
+.contacts {
+  max-width: 1100px;
+}
+
+.contacts .tabs {
+  margin-top: 1rem;
+}
+
+.contacts .account-form {
+  max-width: 720px;
+}
+
+.contacts textarea {
+  font: inherit;
+  font-weight: normal;
+  padding: 0.4rem;
+}
+
 .sales-tax-tab {
   margin-top: 0.8rem;
 }

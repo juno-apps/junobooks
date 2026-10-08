@@ -9,6 +9,7 @@ import HomeStateChange from './HomeStateChange'
 import BankReview from './BankReview'
 import DashboardPanel from './DashboardPanel'
 import CloseBooks from './CloseBooks'
+import Contacts from './Contacts'
 import AmazonImport from './AmazonImport'
 import EtsyImport from './EtsyImport'
 import Form1099K from './Form1099K'
@@ -56,6 +57,7 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
           | 'records'
           | 'package'
           | 'close'
+          | 'contacts'
       }
     | { kind: 'review'; accountId: number | null }
     | null
@@ -88,6 +90,7 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
       | 'records'
       | 'package'
       | 'close'
+      | 'contacts'
       | SimpleKind,
     copyOf?: EntryListItem
   ): void {
@@ -165,6 +168,7 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
                     ['Reconcile', 'reconcile', false]
                   ]
                 ],
+                ['Buy', [['Contacts', 'contacts', false]]],
                 [
                   'Sell and make',
                   [
@@ -216,6 +220,9 @@ function CompanyHome({ company, onChanged }: Props): JSX.Element {
           onPosted={() => setChartVersion((v) => v + 1)}
           onClose={() => setEntering(null)}
         />
+      )}
+      {entering?.kind === 'contacts' && (
+        <Contacts key={entryKey} onOpen={(screen) => startEntry(screen)} onClose={() => setEntering(null)} />
       )}
       {entering?.kind === 'sales' && (
         <Sales key={entryKey} onChanged={() => setChartVersion((v) => v + 1)} onClose={() => setEntering(null)} />

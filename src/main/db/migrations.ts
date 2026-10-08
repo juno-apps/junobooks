@@ -907,6 +907,34 @@ export const MIGRATIONS: Migration[] = [
       ${auditTriggersV2('fixed_assets', ['id', 'name', 'account_id', 'in_service_date', 'cost_cents', 'disposed_date', 'notes', 'updated_at'], false)}
       ${auditTriggersV2('mileage_trips', ['id', 'trip_date', 'miles_tenths', 'purpose', 'from_place', 'to_place', 'created_at'], false)}
     `
+  },
+  {
+    version: 15,
+    description: 'Suppliers (companies you buy from)',
+    sql: `
+      CREATE TABLE suppliers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL CHECK (length(trim(name)) > 0),
+        kind TEXT NOT NULL CHECK (kind IN ('supplier', 'metal_dealer', 'service', 'other')),
+        contact_person TEXT NOT NULL DEFAULT '',
+        email TEXT NOT NULL DEFAULT '',
+        phone TEXT NOT NULL DEFAULT '',
+        website TEXT NOT NULL DEFAULT '',
+        address TEXT NOT NULL DEFAULT '',
+        account_number TEXT NOT NULL DEFAULT '',
+        terms_days INTEGER CHECK (terms_days IS NULL OR (terms_days >= 0 AND terms_days <= 365)),
+        default_account_id INTEGER REFERENCES accounts(id),
+        notes TEXT NOT NULL DEFAULT '',
+        is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      ) STRICT;
+      CREATE UNIQUE INDEX suppliers_name ON suppliers (lower(trim(name)));
+      CREATE TRIGGER suppliers_no_delete BEFORE DELETE ON suppliers BEGIN
+        SELECT RAISE(ABORT, 'Suppliers can''t be deleted. Mark them inactive instead.');
+      END;
+      ${auditTriggersV2('suppliers', ['id', 'name', 'kind', 'contact_person', 'email', 'phone', 'website', 'address', 'account_number', 'terms_days', 'default_account_id', 'notes', 'is_active', 'updated_at'], false)}
+    `
   }
 ]
 
