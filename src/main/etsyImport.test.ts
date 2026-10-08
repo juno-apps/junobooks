@@ -38,6 +38,9 @@ describe('Etsy accounts', () => {
     expect(acct('Etsy payment account')).toMatchObject({ number: '1210', type: 'asset' })
     expect(acct('Sales tax collected by Etsy').accountantNote).toMatch(/marketplace facilitator/)
     expect(acct('State fees collected by Etsy')).toMatchObject({ number: '2220', type: 'liability' })
+    // The percentage Etsy takes on a sale that came from Offsite Ads is a fee, not advertising; Etsy Ads is advertising.
+    expect(acct('Etsy Offsite Ads fees')).toMatchObject({ taxCategory: 'commissions_fees', parentId: books.chart().accounts.find((a) => a.number === '6100')!.id })
+    expect(acct('Etsy Ads')).toMatchObject({ taxCategory: 'advertising' })
     books.addEtsyAccounts()
     expect(books.chart().accounts.filter((a) => a.name.includes('Etsy')).length).toBe(9)
   })

@@ -544,13 +544,13 @@ export const ETSY_ACCOUNTS: ChannelAccountSpec[] = [
     parentNumber: '6000'
   },
   {
-    number: '6002',
+    number: '6105',
     name: 'Etsy Offsite Ads fees',
     type: 'expense',
-    taxCategory: 'advertising',
-    note: 'Offsite Ads are charged as a percentage of the sale. Ask your accountant whether to report them as advertising or as commissions and fees.',
+    taxCategory: 'commissions_fees',
+    note: 'The percentage Etsy takes from a sale that came from an Offsite Ads click. It is a fee on the sale, so it is kept with commissions and fees, not advertising. What you spend on Etsy Ads stays under advertising.',
     targets: ['offsite_ads'],
-    parentNumber: '6000'
+    parentNumber: '6100'
   }
 ]
 
