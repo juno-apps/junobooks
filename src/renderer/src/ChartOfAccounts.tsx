@@ -76,7 +76,8 @@ function ChartOfAccounts(): JSX.Element {
         Click an account to see its register (every entry and the running balance).
         <br />
         {active.length} accounts · Tax lines for {TAX_FORM_LABELS[chart.form]}, from the {chart.tableYear} IRS forms
-        {chart.tableYear < chart.taxYear && ` (the ${chart.taxYear} forms aren't out yet)`}
+        {chart.tableYear < chart.taxYear &&
+          ` (the ${chart.taxYear} forms aren't out yet in JunoBooks: see Settings, "Tax forms and future years")`}
         {notes > 0 && ` · ⚑ ${notes} notes for your accountant`}
       </p>
       {inactiveCount > 0 && (

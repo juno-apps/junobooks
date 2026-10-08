@@ -100,6 +100,34 @@ function Settings({ onFolderChanged, onClose }: Props): JSX.Element {
       )}
 
       {message && <p className={message.bad ? 'error' : 'success'}>{message.text}</p>}
+
+      <h2>Tax forms and future years</h2>
+      <p className="hint">
+        JunoBooks does not download tax forms. Dates work for any year, and your books carry on year after year. What
+        changes with time is a small amount of built-in tax information:
+      </p>
+      <ul className="hint">
+        <li>
+          <strong>Which line of the IRS form each account goes on</strong> (Schedule C, 1065, 1120-S, 1120). These
+          line numbers are built into the program, one table per form year. The IRS changes them only now and then.
+          When a new year&rsquo;s forms come out, a new version of JunoBooks is released with that year&rsquo;s table,
+          and the program updates itself when this PC is online (it checks each time it starts). Until then it uses the
+          most recent table it has and says so on the Chart of accounts and in the tax-line report (for example &ldquo;the
+          2027 forms aren&rsquo;t out yet&rdquo;). Your entries and balances are never affected, only the line labels.
+        </li>
+        <li>
+          <strong>The 1099-NEC reporting amount</strong> is also built in ($600 through 2025, $2,000 from 2026) and
+          follows the same update route. Your accountant has the final say on what must be reported.
+        </li>
+        <li>
+          <strong>Typed by you, so nothing to download:</strong> sales tax rates (Sales tax screen) and the mileage
+          rate and home-office figures for each year (Year-end records).
+        </li>
+      </ul>
+      <p className="hint">
+        The official forms and instructions are free at irs.gov/forms-instructions. JunoBooks does not fill them in:
+        the Accountant package gives your accountant the figures, grouped by form line.
+      </p>
     </section>
   )
 }

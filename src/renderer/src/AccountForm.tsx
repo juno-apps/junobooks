@@ -4,6 +4,7 @@ import {
   ACCOUNT_TYPES,
   numberRangeWarning,
   SUBTYPE_OPTIONS,
+  suggestAccountNumber,
   SYSTEM_SUBTYPES,
   validateAccountInput
 } from '../../shared/accounts'
@@ -36,6 +37,7 @@ function AccountForm({ account, chart, onDone, onCancel }: Props): JSX.Element {
   const [input, setInput] = useState<AccountInput>(() => initialInput(account))
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [numberNote, setNumberNote] = useState<string | null>(null)
   const ref = useRef<HTMLElement>(null)
 
   useEffect(() => {
@@ -62,6 +64,18 @@ function AccountForm({ account, chart, onDone, onCancel }: Props): JSX.Element {
   const parents = chart.accounts.filter(
     (a) => a.type === input.type && a.parentId === null && a.id !== account?.id && a.isActive
   )
+
+  function suggestNumber(): void {
+    const parent = input.parentId ? chart.accounts.find((a) => a.id === input.parentId) : undefined
+    const used = chart.accounts.filter((a) => a.id !== account?.id).map((a) => a.number)
+    const n = suggestAccountNumber(used, input.type, input.taxCategory, parent?.number ?? null)
+    if (n) {
+      set('number', n)
+      setNumberNote(null)
+    } else {
+      setNumberNote('No free number is left there. Type a number of your own.')
+    }
+  }
 
   async function run(action: () => Promise<Result<ChartView>>): Promise<void> {
     setBusy(true)
@@ -102,6 +116,15 @@ function AccountForm({ account, chart, onDone, onCancel }: Props): JSX.Element {
             <input value={input.name} onChange={(e) => set('name', e.target.value)} />
           </label>
         </div>
+        <p className="hint">
+          <button type="button" className="link-button" onClick={suggestNumber}>
+            Suggest a free number
+          </button>{' '}
+          {input.parentId
+            ? 'Uses the number of the account you chose under "Sub-account of".'
+            : 'Picks the next unused number in the usual range for this type. Choose "Sub-account of" first to number it under its parent.'}
+        </p>
+        {numberNote && <p className="hint">{numberNote}</p>}
         {warning && <p className="warning">{warning}</p>}
 
         <div className="form-row">

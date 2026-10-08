@@ -4,6 +4,7 @@ import {
   effectiveSubtype,
   normalBalanceFor,
   numberRangeWarning,
+  suggestAccountNumber,
   validateAccountInput,
   type AccountInput
 } from '../shared/accounts'
@@ -93,6 +94,21 @@ describe('shared account rules', () => {
     expect(numberRangeWarning('expense', 'commissions_fees', '1500')).toMatch(/6000–6999/)
     expect(numberRangeWarning('expense', 'cogs_other', '6400')).toMatch(/5000–5999/)
     expect(numberRangeWarning('asset', 'cash', '1020')).toBeNull()
+  })
+
+  it('suggests a free number: under a parent, then in the type range', () => {
+    expect(suggestAccountNumber(['6120'], 'expense', 'commissions_fees', '6120')).toBe('6121')
+    // 6121–6129 all taken: one digit longer
+    const full = ['6120', ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((k) => `612${k}`)]
+    expect(suggestAccountNumber(full, 'expense', 'commissions_fees', '6120')).toBe('61201')
+    expect(suggestAccountNumber([...full, '61201'], 'expense', 'commissions_fees', '6120')).toBe('61202')
+    // a parent that doesn't end in 0 goes straight to the longer numbers
+    expect(suggestAccountNumber(['6125'], 'expense', 'commissions_fees', '6125')).toBe('61251')
+    // no parent: first unused multiple of 10 in the type's range
+    expect(suggestAccountNumber(['1000', '1010'], 'asset', 'cash', null)).toBe('1020')
+    expect(suggestAccountNumber(['5000'], 'expense', 'cogs_other', null)).toBe('5010')
+    const all = Array.from({ length: 100 }, (_, i) => String(4000 + i * 10))
+    expect(suggestAccountNumber(all, 'income', 'gross_receipts', null)).toBeNull()
   })
 })
 

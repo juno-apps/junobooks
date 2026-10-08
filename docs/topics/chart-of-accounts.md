@@ -53,6 +53,7 @@ Code: `src/shared/accounts.ts` (rules shared with the screen), `src/main/account
 - **Kind** (stored as subtype): asset: regular / bank / inventory / fixed asset / contra; liability: regular / credit card / sales tax / payroll; equity: regular / draws; income: regular / contra (refunds). Expenses have no kind to pick: a `cogs_*` tax category makes it cost of goods sold, anything else a regular expense.
 - **Debit/credit side** is derived (`normalBalanceFor`): the type's natural side, flipped for contra and draw kinds. A test checks every template account follows this rule.
 - **Special accounts** (`SYSTEM_SUBTYPES`: opening balance equity) can't be created by the owner, can't change type, and can't be deleted.
+- **Suggest a free number** (`suggestAccountNumber`, link under the Number box): with a "Sub-account of" parent chosen, the parent's number with its last digit run 1–9 when it ends in 0 (6120 → 6121…6129), then one digit longer (61201…); with no parent, the first unused multiple of 10 in the type's range. Account numbers carry no hierarchy themselves; nesting comes only from "Sub-account of".
 - **Number range:** outside 1xxx/2xxx/3xxx/4xxx/5xxx (COGS)/6xxx for its type → a warning under the field. Saving is still allowed.
 - **Always allowed:** rename, renumber, change tax category, change description, change kind within the same debit/credit side.
 - **Locked once the account is in a posted or voided entry:** type, and any kind change that flips the debit/credit side (also a database trigger for type).

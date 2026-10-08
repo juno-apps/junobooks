@@ -96,6 +96,42 @@ const NUMBER_RANGES: Record<AccountType | 'cogs', { first: string; range: string
   expense: { first: '6', range: '6000–6999', label: 'Expense' }
 }
 
+/**
+ * A free account number to suggest, or null if none is left.
+ * Under a parent: the parent's number with the last digit run 1–9 when it ends in 0 (6120 → 6121…6129), then one
+ * digit longer (61201…61209, then 612001…). Otherwise: the first unused multiple of 10 in the type's thousand-range.
+ */
+export function suggestAccountNumber(
+  used: string[],
+  type: AccountType,
+  taxCategory: string,
+  parentNumber: string | null
+): string | null {
+  const taken = new Set(used.map((n) => n.trim()))
+  if (parentNumber) {
+    const p = parentNumber.trim()
+    if (p.endsWith('0')) {
+      for (let k = 1; k <= 9; k++) {
+        const n = p.slice(0, -1) + k
+        if (!taken.has(n)) return n
+      }
+    }
+    for (let extra = 1; p.length + extra <= 10; extra++) {
+      for (let i = 1; i < 10 ** extra; i++) {
+        const n = p + String(i).padStart(extra, '0')
+        if (!taken.has(n)) return n
+      }
+    }
+    return null
+  }
+  const key = type === 'expense' && taxCategory.startsWith('cogs_') ? 'cogs' : type
+  const start = Number(NUMBER_RANGES[key].first) * 1000
+  for (let n = start; n < start + 1000; n += 10) {
+    if (!taken.has(String(n))) return String(n)
+  }
+  return null
+}
+
 /** A gentle warning when the number is outside its type's usual range. Never blocks saving. */
 export function numberRangeWarning(type: AccountType, taxCategory: string, number: string): string | null {
   const n = number.trim()
