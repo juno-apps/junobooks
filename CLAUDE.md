@@ -64,3 +64,6 @@ JunoBooks is a Windows desktop accounting app (Electron + SQLite) for small busi
 - This stays in force in every session **until I say to put access permission back to the way it was**. When I do, stop requesting that access and remove this section from `CLAUDE.md` and `docs/topics/live-checks.md` in the same turn.
 - This only covers driving the app under test (and the helper windows needed to see it). It does not loosen anything in §8 or the normal safety rules: test data only, no real books, nothing destructive without asking.
 - How to do it step by step, and the traps to avoid: `docs/topics/live-checks.md`. Read it before a live check.
+
+## 10. Plugins and skills
+- This project's plugin picks live in `.claude/settings.json` (Finance plugin enabled). Context7 is used only when a library error needs current docs.
