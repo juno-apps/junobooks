@@ -67,3 +67,16 @@ JunoBooks is a Windows desktop accounting app (Electron + SQLite) for small busi
 
 ## 10. Plugins and skills
 - This project's plugin picks live in `.claude/settings.json` (Finance plugin enabled). Context7 is used only when a library error needs current docs.
+
+## 11. Memory map and session rules
+- `CLAUDE.md`: always, 90 lines, stable rules.
+- `docs/progress-log.md`: start, ask, source of truth, pointer per round.
+- `docs/architecture.md`: start, ask, source of truth, core design and doc index.
+- `docs/HANDOFF.md`: start, 40 lines, short working note rewritten at "wrap up" (not a numbered handoff).
+- `docs/topics/*.md`: on demand, one per module, current state only.
+- `docs/backlog.md`: on demand. `docs/handoffs/`: on demand. `docs/build-run-changes.md`: never, for people.
+- Tag every next step and plan section with its model, e.g. [Sonnet] or [Opus] (see §6).
+- Any new project-management file gets a load type and cap and a line in this map; terse bullets, key line first.
+- Never `@`-import long docs. Never read `docs/archive/` unless restoring.
+- "wrap up": rewrite `docs/HANDOFF.md`, update this file only if a stable fact changed, light trim, report loose ends. Never commit or push.
+- Trims never lose information: save a copy to `docs/archive/` first, move text instead of deleting. Files marked `ask`: propose and wait.
