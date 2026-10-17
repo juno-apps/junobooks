@@ -3,13 +3,14 @@
 ## Status
 - Build run done (Phases 0–11); owner review ongoing. Schema v15, 349 tests, 25 live checks pass.
 - Last feature: Contacts screen with suppliers (R8). Details in `docs/progress-log.md`.
-- Latest commit: project settings (Finance plugin enabled for this project, `.claude/settings.json` now kept in Git).
-- `main` is 12 commits ahead of `origin/main`. Not pushed: the auto-mode check blocked `git push`; owner runs it or adds a permission rule.
+- Git: clean, `main` in sync with `origin/main` (latest `e4f8705`). Use the PowerShell tool for git.
+- Project plugin picks: Finance plugin in `.claude/settings.json`; `CLAUDE.md` §10–11 hold the pointer and the Memory map.
 
 ## Done this session
-- Loaded spc-picker and lean-project-memory skills.
-- Picked this project's plugins; installed Finance (project scope, from `knowledge-work-plugins`).
-- `.gitignore` now keeps `.claude/settings.json`; `CLAUDE.md` §10 points to it.
+- Loaded spc-picker and lean-project-memory (newer versions); merged Memory map and session rules into `CLAUDE.md` §11.
+- Installed Finance plugin (project scope); `.gitignore` keeps `.claude/settings.json`.
+- Committed and pushed 13 commits to GitHub.
+- Lossless trim done (owner said yes): old rounds and phase status → `docs/progress-history.md`, folder tree → `docs/topics/folder-layout.md`, copies in `docs/archive/`. Not committed.
 
 ## Next steps
 1. [Opus] C2 supplier bills: enter now, pay later, owed-to-suppliers aging (schema change + ledger; plan first, wait for OK).
@@ -18,6 +19,9 @@
 4. [Sonnet] Agreed later: read PDFs/photos offline (receipts first).
 
 ## Blockers and notes
+- Session start now reads about 275 lines (was about 440).
 - Finance plugin's BigQuery connector fails to connect; not needed, ignore or decline.
-- Handoff rule in `CLAUDE.md` §4 (numbered files, only on "create new handoff") still stands; this file is a short working note, not a numbered handoff.
-- Start next session by reading `docs/progress-log.md` and `docs/architecture.md`, then this file.
+- `CLAUDE.md` §4 still rules: numbered handoffs only on "create new handoff"; this file is a short working note.
+- Optional, not done: PowerShell git allow rules in `.claude/settings.local.json`; PC safety rules in user settings (see spc-picker).
+
+Deep trim: 2026-10-16 | wrap-ups since: 0

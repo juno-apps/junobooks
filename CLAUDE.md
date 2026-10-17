@@ -70,8 +70,9 @@ JunoBooks is a Windows desktop accounting app (Electron + SQLite) for small busi
 
 ## 11. Memory map and session rules
 - `CLAUDE.md`: always, 90 lines, stable rules.
-- `docs/progress-log.md`: start, ask, source of truth, pointer per round.
-- `docs/architecture.md`: start, ask, source of truth, core design and doc index.
+- `docs/progress-log.md`: start, ask, 40 lines, source of truth: Current state + recent rounds; move older rounds to `docs/progress-history.md`.
+- `docs/architecture.md`: start, ask, 160 lines, source of truth, core design and doc index.
+- `docs/progress-history.md`: on demand, older rounds and per-phase summary; append-only.
 - `docs/HANDOFF.md`: start, 40 lines, short working note rewritten at "wrap up" (not a numbered handoff).
 - `docs/topics/*.md`: on demand, one per module, current state only.
 - `docs/backlog.md`: on demand. `docs/handoffs/`: on demand. `docs/build-run-changes.md`: never, for people.

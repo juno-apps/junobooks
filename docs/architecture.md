@@ -11,73 +11,9 @@ Lean, current-state-only. See `JunoBooks-PLAN.md` for the master plan and phase 
 - **Tests:** Vitest, run by `npm test` through `scripts/run-tests.cjs`, which launches Vitest inside Electron's Node (`ELECTRON_RUN_AS_NODE=1`) because `better-sqlite3` is compiled for Electron and won't load in plain Node. Test files sit next to the code (`*.test.ts`).
 
 ## Folder layout
-```
-JunoBooks-code/
-  src/
-    main/              Electron main process
-      index.ts         Window, IPC handlers, the one open company
-      paths.ts         Data root (installed vs development copy, Settings choice)
-      dataLocation.ts  Data-folder pointer file and folder checks (no Electron imports)
-      appSettings.ts   Per-PC prefs in the data root (app-settings.json: last opened company)
-      companyStore.ts  Create / list / open companies, backups (no Electron imports, so testable)
-      ledger.ts        Ledger engine: post / void / reverse entries, period lock, balances
-      chart.ts         Apply a template's accounts; build the chart-of-accounts view
-      accounts.ts      Add / edit / deactivate / delete accounts
-      companyHistory.ts  Entity-type and home-state history: add / remove a change, correct the starting value
-      entries.ts       Read-only entry list for the screens (writing stays in ledger.ts)
-      register.ts      Read-only account register (lines + running balance)
-      openingBalances.ts  Opening balances: read, and replace (void old + post new)
-      attachments.ts   Receipt files: copy into receipts\<year>\, list, remove (kept on record)
-      bankImport.ts    Bank/card CSV imports: read file, stage lines, review, post, ignore
-      rules.ts         Categorization rules: list, add, edit, delete, matcher
-      reconcile.ts     Cleared status and reconciliations (start, tick, finish, cancel, undo)
-      etsyImport.ts    Etsy statement imports: accounts setup, preview, posting, payouts tie-out
-      inventory.ts     Inventory facts: items, purchases, counts, filed method per year
-      inventoryReport.ts  Inventory year report (four methods) and the year-end entry
-      sales.ts         Customers, resale certificates, invoices, payments received, aging
-      amazonImport.ts  Amazon settlement imports (and the shared add-channel-accounts helper)
-      form1099k.ts     1099-K tie-out per year and platform
-      salesTax.ts      Sales tax rates (dated), period report, recording a payment
-      reports.ts       Profit & loss, balance sheet, trial balance, general ledger
-      reportsExtra.ts  Sales by channel, tax-line summary, cost of goods sold schedule
-      records.ts       Contractors + 1099-NEC list, fixed assets, mileage log, home office
-      contacts.ts      Suppliers and the combined Contacts list
-      accountantNotes.ts  Notes and checks for the accountant for a year
-      accountantPackage.ts  Year-end ZIP: Excel workbook, CSVs, receipts (exceljs, jszip)
-      closing.ts       Close books through a date; year-end closing entry
-      dashboard.ts     Company home summary and to-do list
-      db/migrations.ts Numbered schema migrations
-    preload/           contextBridge API exposed to the renderer as window.juno
-    renderer/src/      React screens (App, CompanyPicker, NewCompanyForm, CompanyHome, ChartOfAccounts, AccountForm, TemplatePicker, EntityTypeChange, HomeStateChange, JournalEntry, TransactionList, SimpleEntry, TransferEntry, AccountCombobox, AccountRegister, OpeningBalances, Receipts, Settings, ImportWizard, BankReview, RulesManager, Reconcile, EtsyImport, AmazonImport, Form1099K, Inventory, Sales, SalesTax, Reports, ReportsExtra, ReportBits, YearEndRecords, AccountantPackage, CloseBooks, DashboardPanel, Contacts; useFormError hook)
-    shared/            Code used by both main and renderer: entity types, US states, dates, money, company validation,
-                       templates.ts (starting charts), taxLines.ts (tax categories + per-year line tables), chart.ts (view types),
-                       accounts.ts (account input rules: kinds, debit/credit side, validation, number-range warning),
-                       journal.ts (entry-screen rows → ledger lines, live totals, two-line balancing, entry list type),
-                       everyday.ts (Expense/Income/Transfer screens: account groups, type-to-narrow filter, entry builders),
-                       register.ts (register view types, column wording), opening.ts (opening-balance types, difference), settings.ts (Settings view type),
-                       attachments.ts (receipt naming, accepted types), csvImport.ts (CSV reading, column guessing, mapping, fingerprints),
-                       bankImport.ts (import types, account groups for import screens), rules.ts (rule matching, suggested text),
-                       reconcile.ts (reconciliation view types, totals), etsy.ts (Etsy file reading, row kinds, posting plan, Etsy accounts),
-                       etsyImport.ts (Etsy import types), inventory.ts (quantities, the four methods), inventoryView.ts (inventory screen types),
-                       sales.ts (direct-sales types, tax rates, invoice totals, aging), invoiceHtml.ts (printable invoice),
-                       amazon.ts / amazonImport.ts (Amazon settlement reading, kinds, plan, types), form1099k.ts (tie-out types), salesTax.ts (rates in force, quarters, report types),
-                       reports.ts (report shapes, CSV helpers), reportsExtra.ts (detail report shapes), records.ts (year-end record types, 1099-NEC threshold, home-office math),
-                       pkg.ts (notes and package types), summaryHtml.ts (PDF summary page), closing.ts (closing types), dashboard.ts (home summary type), contacts.ts (suppliers, contact list types)
-  scripts/run-tests.cjs
-  scripts/live/         Playwright live checks (dev-only; see docs/topics/live-checks.md)
-  samples/              Made-up example files (bank CSVs, Etsy statement and orders, Amazon settlement) for trying imports and live checks
-  test-data/           Dev data root (git-ignored, never real books)
-    app-settings.json
-    Companies/<Company Name>/
-      books.sqlite
-      backups/  receipts/  exports/
-  docs/
-    architecture.md    This file
-    progress-log.md    Pointer log of what changed each round
-    backlog.md         Parked ideas ("backlog:" messages), reviewed at each phase start
-    topics/            One doc per module, read only when a task touches it
-    handoffs/          Numbered handoff files, created on request only
-```
+- `src/main/` (Electron main process, one file per module, `db/migrations.ts`), `src/preload/` (`window.juno` API), `src/renderer/src/` (React screens), `src/shared/` (code used by both sides).
+- `scripts/` (test runner, `live/` Playwright checks), `samples/` (made-up import files), `test-data/` (dev data root, git-ignored, never real books), `docs/`.
+- File-by-file list: `docs/topics/folder-layout.md`.
 
 ## Companies
 - **Data root** (`paths.ts`): the installed app uses `Documents\JunoBooks\`; a development copy (`npm start`) uses `<project>\test-data\` (live checks replace it with `JUNOBOOKS_DATA_ROOT`). **Settings** (header link, `Settings.tsx`) shows the folder and its company count, opens it, and switches to another folder or back to the standard one. The choice is a pointer file outside the data root (installed: `<userData>\data-location.json`; development: `test-data\data-location.json`). Switching closes (and backs up) the open company and never moves or copies files. `checkDataFolder` refuses a single company's folder, the `Companies` folder itself, a file, or a folder JunoBooks can't write to; a development copy only accepts folders inside its test data, so it can never open real books. Practice companies from earlier installed test versions stay in `<userData>\test-data\`; Settings mentions them with a "Use that folder" link. Settings also explains "Tax forms and future years": the app doesn't download forms; IRS line tables and the 1099-NEC amount are built in and arrive with app updates (the app says when it is using an older year's table); sales tax rates, mileage rates and home-office figures are typed by the owner.
@@ -204,21 +140,10 @@ See `JunoBooks-PLAN.md` §10 (inventory method, S-corp election timing, which ba
 - `docs/topics/closing.md`: closing the books through a date, year-end closing entry, how reports treat closing entries.
 - `docs/topics/contacts.md`: Contacts list (suppliers, customers, contractors), supplier details.
 - `docs/topics/chart-of-accounts.md`: templates, numbering, entity-specific accounts, tax-line mapping, accountant notes, chart screen, editing accounts, adding/restoring accounts after creation.
+- `docs/topics/folder-layout.md`: every source file and folder with a one-line purpose; data folder layout.
 
 ## Latest handoff
 None yet. Created only when the owner types "create new handoff."
 
 ## Status
-- **Phase 0 complete:** installs from GitHub, opens, updates itself.
-- **Phase 1 complete (schema v5 at the end of Phase 1):** create/list/switch companies, core schema + audit log, ledger engine + period lock, templates + chart of accounts + tax lines, account editing, entity-type and home-state changes with start dates (correct/remove, chart follows entity changes, restore missing accounts). 
-- **Phase 2 complete (schema v6):** journal entry screen, transaction list, Expense / Income / Transfer, account register, opening balances, receipts, data folder `Documents\JunoBooks` + Settings (see `docs/topics/manual-entry.md`). 2d–2g verified by Claude, owner review pending.
-- **Phase 3 complete (schema v8):** CSV import wizard, review screen, categorization rules, matching to entries already in the books, cleared status and reconciliation (`docs/topics/bank-import.md`). Verified by Claude, owner review pending.
-- **Phase 4 complete (schema v9):** Etsy importer with payouts tie-out (`docs/topics/etsy-import.md`). Checked with five real monthly statements (May-Sep 2026), the year's Sold Orders file and a real Chase file: all 25 Etsy deposits matched.
-- **Phase 5 complete (schema v10):** inventory with four methods side by side, filed method per year, year-end entry (`docs/topics/inventory.md`). Filed method for 2026 is the owner's/accountant's choice (backlog).
-- **Phase 6 complete (schema v11):** customers, resale certificates, invoices with PDF, payments, aging (`docs/topics/direct-sales.md`).
-- **Phase 7 complete (schema v12):** Amazon settlement importer and 1099-K tie-out (`docs/topics/amazon-1099k.md`). Checked with three real settlement files and a real Chase file (payout matching).
-- **Phase 8 complete (schema v13):** sales tax rates by date and the period report (`docs/topics/sales-tax.md`).
-- **Phase 9 complete (schema v14):** sub-accounts up to 5 levels (chart and reports), Reports screen with profit & loss, balance sheet, trial balance, general ledger, sales by channel, tax-line summary, cost of goods sold, inventory methods, CSV export, and Year-end records (contractors/1099-NEC, fixed assets, mileage, home office; schema v14) (`docs/topics/reports.md`).
-- **Phase 10 complete:** accountant package (`docs/topics/accountant-package.md`).
-- **Contacts (schema v15):** suppliers and one Contacts list (`docs/topics/contacts.md`). Next: supplier bills (pay later), then a Supplier box on the Expense screen.
-- **Phase 11 complete:** Close books (period lock screen), year-end close, dashboard and grouped home (`docs/topics/closing.md`, Companies → Company home).
+- Phases 0–11 complete (schema v15 incl. Contacts); verified by Claude, owner review ongoing. Per-phase summary: `docs/progress-history.md`. Current work: `docs/progress-log.md`.
